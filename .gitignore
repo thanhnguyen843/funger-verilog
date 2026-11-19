@@ -1,0 +1,15 @@
+# Compiled simulation outputs
+*.out
+*.vcd
+*.vvp
+
+# Python cache & temporary files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary or editor files
+.vscode/
+.idea/
+*.swp
+*.bak
