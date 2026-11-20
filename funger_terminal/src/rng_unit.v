@@ -7,6 +7,7 @@
 //   - Weighted Pseudo-random Monster ID (1 to 36)
 // ============================================================================
 
+`timescale 1ns / 1ps
 `include "battle_defs.vh"
 
 module rng_unit (

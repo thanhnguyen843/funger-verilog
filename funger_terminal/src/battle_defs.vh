@@ -27,6 +27,14 @@
 `define B_STATE_RESOLVE     3'd6   // Resolve HP & Log Update
 `define B_STATE_CHECK       3'd7   // Outcome Check (Victory / Faint / Swap)
 
+// Standalone 1v1 Battle FSM Controller States (3-bit) - Module 1 Specification
+`define STATE_INIT          3'b000
+`define STATE_INPUT         3'b001
+`define STATE_CALC          3'b010
+`define STATE_RENDER        3'b011
+`define STATE_CHECK         3'b100
+`define STATE_END           3'b101
+
 // Action Encodings
 `define ACTION_NONE         2'b00
 `define ACTION_ATTACK       2'b01

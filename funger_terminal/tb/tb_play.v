@@ -23,8 +23,8 @@ module tb_play;
     // Submodules (ROM Databases & UI Peripheral)
     terminal_ui   ui();
     character_rom char_db();
-    monster_rom   mon_db();
-    map_rom       map_db();
+    monster_rom   mon_db(.monster_id(6'd1), .is_elite(1'b0), .base_hp(), .base_atk(), .base_def(), .spawn_weight(), .is_default_elite());
+    map_rom       map_db(.in_x(32'sd0), .in_y(32'sd0), .out_tile());
 
     // Explorer Squad (4 Explorers)
     reg [255:0] team_name [0:3];
@@ -144,9 +144,9 @@ module tb_play;
     reg [1:0]  inv_target_idx;
     reg [7:0]  inv_new_hp;
     reg        inv_consume_en;
-    reg [2:0]  inv_consume_type;
+    reg [3:0]  inv_consume_type;
     reg        inv_recv_en;
-    reg [2:0]  inv_recv_type;
+    reg [3:0]  inv_recv_type;
     reg [7:0]  inv_recv_amt;
     wire [1:0] inv_active_out;
     wire [3:0] inv_c0_id, inv_c1_id, inv_c2_id, inv_c3_id;
@@ -780,9 +780,9 @@ module tb_play;
                     step_count = step_count + 1;
                     $write("\033[2J\033[H");
 
-                    // Select non-repeating monster
+                    // Select non-repeating monster in progressive difficulty order (low ID to high ID)
                     cur_enemy_id = 6'd1;
-                    for (int_choice = 1; int_choice <= 36; int_choice = int_choice + 1) begin
+                    for (int_choice = 36; int_choice >= 1; int_choice = int_choice - 1) begin
                         if (!encountered_mask[int_choice] && int_choice != 23) begin
                             cur_enemy_id = int_choice[5:0];
                         end

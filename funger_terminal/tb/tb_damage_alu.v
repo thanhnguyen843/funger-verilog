@@ -14,19 +14,53 @@ module tb_damage_alu;
 
     reg  [1:0] p1_action;
     reg  [1:0] p2_action;
+    reg  [7:0] p1_base_atk;
+    reg  [7:0] p2_base_atk;
+    reg  [7:0] p1_def;
+    reg  [7:0] p2_def;
+    reg  [3:0] rng_bits;
+    reg  [7:0] p1_curr_hp;
+    reg        is_flee_failed;
+    reg  [2:0] limb_target;
+    reg        is_lethal_mode;
+    reg        enemy_disarmed;
+
     wire [7:0] p1_damage;
     wire [7:0] p2_damage;
+    wire [7:0] p1_flee_penalty;
 
     integer errors = 0;
 
     damage_alu dut (
-        .p1_action(p1_action),
-        .p2_action(p2_action),
-        .p1_damage(p1_damage),
-        .p2_damage(p2_damage)
+        .p1_action      (p1_action),
+        .p2_action      (p2_action),
+        .p1_base_atk    (p1_base_atk),
+        .p2_base_atk    (p2_base_atk),
+        .p1_def         (p1_def),
+        .p2_def         (p2_def),
+        .rng_bits       (rng_bits),
+        .p1_curr_hp     (p1_curr_hp),
+        .is_flee_failed (is_flee_failed),
+        .limb_target    (limb_target),
+        .is_lethal_mode (is_lethal_mode),
+        .enemy_disarmed (enemy_disarmed),
+        .p1_damage      (p1_damage),
+        .p2_damage      (p2_damage),
+        .p1_flee_penalty(p1_flee_penalty)
     );
 
     initial begin
+        // Initialize inputs to standard test values
+        p1_base_atk    = 8'd20;
+        p2_base_atk    = 8'd20;
+        p1_def         = 8'd0;
+        p2_def         = 8'd0;
+        rng_bits       = 4'd1;
+        p1_curr_hp     = 8'd100;
+        is_flee_failed = 1'b0;
+        limb_target    = `LIMB_TORSO;
+        is_lethal_mode = 1'b0;
+        enemy_disarmed = 1'b0;
         $display("\n========================================================");
         $display("   TESTBENCH: DAMAGE ALU 2x2 COMBAT MATRIX VERIFICATION");
         $display("========================================================");

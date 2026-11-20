@@ -20,8 +20,8 @@ module tb_showcase_all;
     // Hardware module instances
     terminal_ui   ui();
     character_rom char_db();
-    monster_rom   mon_db();
-    map_rom       map_db();
+    monster_rom   mon_db(.monster_id(6'd1), .is_elite(1'b0), .base_hp(), .base_atk(), .base_def(), .spawn_weight(), .is_default_elite());
+    map_rom       map_db(.in_x(32'sd0), .in_y(32'sd0), .out_tile());
 
     // Squad registers (4 companions)
     reg [3:0]   team_char_id [0:3];
@@ -59,7 +59,7 @@ module tb_showcase_all;
     reg signed [31:0] player_x;
     reg signed [31:0] player_y;
     reg [31:0]        step_count;
-    reg [63:0]        cleared_mask;
+    reg [719:0]       cleared_mask;
 
     // Helper task to print section header banners
     task print_stage_banner;
@@ -88,7 +88,7 @@ module tb_showcase_all;
         player_x      = 2;
         player_y      = 2;
         step_count    = 0;
-        cleared_mask  = 64'd0;
+        cleared_mask  = 720'd0;
 
         // Squad initialization (Cahara, D'arce, Enki, Ragnvaldr)
         team_char_id[0] = 4'd1; team_mind[0] = 8'd100; team_hunger[0] = 8'd0;

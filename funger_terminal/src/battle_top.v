@@ -11,6 +11,7 @@
 //   - terminal_ui (đồ họa console ANSI với Combat Log)
 // ============================================================================
 
+`timescale 1ns / 1ps
 `include "battle_defs.vh"
 
 module battle_top (
@@ -30,7 +31,7 @@ module battle_top (
     output wire signed [31:0] player_y_out,
     output wire [31:0] step_count_out,
 
-    output wire [4:0]  enemy_id_out,
+    output wire [5:0]  enemy_id_out,
     output wire [7:0]  enemy_hp_out,
     output wire [7:0]  enemy_max_hp_out,
 
@@ -79,7 +80,7 @@ module battle_top (
     reg [4:0] draft_candidates [0:4];
 
     // Trạng thái quái đối thủ
-    reg [4:0] enemy_id_reg;
+    reg [5:0] enemy_id_reg;
     reg [7:0] enemy_hp_reg;
     reg [7:0] enemy_max_hp_reg;
     reg [7:0] enemy_atk_reg;
@@ -116,11 +117,11 @@ module battle_top (
     reg [1:0] ram_target_idx;
     reg [7:0] ram_new_hp;
     reg       ram_item_consume;
-    reg [1:0] ram_consume_type;
+    reg [3:0] ram_consume_type;
     reg [1:0] ram_active_idx_req;
 
     reg       ram_item_receive;
-    reg [2:0] ram_recv_type;
+    reg [3:0] ram_recv_type;
     reg [7:0] ram_recv_qty;
 
     // ========================================================================
@@ -171,7 +172,7 @@ module battle_top (
         .target_char_idx  (ram_target_idx),
         .new_hp_val       (ram_new_hp),
         .item_consume_en  (ram_item_consume),
-        .consume_item_type({1'b0, ram_consume_type}),
+        .consume_item_type(ram_consume_type),
         .item_receive_en  (ram_item_receive),
         .receive_item_type(ram_recv_type),
         .receive_amount   (ram_recv_qty),
@@ -181,7 +182,7 @@ module battle_top (
     // Module PRNG LFSR 32-bit (Weighted Spawns)
     wire [31:0] rng_val;
     wire        rng_flee_bit;
-    wire [4:0]  rng_monster_roll;
+    wire [5:0]  rng_monster_roll;
 
     rng_unit u_rng (
         .clk            (clk),
@@ -194,7 +195,7 @@ module battle_top (
     );
 
     // Module CSDL quái vật thật từ monster_rom
-    wire [5:0] rom_query_id = {1'b0, rng_monster_roll};
+    wire [5:0] rom_query_id = rng_monster_roll;
     wire [7:0] rom_hp, rom_atk, rom_def, rom_weight;
     wire       rom_is_default_elite;
 
@@ -264,6 +265,7 @@ module battle_top (
         .cleared_valid   (cleared_valid),
         .cleared_coords_x(cleared_coords_x),
         .cleared_coords_y(cleared_coords_y),
+        .cleared_mask    (720'd0),
         .next_x          (col_next_x),
         .next_y          (col_next_y),
         .is_blocked      (col_blocked),
@@ -303,6 +305,9 @@ module battle_top (
         .rng_bits       (rng_val[3:0]),
         .p1_curr_hp     (cur_pal_hp),
         .is_flee_failed (alu_flee_fail),
+        .limb_target    (3'd0),
+        .is_lethal_mode (1'b0),
+        .enemy_disarmed (1'b0),
         .p1_damage      (alu_dmg_to_p1),
         .p2_damage      (alu_dmg_to_p2),
         .p1_flee_penalty(alu_flee_pen)

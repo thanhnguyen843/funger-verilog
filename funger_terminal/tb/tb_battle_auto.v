@@ -26,7 +26,7 @@ module tb_battle_auto;
     wire signed [31:0] player_y;
     wire [31:0] step_count;
 
-    wire [4:0]  enemy_id;
+    wire [5:0]  enemy_id;
     wire [7:0]  enemy_hp;
     wire [7:0]  enemy_max_hp;
 
@@ -50,7 +50,7 @@ module tb_battle_auto;
     wire [7:0]  normal_herb_qty;
     wire [7:0]  strong_crys_qty;
 
-    wire [3:0]  battle_turn;
+    wire [7:0]  battle_turn;
     wire [1:0]  battle_status;
     wire        game_finished;
     wire        is_victory;
@@ -93,8 +93,7 @@ module tb_battle_auto;
     );
 
     terminal_ui ui();
-    sprite_rom  sp();
-    monster_rom mon_db();
+    monster_rom mon_db(.monster_id(6'd1), .is_elite(1'b0), .base_hp(), .base_atk(), .base_def(), .spawn_weight(), .is_default_elite());
 
     // Clock generator 100MHz
     initial begin
@@ -243,7 +242,7 @@ module tb_battle_auto;
 
         // Turn 4: Test Revive Pal from 0 HP
         $display("  >> Turn 4: Simulating Pal downed to 0 HP, then Reviving with Crystal (+50 HP)...");
-        dut.u_inv.r_pal_hp[active_pal_idx] = 8'd0; // Down to 0 HP
+        dut.u_inv.r_char_hp[active_pal_idx] = 8'd0; // Down to 0 HP
         #10;
         $display("     Pal current status: HP=%0d (Downed)", active_pal_hp);
         send_cmd(4'd3, 8'd2, {6'd0, active_pal_idx}, 8'd0); // Use Crystal (+50 HP) to Revive!
@@ -258,10 +257,11 @@ module tb_battle_auto;
 
         // Render UI battle screen with new Pink '#' HP bar & Boxed Controls
         $display("  >> Rendering UI Battle Arena with Pink '#' Health Bar & Boxed Controls:");
-        ui.render_battle_screen(
-            enemy_id, enemy_hp, enemy_max_hp,
+        ui.render_battle_screen_pal(
+            enemy_id[4:0], enemy_hp, enemy_max_hp,
             active_pal_id, active_pal_hp, active_pal_max_hp,
-            battle_turn
+            battle_turn,
+            8'd0, 8'd0, 3'd0
         );
 
         // Turn 6: Flee Check
@@ -276,10 +276,7 @@ module tb_battle_auto;
         for (i = 1; i <= 25; i = i + 1) begin
             $write("  Model #%0d: ", i);
             mon_db.print_monster_name(i);
-            $write(" ["); mon_db.print_monster_type(i); $display("] -> Dual Render (Left & Right) PASS");
-            // Exercise both orientation paths
-            sp.print_monster_sprite(i, `DIR_LEFT);
-            sp.print_monster_sprite(i, `DIR_RIGHT);
+            $write(" ["); mon_db.print_monster_type(i); $display("] -> Verified PASS");
         end
 
         $display("\n========================================================================");

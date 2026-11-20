@@ -15,12 +15,13 @@
 //   4. All notifications cleanly boxed with high-contrast backgrounds
 // ============================================================================
 
+`timescale 1ns / 1ps
 `include "battle_defs.vh"
 
 module terminal_ui;
 
-    map_rom       u_map();
-    monster_rom   u_mon_db();
+    map_rom       u_map(.in_x(32'sd0), .in_y(32'sd0), .out_tile());
+    monster_rom   u_mon_db(.monster_id(6'd1), .is_elite(1'b0), .base_hp(), .base_atk(), .base_def(), .spawn_weight(), .is_default_elite());
     character_rom u_char_db();
 
     // Sprite models for Chest and Key

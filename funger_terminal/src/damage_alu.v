@@ -8,6 +8,7 @@
 //   - 30% Flee failure penalty calculation
 // ============================================================================
 
+`timescale 1ns / 1ps
 `include "battle_defs.vh"
 
 module damage_alu (
@@ -30,6 +31,8 @@ module damage_alu (
 
     reg [7:0] eff_p1_atk;
     reg [7:0] eff_p2_atk;
+    reg [7:0] eff_p1_def;
+    reg [7:0] eff_p2_def;
     reg [7:0] raw_dmg_1to2;
     reg [7:0] raw_dmg_2to1;
     reg [7:0] eff_dmg_1to2;
@@ -37,45 +40,47 @@ module damage_alu (
 
     always @(*) begin
         // Fallback defaults if atk is unassigned / 0 (maintains unit testbench compatibility)
-        eff_p1_atk = (p1_base_atk != 8'd0) ? p1_base_atk : 8'd20;
-        eff_p2_atk = (p2_base_atk != 8'd0) ? p2_base_atk : 8'd20;
+        eff_p1_atk = (p1_base_atk != 8'd0 && p1_base_atk !== 8'hxx && p1_base_atk !== 8'hzz) ? p1_base_atk : 8'd20;
+        eff_p2_atk = (p2_base_atk != 8'd0 && p2_base_atk !== 8'hxx && p2_base_atk !== 8'hzz) ? p2_base_atk : 8'd20;
+        eff_p1_def = (p1_def !== 8'hxx && p1_def !== 8'hzz) ? p1_def : 8'd0;
+        eff_p2_def = (p2_def !== 8'hxx && p2_def !== 8'hzz) ? p2_def : 8'd0;
 
         // 1. Calculate Base Damage with Bitwise Defense Mitigation: max(2, ATK - (DEF >> 1))
-        if (eff_p1_atk > (p2_def >> 1)) begin
-            raw_dmg_1to2 = eff_p1_atk - (p2_def >> 1);
+        if (eff_p1_atk > (eff_p2_def >> 1)) begin
+            raw_dmg_1to2 = eff_p1_atk - (eff_p2_def >> 1);
             if (raw_dmg_1to2 < 8'd2) raw_dmg_1to2 = 8'd2;
         end else begin
             raw_dmg_1to2 = 8'd2;
         end
 
         // Limb targeting modifier: Head attack gets +50% critical damage multiplier
-        if (limb_target == `LIMB_HEAD) begin
+        if (limb_target === `LIMB_HEAD) begin
             raw_dmg_1to2 = raw_dmg_1to2 + (raw_dmg_1to2 >> 1);
         end
 
         // Enemy base damage calculation:
-        if (is_lethal_mode) begin
+        if (is_lethal_mode === 1'b1) begin
             // Coin flip execution: brutal unblockable strike
             raw_dmg_2to1 = eff_p2_atk + 8'd25;
-        end else if (enemy_disarmed) begin
+        end else if (enemy_disarmed === 1'b1) begin
             // Both arms severed: enemy reduced to feeble flailing
             raw_dmg_2to1 = (eff_p2_atk >> 2);
             if (raw_dmg_2to1 < 8'd2) raw_dmg_2to1 = 8'd2;
-        end else if (eff_p2_atk > (p1_def >> 1)) begin
-            raw_dmg_2to1 = eff_p2_atk - (p1_def >> 1);
+        end else if (eff_p2_atk > (eff_p1_def >> 1)) begin
+            raw_dmg_2to1 = eff_p2_atk - (eff_p1_def >> 1);
             if (raw_dmg_2to1 < 8'd2) raw_dmg_2to1 = 8'd2;
         end else begin
             raw_dmg_2to1 = 8'd2;
         end
 
         // 2. Hardware Critical Hit Multiplier (6.25% when rng_bits == 4'b1111: 1.5x)
-        if (rng_bits == 4'b1111 && !is_lethal_mode) begin
+        if (rng_bits === 4'b1111 && is_lethal_mode !== 1'b1) begin
             eff_dmg_1to2 = raw_dmg_1to2 + (raw_dmg_1to2 >> 1);
         end else begin
             eff_dmg_1to2 = raw_dmg_1to2;
         end
 
-        if (rng_bits == 4'b0000 && !is_lethal_mode) begin
+        if (rng_bits === 4'b0000 && is_lethal_mode !== 1'b1) begin
             eff_dmg_2to1 = raw_dmg_2to1 + (raw_dmg_2to1 >> 1);
         end else begin
             eff_dmg_2to1 = raw_dmg_2to1;

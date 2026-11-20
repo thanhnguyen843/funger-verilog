@@ -8,6 +8,7 @@
 //   - Item Consumption: Out-of-combat (Map) & In-combat (Turn action)
 // ============================================================================
 
+`timescale 1ns / 1ps
 `include "battle_defs.vh"
 
 module inventory_ram (
@@ -53,11 +54,11 @@ module inventory_ram (
 
     // Control Strobe: Consume Item
     input  wire        item_consume_en,
-    input  wire [2:0]  consume_item_type, // ITEM_POPPY, ITEM_MARIJUANA
+    input  wire [3:0]  consume_item_type, // ITEM_POPPY, ITEM_MARIJUANA
 
     // Control Strobe: Receive Item (From Chest or Monster Drop)
     input  wire        item_receive_en,
-    input  wire [2:0]  receive_item_type, // ITEM_POPPY, ITEM_MARIJUANA, ITEM_KEY
+    input  wire [3:0]  receive_item_type, // ITEM_POPPY, ITEM_MARIJUANA, ITEM_KEY
     input  wire [7:0]  receive_amount,
 
     output wire        team_all_fainted

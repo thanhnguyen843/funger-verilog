@@ -4,6 +4,7 @@
 // Supports both 720-bit Cleared Mask (36x20 Labyrinth) and legacy circular buffer
 // ============================================================================
 
+`timescale 1ns / 1ps
 `include "battle_defs.vh"
 
 module collision_unit (
