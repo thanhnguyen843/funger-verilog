@@ -50,13 +50,14 @@
 `define ITEM_NORMAL         `ITEM_POPPY      // Backward compatibility alias
 `define ITEM_STRONG         `ITEM_MARIJUANA  // Backward compatibility alias
 
-// Targetable Body Parts (3-bit)
-`define LIMB_HEAD           3'd0   // Head (25% Hit | LETHAL Decapitation)
-`define LIMB_TORSO          3'd1   // Torso (95% Hit | Core vitals)
-`define LIMB_ARM_R          3'd2   // Right Arm (80% Hit | Weapon arm)
-`define LIMB_ARM_L          3'd3   // Left Arm (80% Hit | Shield/Offhand)
-`define LIMB_LEG_R          3'd4   // Right Leg (85% Hit | Mobility)
-`define LIMB_LEG_L          3'd5   // Left Leg (85% Hit | Both legs = Crawling)
+// Targetable Body Parts (3-bit) - Unified ALU & Engine Mapping
+`define LIMB_TORSO          3'd0   // Torso (95% Hit | Core vitals | 1.0x baseline)
+`define LIMB_HEAD           3'd1   // Head (25% Hit | LETHAL Decapitation | 1.5x crit)
+`define LIMB_ARM_R          3'd2   // Right Arm (80% Hit | Weapon arm | Disarms ATK)
+`define LIMB_ARM_L          3'd3   // Left Arm (80% Hit | Shield/Offhand | Breaks Guard)
+`define LIMB_LEGS           3'd4   // Legs (85% Hit | Mobility | Forces Crawling)
+`define LIMB_LEG_R          3'd4   // Alias for Right Leg
+`define LIMB_LEG_L          3'd4   // Alias for Left Leg
 
 // Coin Flip Choices (1-bit)
 `define COIN_HEADS          1'b0   // Heads (Sylvian Face)

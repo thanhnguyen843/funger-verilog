@@ -91,9 +91,9 @@ module character_rom;
                 char_atk = base_atk;
                 char_def = base_def;
             end else begin
-                // Mode 1: Fear & Hunger (Empowered 1.5x stats)
-                char_atk = base_atk + (base_atk / 8'd2);
-                char_def = base_def + (base_def / 8'd2);
+                // Mode 1: Fear & Hunger (Empowered 1.5x stats via bitwise shift)
+                char_atk = base_atk + (base_atk >> 1);
+                char_def = base_def + (base_def >> 1);
             end
         end
     endtask

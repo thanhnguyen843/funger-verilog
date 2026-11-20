@@ -40,16 +40,20 @@ module rng_unit (
     // 50% boolean outcome (Bit 0 of Galois LFSR has ideal uniform distribution)
     assign rand_bit_50 = lfsr_val[0];
 
-    // 0..99 percentage modulo
-    assign rand_pct = lfsr_val[15:0] % 100;
+    // 0..99 percentage using Lemire Fast Multiplier Scaling (eliminates hardware modulo divider)
+    // (lfsr_val[15:0] * 100) >> 16 maps [0, 65535] uniformly onto [0, 99]
+    assign rand_pct = (lfsr_val[15:0] * 16'd100) >> 16;
 
-    // Weighted spawn distribution for 36 monsters:
-    // Exclude ID 23 (Mimic) from open dungeon encounters
+    // Uniform pseudo-random monster ID 1 to 36 without hardware modulo
+    // Maps [0, 255] onto [0, 35] via scale, then adds 1 -> [1, 36]
+    wire [15:0] scaled_mon_prod = lfsr_val[7:0] * 8'd36;
+    wire [5:0]  raw_mon_id = (scaled_mon_prod[15:8]) + 6'd1;
+
     always @(*) begin
-        if ((lfsr_val[7:0] % 36) + 6'd1 == 6'd23)
-            rand_monster_id = 6'd24;
+        if (raw_mon_id == 6'd23)
+            rand_monster_id = 6'd24; // Mimic is chest-only, reroute encounter to Hydra
         else
-            rand_monster_id = (lfsr_val[7:0] % 36) + 6'd1;
+            rand_monster_id = raw_mon_id;
     end
 
 endmodule
