@@ -78,10 +78,10 @@ module inventory_ram (
         if (!rst_n) begin
             r_active_idx <= 2'd0;
 
-            r_char_id[0] <= 4'd1; r_char_hp[0] <= 8'd110; r_char_max[0] <= 8'd110; // Cahara
-            r_char_id[1] <= 4'd2; r_char_hp[1] <= 8'd130; r_char_max[1] <= 8'd130; // D'arce
-            r_char_id[2] <= 4'd3; r_char_hp[2] <= 8'd85;  r_char_max[2] <= 8'd85;  // Enki
-            r_char_id[3] <= 4'd4; r_char_hp[3] <= 8'd140; r_char_max[3] <= 8'd140; // Ragnvaldr
+            r_char_id[0] <= 4'd1; r_char_hp[0] <= 8'd125; r_char_max[0] <= 8'd125; // Cahara
+            r_char_id[1] <= 4'd2; r_char_hp[1] <= 8'd145; r_char_max[1] <= 8'd145; // D'arce
+            r_char_id[2] <= 4'd3; r_char_hp[2] <= 8'd95;  r_char_max[2] <= 8'd95;  // Enki
+            r_char_id[3] <= 4'd4; r_char_hp[3] <= 8'd155; r_char_max[3] <= 8'd155; // Ragnvaldr
 
             // Bắt đầu game: Luôn luôn có 10 Poppy và 3 Marijuana, 0 Chìa khóa
             r_poppy_qty     <= 8'd10;

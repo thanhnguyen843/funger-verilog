@@ -212,7 +212,7 @@ module tb_battle_auto;
         // 7. Tactical Turn-based Battle Verification
         $display("\n[STEP 7]: Verifying Turn-based Combat Mechanics (Attack, Defend, Heal, Revive, Swap, Flee)...");
         dut.state_reg         = `STATE_BATTLE_LOOP;
-        dut.enemy_id_reg      = 5'd25; // Abyssmaw
+        dut.enemy_id_reg      = 6'd25; // Abyssmaw
         dut.enemy_hp_reg      = 8'd80;
         dut.enemy_max_hp_reg  = 8'd80;
         dut.enemy_atk_reg     = 8'd20;
