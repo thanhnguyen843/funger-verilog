@@ -233,7 +233,7 @@ module terminal_ui;
         reg [2:0] raw_t;
         integer dx_gate, dy_gate;
         begin
-            $write("\033[H"); // Anti-flicker: Overwrite in place
+            $write("\033[2J\033[H"); // Clean screen reset: No ghost text from previous combat screens
             $display("\033[1;32m==================================================================================\033[0m\033[K");
             $display("\033[1;32m  LABYRINTH [TERROR & STARVATION] | POS:[%2d,%2d] | STEPS:%-3d\033[0m\033[K",
                      px, py, step_count);
@@ -418,7 +418,7 @@ module terminal_ui;
         integer dist;
         integer dx_gate, dy_gate;
         begin
-            $write("\033[H"); // Anti-flicker: Overwrite in place
+            $write("\033[2J\033[H"); // Clean screen reset: No ghost text from previous combat screens
             $display("\033[1;32m==================================================================================\033[0m\033[K");
             if (is_hard_mode)
                 $display("\033[1;31m  LABYRINTH [TERROR & STARVATION] | POS:[%2d,%2d] | STEPS:%-3d | KEYS:\033[1;33m%0d/3\033[1;31m\033[0m\033[K",
