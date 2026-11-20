@@ -9,7 +9,7 @@ A complete **Turn-Based Tactical Roguelike Dungeon Crawler** implemented at the 
 ### 1.1 Dual Difficulty Modes (Fear & Hunger vs. Terror & Starvation)
 Upon starting an expedition, players choose between two distinct difficulty levels:
 1. **Mode 1: "Fear & Hunger" (Normal / Standard Expeditions)**:
-   - **Empowered Explorer Combat Stats**: Player character **ATK and DEF are boosted by 1.5x** (e.g. Cahara: 33 ATK / 21 DEF, Enki: 45 ATK / 24 DEF, Nas'hrah: 51 ATK / 18 DEF) while monsters remain at standard stats.
+   - **Empowered Explorer Combat Stats**: Player character **ATK and DEF are boosted by 1.5x** and **Max HP is boosted by +25%** (`base_hp + (base_hp >> 2)`) (e.g. Cahara: 156 HP, 33 ATK / 21 DEF; D'arce: 181 HP, 30 ATK / 30 DEF; Ragnvaldr: 193 HP, 39 ATK / 18 DEF) while monsters remain at standard stats.
    - **Generous Healing Potencies**: **Poppy Flower** restores **+50 HP**, and **Marijuana Herb** restores **+120 HP**.
    - Ideal for dungeoneers seeking balanced combat and tactical survival.
 2. **Mode 2: "Terror & Starvation" (Hardcore / Classic Fear & Hunger Mode)**:
@@ -67,29 +67,38 @@ Upon starting an expedition, players choose between two distinct difficulty leve
 
 ```text
 funger_terminal/
-├── src/
-│   ├── character_rom.v       # 8 Fear & Hunger character stats and database
-│   ├── monster_rom.v         # 36 Monster database with Elite weights and stats
-│   ├── map_rom.v             # 20x36 Labyrinth map ROM with rightmost Gates 'G' and guard 'M'
-│   ├── collision_unit.v      # Collision detection unit for walls, chests, gates, and foes
-│   ├── inventory_ram.v       # RAM managing 4-character squad, Poppy, Marijuana, and 3 Keys
-│   ├── chest_sprite_rom.v    # 20x23 pixel-art chest model ROM
-│   ├── key_sprite_rom.v      # 11x22 pixel-art key model ROM + compact pouch icon
-│   ├── funger_*_rom.v        # 8 Fear & Hunger player character pixel-art ROMs
-│   ├── monster.v             # 20 Monster pixel-art sprite sheet ROM
-│   ├── fantasy_creatures.v   # 16 Fantasy creature pixel-art sprite sheet ROM
-│   ├── healing_items.v       # Pixel-art ROM for Poppy and Marijuana
-│   ├── sprite_router.v       # Color sprite multiplexer for side-by-side battle rendering
-│   ├── terminal_ui.v         # ANSI terminal UI (Map, Bag, Full-Screen Chest, Battle, Boxed Alerts)
-│   ├── damage_alu.v          # Combat damage calculation arithmetic unit
-│   ├── rng_unit.v            # 32-bit LFSR PRNG unit
-│   └── battle_top.v          # Top-level RTL hardware coordinator
-├── tb/
-│   ├── tb_game_check.v       # Comprehensive verification testbench
-│   ├── tb_battle_top.v       # Interactive keyboard testbench
-│   └── tb_battle_auto.v      # Automated regression testbench
-├── sim/                      # Compiled simulation binaries
-└── run_game_check.bat        # One-click execution script for full game feature verification
+├── run_comprehensive_verification.py # 5-Gate DO-254 / OpenTitan industrial verification suite
+├── audit_hardware_linter.py          # Stage 1: Static hardware synthesizability audit
+├── audit_string_overflow.py          # Stage 2: String register width & ANSI integrity
+├── audit_damage_accounting.py        # Stage 3: Python golden reference co-simulation
+├── audit_rng_pity.py                 # Stage 4: 100k-cycle LFSR chi-square & pity proof
+├── benchmark_hw_vs_sw.py             # Hardware vs. Software (RISC-V) benchmarking tool
+├── src/                              # 100% Synthesizable Verilog RTL Modules
+│   ├── battle_defs.vh                # Global system definitions & states
+│   ├── character_rom.v               # 8 Fear & Hunger character stats and database
+│   ├── monster_rom.v                 # 36 Monster database with Elite weights and stats
+│   ├── map_rom.v                     # 20x36 Labyrinth map ROM with rightmost Gates 'G' and guard 'M'
+│   ├── collision_unit.v              # Collision detection unit for walls, chests, gates, and foes
+│   ├── inventory_ram.v               # RAM managing 4-character squad, Poppy, Marijuana, and 3 Keys
+│   ├── chest_sprite_rom.v            # 20x23 pixel-art chest model ROM
+│   ├── key_sprite_rom.v              # 11x22 pixel-art key model ROM + compact pouch icon
+│   ├── funger_*_rom.v                # 8 Fear & Hunger player character pixel-art ROMs
+│   ├── monster.v                     # 20 Monster pixel-art sprite sheet ROM
+│   ├── fantasy_creatures.v           # 16 Fantasy creature pixel-art sprite sheet ROM
+│   ├── healing_items.v               # Pixel-art ROM for Poppy and Marijuana
+│   ├── sprite_router.v               # Color sprite multiplexer for side-by-side battle rendering
+│   ├── terminal_ui.v                 # ANSI terminal UI (Map, Bag, Full-Screen Chest, Battle, Boxed Alerts)
+│   ├── damage_alu.v                  # Combat damage calculation arithmetic unit
+│   ├── rng_unit.v                    # 32-bit LFSR PRNG unit
+│   └── battle_top.v                  # Top-level RTL hardware coordinator
+└── tb/                               # Comprehensive Testbenches
+    ├── tb_play.v                     # Interactive keyboard testbench
+    ├── tb_game_check.v               # Comprehensive feature verification testbench
+    ├── tb_battle_auto.v              # Automated regression testbench
+    ├── tb_damage_alu.v               # ALU combat matrix unit testbench
+    ├── tb_golden_trace.v             # Golden model co-simulation trace generator
+    ├── tb_fsm_fuzzer.v               # 50,000-iteration random input FSM fuzzer
+    └── tb_waveform_trace.v           # GTKWave VCD architecture waveform testbench
 ```
 
 ---
