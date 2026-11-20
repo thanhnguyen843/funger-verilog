@@ -865,7 +865,7 @@ module tb_play;
                     enemy_torso_hp, enemy_torso_max,
                     enemy_arm_r_hp, enemy_arm_r_max,
                     enemy_arm_l_hp, enemy_arm_l_max,
-                    enemy_leg_r_hp, enemy_leg_l_max,
+                    enemy_leg_r_hp, enemy_leg_r_max,
                     enemy_is_crawling,
                     enemy_is_disarmed,
                     // Event Log
@@ -1002,7 +1002,7 @@ module tb_play;
                             enemy_is_crawling = 1'b1;
                             player_action_log = "[CRAWLING !]: Legs severed! Foe falls! Head hit chance is 100%!";
                         end else begin
-                            $sformat(player_action_log, "Slashed LEGS for %0d DMG! (Legs HP: %0d/%0d)", calc_dmg, enemy_leg_r_hp, enemy_leg_l_max);
+                            $sformat(player_action_log, "Slashed LEGS for %0d DMG! (Legs HP: %0d/%0d)", calc_dmg, enemy_leg_r_hp, enemy_leg_r_max);
                         end
                     end else begin
                         player_action_log = "[MISSED]: Foe leapt back to evade leg strike!";

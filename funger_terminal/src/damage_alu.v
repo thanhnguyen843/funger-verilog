@@ -40,10 +40,25 @@ module damage_alu (
 
     always @(*) begin
         // Fallback defaults if atk is unassigned / 0 (maintains unit testbench compatibility)
-        eff_p1_atk = (p1_base_atk != 8'd0 && p1_base_atk !== 8'hxx && p1_base_atk !== 8'hzz) ? p1_base_atk : 8'd20;
-        eff_p2_atk = (p2_base_atk != 8'd0 && p2_base_atk !== 8'hxx && p2_base_atk !== 8'hzz) ? p2_base_atk : 8'd20;
-        eff_p1_def = (p1_def !== 8'hxx && p1_def !== 8'hzz) ? p1_def : 8'd0;
-        eff_p2_def = (p2_def !== 8'hxx && p2_def !== 8'hzz) ? p2_def : 8'd0;
+        if (p1_base_atk === 8'hxx || p1_base_atk === 8'hzz || p1_base_atk == 8'd0 || (^p1_base_atk === 1'bx))
+            eff_p1_atk = 8'd20;
+        else
+            eff_p1_atk = p1_base_atk;
+
+        if (p2_base_atk === 8'hxx || p2_base_atk === 8'hzz || p2_base_atk == 8'd0 || (^p2_base_atk === 1'bx))
+            eff_p2_atk = 8'd20;
+        else
+            eff_p2_atk = p2_base_atk;
+
+        if (p1_def === 8'hxx || p1_def === 8'hzz || (^p1_def === 1'bx))
+            eff_p1_def = 8'd0;
+        else
+            eff_p1_def = p1_def;
+
+        if (p2_def === 8'hxx || p2_def === 8'hzz || (^p2_def === 1'bx))
+            eff_p2_def = 8'd0;
+        else
+            eff_p2_def = p2_def;
 
         // 1. Calculate Base Damage with Bitwise Defense Mitigation: max(2, ATK - (DEF >> 1))
         if (eff_p1_atk > (eff_p2_def >> 1)) begin
