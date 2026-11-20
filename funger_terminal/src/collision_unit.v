@@ -1,6 +1,7 @@
 // ============================================================================
-// Pokemon Lite: Terror & Starvation - Collision Unit (collision_unit.v)
-// Handles boundary checks, walls, monster encounters, chests, and gates with Cleared Tile Memory
+// Funger Hardware Engine: Collision & Navigation Unit (collision_unit.v)
+// Synthesizable combinational unit for boundary, walls, encounters, chests, and gates
+// Supports both 720-bit Cleared Mask (36x20 Labyrinth) and legacy circular buffer
 // ============================================================================
 
 `include "battle_defs.vh"
@@ -13,6 +14,7 @@ module collision_unit (
     input  wire [15:0]        cleared_valid,
     input  wire [127:0]       cleared_coords_x,
     input  wire [127:0]       cleared_coords_y,
+    input  wire [719:0]       cleared_mask,
     output reg  signed [31:0] next_x,
     output reg  signed [31:0] next_y,
     output reg                is_blocked,
@@ -29,14 +31,23 @@ module collision_unit (
     reg [2:0] raw_tile;
     integer k;
     reg is_cleared;
+    integer target_idx;
 
     always @(*) begin
         target_x   = curr_x + dir_dx;
         target_y   = curr_y + dir_dy;
         raw_tile   = u_map.get_tile(target_x, target_y);
+        target_idx = target_y * `MAP_WIDTH + target_x;
 
-        // Check if target tile has been defeated or opened in Cleared Memory
+        // Check if target tile has been defeated or opened
         is_cleared = 1'b0;
+
+        // 1. Check 720-bit cleared mask (Fast hardware bit-index)
+        if (target_idx >= 0 && target_idx < 720) begin
+            if (cleared_mask[target_idx]) is_cleared = 1'b1;
+        end
+
+        // 2. Check legacy circular buffer (for battle_top.v compatibility)
         for (k = 0; k < 16; k = k + 1) begin
             if (cleared_valid[k] && 
                 target_x == {24'd0, cleared_coords_x[k*8 +: 8]} && 

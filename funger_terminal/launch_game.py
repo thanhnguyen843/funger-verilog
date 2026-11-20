@@ -83,10 +83,10 @@ def main():
                             continue
                         last_key_time = now
                     elif ch in (b'\r', b'\n'):  # Enter Key
-                        # If Enter is pressed right after a character key (< 0.2s), it's the trailing Enter of that key
-                        if (now - last_key_time) < 0.2:
+                        # Trailing Enter right after an option key (within 0.6s) is safely absorbed
+                        if (now - last_key_time) < 0.6:
                             continue
-                        # Independent Enter (e.g., Press [C] or Enter to continue / confirm)
+                        # Standalone Enter on prompts (e.g. "Press [C] or Enter to continue")
                         cmd = b'c\n'
                         last_key_time = now
                     elif ch == b' ':       # Space Bar -> Confirm / Continue ('c')
