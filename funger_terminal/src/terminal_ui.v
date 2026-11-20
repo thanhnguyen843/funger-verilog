@@ -229,7 +229,7 @@ module terminal_ui;
         input [4:0]         p0_id; input [7:0] p0_hp, p0_max;
         input [4:0]         p1_id; input [7:0] p1_hp, p1_max;
         input [4:0]         p2_id; input [7:0] p2_hp, p2_max;
-        integer x, y, dist;
+        integer x, y, tile_dist;
         reg [2:0] raw_t;
         integer dx_gate, dy_gate;
         begin
@@ -242,10 +242,10 @@ module terminal_ui;
             for (y = 0; y < `MAP_HEIGHT; y = y + 1) begin
                 $write("  ");
                 for (x = 0; x < `MAP_WIDTH; x = x + 1) begin
-                    dist = (x > px ? x - px : px - x) + (y > py ? y - py : py - y);
+                    tile_dist = (x > px ? x - px : px - x) + (y > py ? y - py : py - y);
                     if (x == px && y == py) begin
                         $write("\033[1;33;40m O\033[0m");
-                    end else if (dist > 7) begin
+                    end else if (tile_dist > 7) begin
                         // Fog of War: Distant cells dimmed to dark dot
                         $write("\033[90m .\033[0m");
                     end else begin
@@ -415,7 +415,7 @@ module terminal_ui;
         reg [2:0] raw_t;
         integer cell_idx;
         reg is_cleared;
-        integer dist;
+        integer tile_dist;
         integer dx_gate, dy_gate;
         begin
             $write("\033[2J\033[H"); // Clean screen reset: No ghost text from previous combat screens
@@ -433,12 +433,12 @@ module terminal_ui;
                 for (x = 0; x < `MAP_WIDTH; x = x + 1) begin
                     cell_idx   = y * `MAP_WIDTH + x;
                     is_cleared = cleared_mask[cell_idx];
-                    dist = (x > px ? x - px : px - x) + (y > py ? y - py : py - y);
+                    tile_dist = (x > px ? x - px : px - x) + (y > py ? y - py : py - y);
 
                     if (x == px && y == py) begin
                         // Player representation: Vibrant Yellow 'O'
                         $write("\033[1;33;40m O\033[0m");
-                    end else if (dist > 7) begin
+                    end else if (tile_dist > 7) begin
                         // Fog of War: Distant cells dimmed to dark gray dot
                         $write("\033[90m .\033[0m");
                     end else begin

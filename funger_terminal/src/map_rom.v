@@ -12,7 +12,11 @@
 
 `include "battle_defs.vh"
 
-module map_rom;
+module map_rom (
+    input  wire signed [31:0] in_x,
+    input  wire signed [31:0] in_y,
+    output wire [2:0]         out_tile
+);
 
     function [2:0] get_tile;
         input integer x;
@@ -103,5 +107,7 @@ module map_rom;
             end
         end
     endfunction
+
+    assign out_tile = get_tile(in_x, in_y);
 
 endmodule

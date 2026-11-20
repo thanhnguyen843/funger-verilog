@@ -24,19 +24,21 @@ module collision_unit (
     output reg  [2:0]         dest_tile
 );
 
-    map_rom u_map();
+    wire signed [31:0] target_x = curr_x + dir_dx;
+    wire signed [31:0] target_y = curr_y + dir_dy;
+    wire [2:0]         raw_tile;
 
-    integer target_x;
-    integer target_y;
-    reg [2:0] raw_tile;
+    map_rom u_map (
+        .in_x(target_x),
+        .in_y(target_y),
+        .out_tile(raw_tile)
+    );
+
     integer k;
     reg is_cleared;
     integer target_idx;
 
     always @(*) begin
-        target_x   = curr_x + dir_dx;
-        target_y   = curr_y + dir_dy;
-        raw_tile   = u_map.get_tile(target_x, target_y);
         target_idx = target_y * `MAP_WIDTH + target_x;
 
         // Check if target tile has been defeated or opened
@@ -57,12 +59,12 @@ module collision_unit (
         end
 
         if (is_cleared && (raw_tile == `TILE_MONSTER || raw_tile == `TILE_CHEST)) begin
-            raw_tile = `TILE_PATH;
+            dest_tile = `TILE_PATH;
+        end else begin
+            dest_tile = raw_tile;
         end
 
-        dest_tile = raw_tile;
-
-        if (raw_tile == `TILE_WALL) begin
+        if (dest_tile == `TILE_WALL) begin
             // Blocked by green wall -> maintain current position
             next_x     = curr_x;
             next_y     = curr_y;
@@ -75,9 +77,9 @@ module collision_unit (
             next_x     = target_x;
             next_y     = target_y;
             is_blocked = 1'b0;
-            is_monster = (raw_tile == `TILE_MONSTER);
-            is_chest   = (raw_tile == `TILE_CHEST);
-            is_gate    = (raw_tile == `TILE_GATE);
+            is_monster = (dest_tile == `TILE_MONSTER);
+            is_chest   = (dest_tile == `TILE_CHEST);
+            is_gate    = (dest_tile == `TILE_GATE);
         end
     end
 

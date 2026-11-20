@@ -70,11 +70,11 @@ module monster_rom (
             end
         endcase
 
-        // Boost stats by +20% if Elite (Mimic is never elite)
+        // Boost stats by +20% if Elite (Mimic is never elite) via 16-bit shift-scale (~51/256 = 19.92%)
         if (is_elite && monster_id != 6'd23) begin
-            base_hp  = raw_hp  + (raw_hp  / 8'd5);
-            base_atk = raw_atk + (raw_atk / 8'd5);
-            base_def = raw_def + (raw_def / 8'd5);
+            base_hp  = raw_hp  + (({8'd0, raw_hp}  * 8'd51) >> 8);
+            base_atk = raw_atk + (({8'd0, raw_atk} * 8'd51) >> 8);
+            base_def = raw_def + (({8'd0, raw_def} * 8'd51) >> 8);
         end else begin
             base_hp  = raw_hp;
             base_atk = raw_atk;
@@ -138,9 +138,9 @@ module monster_rom (
             endcase
 
             if ((elite || is_el) && mid != 6'd23) begin
-                hp  = rh + (rh / 8'd5);
-                atk = ra + (ra / 8'd5);
-                def = rd + (rd / 8'd5);
+                hp  = rh + (({8'd0, rh} * 8'd51) >> 8);
+                atk = ra + (({8'd0, ra} * 8'd51) >> 8);
+                def = rd + (({8'd0, rd} * 8'd51) >> 8);
                 is_el = 1'b1;
             end else begin
                 hp  = rh;
