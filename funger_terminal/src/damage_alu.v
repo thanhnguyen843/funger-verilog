@@ -49,7 +49,7 @@ module damage_alu (
         end
 
         // Limb targeting modifier: Head attack gets +50% critical damage multiplier
-        if (limb_target == 3'd1) begin
+        if (limb_target == `LIMB_HEAD) begin
             raw_dmg_1to2 = raw_dmg_1to2 + (raw_dmg_1to2 >> 1);
         end
 
@@ -82,8 +82,10 @@ module damage_alu (
         end
 
         // 3. Compute 30% current HP penalty if player fails to flee
+        // Widen operands to 16-bit to prevent 8-bit overflow (e.g. 100 * 3 = 300 overflows 255)
+        // and eliminate hardware division: 30% ~= 77 / 256 (77/256 = 0.30078)
         if (is_flee_failed) begin
-            p1_flee_penalty = (p1_curr_hp * 8'd3) / 8'd10;
+            p1_flee_penalty = (({8'd0, p1_curr_hp} * 8'd77) >> 8);
             if (p1_flee_penalty == 8'd0 && p1_curr_hp > 8'd0)
                 p1_flee_penalty = 8'd1;
         end else begin
@@ -120,7 +122,11 @@ module damage_alu (
 
             {`ACTION_ITEM_OR_FLEE, `ACTION_ATTACK}: begin
                 // Player turn consumed (item or failed flee): free enemy attack
-                p1_damage = eff_dmg_2to1 + p1_flee_penalty;
+                // Saturation addition to prevent 8-bit wrap-around
+                if ({1'b0, eff_dmg_2to1} + {1'b0, p1_flee_penalty} > 9'd255)
+                    p1_damage = 8'd255;
+                else
+                    p1_damage = eff_dmg_2to1 + p1_flee_penalty;
                 p2_damage = 8'd0;
             end
 

@@ -329,11 +329,14 @@ module tb_play;
     // HARDWARE HELPER TASKS: DRIVING RTL MODULES VIA CLOCKED STROBES
     // ------------------------------------------------------------------------
 
-    // Step hardware Galois LFSR PRNG
+    // Step hardware Galois LFSR PRNG (Advances 32 clock cycles to eliminate serial autocorrelation)
     task step_rng;
+        integer s_idx;
         begin
             rng_step_en = 1'b1;
-            @(posedge clk);
+            for (s_idx = 0; s_idx < 32; s_idx = s_idx + 1) begin
+                @(posedge clk);
+            end
             rng_step_en = 1'b0;
             @(posedge clk);
         end
@@ -341,11 +344,11 @@ module tb_play;
 
     // Hardware ALU calculation for player attack on chosen limb
     task hw_calc_player_attack;
-        input  [2:0] target_limb; // 0: Torso, 1: Head, 2: Arm R, 3: Arm L, 4: Legs
+        input  [2:0] target_limb; // LIMB_TORSO, LIMB_HEAD, LIMB_ARM_R, LIMB_ARM_L, LIMB_LEGS
         output [7:0] out_dmg;
         begin
             alu_p1_action   = `ACTION_ATTACK;
-            alu_p2_action   = (enemy_is_disarmed) ? `ACTION_DEFEND : `ACTION_ATTACK;
+            alu_p2_action   = `ACTION_ATTACK; // Disarm penalty is handled via alu_disarmed, not enemy defend
             alu_p1_base_atk = team_atk[active_member];
             alu_p2_base_atk = cur_enemy_atk;
             alu_p1_def      = team_def[active_member];
@@ -893,7 +896,7 @@ module tb_play;
                     step_rng;
                     r_roll = hw_rand_pct;
                     if (enemy_is_crawling || r_roll < 25) begin
-                        hw_calc_player_attack(3'd1, calc_dmg); // ALU Head target (1.5x crit multiplier)
+                        hw_calc_player_attack(`LIMB_HEAD, calc_dmg); // ALU Head target (1.5x crit multiplier)
                         ui.render_slash_fx();
                         if (enemy_head_hp > calc_dmg) enemy_head_hp = enemy_head_hp - calc_dmg;
                         else enemy_head_hp = 8'd0;
@@ -916,7 +919,7 @@ module tb_play;
                     step_rng;
                     r_roll = hw_rand_pct;
                     if (r_roll < 95) begin
-                        hw_calc_player_attack(3'd0, calc_dmg); // ALU Torso target (Standard baseline)
+                        hw_calc_player_attack(`LIMB_TORSO, calc_dmg); // ALU Torso target (Standard baseline)
                         ui.render_slash_fx();
                         if (enemy_torso_hp > calc_dmg) enemy_torso_hp = enemy_torso_hp - calc_dmg;
                         else enemy_torso_hp = 8'd0;
@@ -940,7 +943,7 @@ module tb_play;
                     step_rng;
                     r_roll = hw_rand_pct;
                     if (r_roll < 80) begin
-                        hw_calc_player_attack(3'd2, calc_dmg); // ALU Right Arm target
+                        hw_calc_player_attack(`LIMB_ARM_R, calc_dmg); // ALU Right Arm target
                         ui.render_slash_fx();
                         if (enemy_arm_r_hp > calc_dmg) enemy_arm_r_hp = enemy_arm_r_hp - calc_dmg;
                         else enemy_arm_r_hp = 8'd0;
@@ -964,7 +967,7 @@ module tb_play;
                     step_rng;
                     r_roll = hw_rand_pct;
                     if (r_roll < 80) begin
-                        hw_calc_player_attack(3'd3, calc_dmg); // ALU Left Arm target
+                        hw_calc_player_attack(`LIMB_ARM_L, calc_dmg); // ALU Left Arm target
                         ui.render_slash_fx();
                         if (enemy_arm_l_hp > calc_dmg) enemy_arm_l_hp = enemy_arm_l_hp - calc_dmg;
                         else enemy_arm_l_hp = 8'd0;
@@ -987,7 +990,7 @@ module tb_play;
                     step_rng;
                     r_roll = hw_rand_pct;
                     if (r_roll < 85) begin
-                        hw_calc_player_attack(3'd4, calc_dmg); // ALU Legs target
+                        hw_calc_player_attack(`LIMB_LEGS, calc_dmg); // ALU Legs target
                         ui.render_slash_fx();
                         if (enemy_leg_r_hp > calc_dmg) enemy_leg_r_hp = enemy_leg_r_hp - calc_dmg;
                         else enemy_leg_r_hp = 8'd0;
