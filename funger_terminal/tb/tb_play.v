@@ -20,7 +20,7 @@ module tb_play;
 
     always #5 clk = ~clk;
 
-    // Submodules
+    // Submodules (ROM Databases & UI Peripheral)
     terminal_ui   ui();
     character_rom char_db();
     monster_rom   mon_db();
@@ -53,6 +53,147 @@ module tb_play;
     reg [719:0]       cleared_mask;
     reg [36:0]        encountered_mask;
     integer           monsters_defeated_count;
+
+    // ========================================================================
+    // HARDWARE RTL COPEN ENGINE INSTANTIATIONS
+    // ========================================================================
+
+    // 1. Hardware Galois LFSR 32-bit PRNG Unit
+    reg         rng_step_en;
+    reg  [31:0] rng_seed;
+    wire [31:0] hw_lfsr_val;
+    wire        hw_rand_50;
+    wire [6:0]  hw_rand_pct;
+    wire [5:0]  hw_rand_mon_id;
+
+    rng_unit u_rng (
+        .clk            (clk),
+        .rst_n          (rst_n),
+        .step_en        (rng_step_en),
+        .seed_val       (rng_seed),
+        .lfsr_val       (hw_lfsr_val),
+        .rand_bit_50    (hw_rand_50),
+        .rand_pct       (hw_rand_pct),
+        .rand_monster_id(hw_rand_mon_id)
+    );
+
+    // 2. Hardware Combat Arithmetic Logic Unit (ALU)
+    reg  [1:0] alu_p1_action;
+    reg  [1:0] alu_p2_action;
+    reg  [7:0] alu_p1_base_atk;
+    reg  [7:0] alu_p2_base_atk;
+    reg  [7:0] alu_p1_def;
+    reg  [7:0] alu_p2_def;
+    reg  [3:0] alu_rng_bits;
+    reg  [7:0] alu_p1_curr_hp;
+    reg        alu_is_flee_failed;
+    reg  [2:0] alu_limb_target;
+    reg        alu_is_lethal;
+    reg        alu_disarmed;
+    wire [7:0] alu_p1_damage;
+    wire [7:0] alu_p2_damage;
+    wire [7:0] alu_p1_flee_penalty;
+
+    damage_alu u_alu (
+        .p1_action     (alu_p1_action),
+        .p2_action     (alu_p2_action),
+        .p1_base_atk   (alu_p1_base_atk),
+        .p2_base_atk   (alu_p2_base_atk),
+        .p1_def        (alu_p1_def),
+        .p2_def        (alu_p2_def),
+        .rng_bits      (alu_rng_bits),
+        .p1_curr_hp    (alu_p1_curr_hp),
+        .is_flee_failed(alu_is_flee_failed),
+        .limb_target   (alu_limb_target),
+        .is_lethal_mode(alu_is_lethal),
+        .enemy_disarmed(alu_disarmed),
+        .p1_damage     (alu_p1_damage),
+        .p2_damage     (alu_p2_damage),
+        .p1_flee_penalty(alu_p1_flee_penalty)
+    );
+
+    // 3. Hardware Collision & Navigation Unit
+    reg signed [31:0] col_dx, col_dy;
+    wire signed [31:0] col_next_x, col_next_y;
+    wire col_blocked, col_monster, col_chest, col_gate;
+    wire [2:0] col_dest_tile;
+
+    collision_unit u_col (
+        .curr_x          (player_x),
+        .curr_y          (player_y),
+        .dir_dx          (col_dx),
+        .dir_dy          (col_dy),
+        .cleared_valid   (16'd0),
+        .cleared_coords_x(128'd0),
+        .cleared_coords_y(128'd0),
+        .cleared_mask    (cleared_mask),
+        .next_x          (col_next_x),
+        .next_y          (col_next_y),
+        .is_blocked      (col_blocked),
+        .is_monster      (col_monster),
+        .is_chest        (col_chest),
+        .is_gate         (col_gate),
+        .dest_tile       (col_dest_tile)
+    );
+
+    // 4. Hardware Inventory & Squad RAM
+    reg        inv_draft_load;
+    reg [3:0]  inv_d_c0, inv_d_c1, inv_d_c2, inv_d_c3;
+    reg [7:0]  inv_d_m0, inv_d_m1, inv_d_m2, inv_d_m3;
+    reg        inv_hp_update;
+    reg [1:0]  inv_target_idx;
+    reg [7:0]  inv_new_hp;
+    reg        inv_consume_en;
+    reg [2:0]  inv_consume_type;
+    reg        inv_recv_en;
+    reg [2:0]  inv_recv_type;
+    reg [7:0]  inv_recv_amt;
+    wire [1:0] inv_active_out;
+    wire [3:0] inv_c0_id, inv_c1_id, inv_c2_id, inv_c3_id;
+    wire [7:0] inv_c0_hp, inv_c1_hp, inv_c2_hp, inv_c3_hp;
+    wire [7:0] inv_c0_max, inv_c1_max, inv_c2_max, inv_c3_max;
+    wire [7:0] inv_poppy_qty, inv_marijuana_qty, inv_key_qty;
+    wire       inv_all_fainted;
+
+    inventory_ram u_inv (
+        .clk              (clk),
+        .rst_n            (rst_n),
+        .active_idx_in    (active_member),
+        .active_idx_out   (inv_active_out),
+        .char0_id         (inv_c0_id),
+        .char1_id         (inv_c1_id),
+        .char2_id         (inv_c2_id),
+        .char3_id         (inv_c3_id),
+        .char0_hp         (inv_c0_hp),
+        .char1_hp         (inv_c1_hp),
+        .char2_hp         (inv_c2_hp),
+        .char3_hp         (inv_c3_hp),
+        .char0_max_hp     (inv_c0_max),
+        .char1_max_hp     (inv_c1_max),
+        .char2_max_hp     (inv_c2_max),
+        .char3_max_hp     (inv_c3_max),
+        .poppy_qty        (inv_poppy_qty),
+        .marijuana_qty    (inv_marijuana_qty),
+        .key_qty          (inv_key_qty),
+        .draft_load_en    (inv_draft_load),
+        .draft_c0_id      (inv_d_c0),
+        .draft_c1_id      (inv_d_c1),
+        .draft_c2_id      (inv_d_c2),
+        .draft_c3_id      (inv_d_c3),
+        .draft_c0_max     (inv_d_m0),
+        .draft_c1_max     (inv_d_m1),
+        .draft_c2_max     (inv_d_m2),
+        .draft_c3_max     (inv_d_m3),
+        .hp_update_en     (inv_hp_update),
+        .target_char_idx  (inv_target_idx),
+        .new_hp_val       (inv_new_hp),
+        .item_consume_en  (inv_consume_en),
+        .consume_item_type(inv_consume_type),
+        .item_receive_en  (inv_recv_en),
+        .receive_item_type(inv_recv_type),
+        .receive_amount   (inv_recv_amt),
+        .team_all_fainted (inv_all_fainted)
+    );
 
     // Interaction variables
     integer scan_ret;
@@ -184,13 +325,125 @@ module tb_play;
         end
     endtask
 
+    // ------------------------------------------------------------------------
+    // HARDWARE HELPER TASKS: DRIVING RTL MODULES VIA CLOCKED STROBES
+    // ------------------------------------------------------------------------
+
+    // Step hardware Galois LFSR PRNG
+    task step_rng;
+        begin
+            rng_step_en = 1'b1;
+            @(posedge clk);
+            rng_step_en = 1'b0;
+            @(posedge clk);
+        end
+    endtask
+
+    // Hardware ALU calculation for player attack on chosen limb
+    task hw_calc_player_attack;
+        input  [2:0] target_limb; // 0: Torso, 1: Head, 2: Arm R, 3: Arm L, 4: Legs
+        output [7:0] out_dmg;
+        begin
+            alu_p1_action   = `ACTION_ATTACK;
+            alu_p2_action   = (enemy_is_disarmed) ? `ACTION_DEFEND : `ACTION_ATTACK;
+            alu_p1_base_atk = team_atk[active_member];
+            alu_p2_base_atk = cur_enemy_atk;
+            alu_p1_def      = team_def[active_member];
+            alu_p2_def      = cur_enemy_def;
+            alu_rng_bits    = hw_lfsr_val[3:0];
+            alu_p1_curr_hp  = team_hp[active_member];
+            alu_is_flee_failed = 1'b0;
+            alu_limb_target = target_limb;
+            alu_is_lethal   = 1'b0;
+            alu_disarmed    = enemy_is_disarmed;
+            #1;
+            out_dmg = alu_p2_damage;
+        end
+    endtask
+
+    // Hardware ALU calculation for enemy retaliation strike
+    task hw_calc_enemy_retaliation;
+        input        is_lethal;
+        input  [2:0] player_action;
+        output [7:0] out_dmg;
+        begin
+            alu_p1_action   = (player_action == 3'd4) ? `ACTION_DEFEND : `ACTION_ATTACK;
+            alu_p2_action   = `ACTION_ATTACK;
+            alu_p1_base_atk = team_atk[active_member];
+            alu_p2_base_atk = cur_enemy_atk;
+            alu_p1_def      = team_def[active_member];
+            alu_p2_def      = cur_enemy_def;
+            alu_rng_bits    = hw_lfsr_val[7:4];
+            alu_p1_curr_hp  = team_hp[active_member];
+            alu_is_flee_failed = 1'b0;
+            alu_limb_target = 3'd0;
+            alu_is_lethal   = is_lethal;
+            alu_disarmed    = enemy_is_disarmed;
+            #1;
+            out_dmg = alu_p1_damage;
+        end
+    endtask
+
+    // Synchronize character HP with Hardware Inventory RAM
+    task hw_sync_hp;
+        input [1:0] char_idx;
+        input [7:0] new_val;
+        begin
+            team_hp[char_idx] = new_val;
+            inv_target_idx    = char_idx;
+            inv_new_hp       = new_val;
+            inv_hp_update     = 1'b1;
+            @(posedge clk);
+            inv_hp_update     = 1'b0;
+            @(posedge clk);
+        end
+    endtask
+
+    // Synchronize Item Consumption with Hardware Inventory RAM
+    task hw_sync_item_consume;
+        input [2:0] itype;
+        begin
+            inv_consume_type = itype;
+            inv_consume_en   = 1'b1;
+            @(posedge clk);
+            inv_consume_en   = 1'b0;
+            @(posedge clk);
+        end
+    endtask
+
+    // Synchronize Item Reception with Hardware Inventory RAM
+    task hw_sync_item_receive;
+        input [2:0] itype;
+        input [7:0] amt;
+        begin
+            inv_recv_type   = itype;
+            inv_recv_amt    = amt;
+            inv_recv_en     = 1'b1;
+            @(posedge clk);
+            inv_recv_en     = 1'b0;
+            @(posedge clk);
+        end
+    endtask
+
     // ========================================================================
     // MAIN GAME EXECUTION
     // ========================================================================
     initial begin
         clk   = 0;
         rst_n = 0;
+
+        // Initialize RTL Hardware Control Lines
+        rng_step_en     = 1'b0;
+        rng_seed        = 32'h5A82_7999;
+        inv_draft_load  = 1'b0;
+        inv_hp_update   = 1'b0;
+        inv_consume_en  = 1'b0;
+        inv_recv_en     = 1'b0;
+        col_dx          = 32'sd0;
+        col_dy          = 32'sd0;
+
         #20 rst_n = 1;
+        #10;
 
         bag_poppy        = 8'd10;
         bag_marijuana    = 8'd3;
@@ -299,6 +552,16 @@ module tb_play;
         char_db.get_character(team_char_id[3], is_hard_mode, team_hp[3], team_atk[3], team_def[3], team_name[3], team_class[3]);
         team_max[3] = team_hp[3]; team_mind[3] = 8'd100; team_hunger[3] = 8'd0;
 
+        // Load Squad into Hardware Inventory RAM via Synchronous Strobe
+        inv_d_c0 = team_char_id[0]; inv_d_m0 = team_max[0];
+        inv_d_c1 = team_char_id[1]; inv_d_m1 = team_max[1];
+        inv_d_c2 = team_char_id[2]; inv_d_m2 = team_max[2];
+        inv_d_c3 = team_char_id[3]; inv_d_m3 = team_max[3];
+        inv_draft_load = 1'b1;
+        @(posedge clk);
+        inv_draft_load = 1'b0;
+        @(posedge clk);
+
         $display("\n\033[1;32m  >> Squad successfully recruited into the Labyrinth of Shadows!\033[0m");
         ui.render_squad_screen(
             team_char_id[0], team_char_id[1], team_char_id[2], team_char_id[3],
@@ -399,13 +662,17 @@ module tb_play;
                 if (sub_confirmed) begin
                     if (bag_cursor == 3'd0 && bag_poppy > 0) begin
                         bag_poppy = bag_poppy - 1;
+                        hw_sync_item_consume(`ITEM_POPPY);
                         team_hp[active_member] = team_hp[active_member] + heal_poppy_val;
                         if (team_hp[active_member] > team_max[active_member]) team_hp[active_member] = team_max[active_member];
+                        hw_sync_hp(active_member, team_hp[active_member]);
                         ui.notify_consume_item("Poppy Flower", team_name[active_member], heal_poppy_val, team_hp[active_member], team_max[active_member]);
                     end else if (bag_cursor == 3'd1 && bag_marijuana > 0) begin
                         bag_marijuana = bag_marijuana - 1;
+                        hw_sync_item_consume(`ITEM_MARIJUANA);
                         team_hp[active_member] = team_hp[active_member] + heal_marijuana_val;
                         if (team_hp[active_member] > team_max[active_member]) team_hp[active_member] = team_max[active_member];
+                        hw_sync_hp(active_member, team_hp[active_member]);
                         team_mind[active_member] = team_mind[active_member] + 8'd20;
                         if (team_mind[active_member] > 8'd100) team_mind[active_member] = 8'd100;
                         ui.notify_consume_item("Marijuana Herb", team_name[active_member], heal_marijuana_val, team_hp[active_member], team_max[active_member]);
@@ -432,20 +699,18 @@ module tb_play;
                 end
                 $write("\033[2J\033[H");
             end else begin
-                // Navigation Input (WASD or Arrow Keys)
-                target_x = player_x;
-                target_y = player_y;
-                if (cmd_char == "w" || cmd_char == "W") target_y = player_y - 1;
-                else if (cmd_char == "s" || cmd_char == "S") target_y = player_y + 1;
-                else if (cmd_char == "a" || cmd_char == "A") target_x = player_x - 1;
-                else if (cmd_char == "d" || cmd_char == "D") target_x = player_x + 1;
-
-                target_tile = map_db.get_tile(target_x, target_y);
+                // Navigation Input (WASD or Arrow Keys) routed via Hardware Collision Unit
+                col_dx = (cmd_char == "a" || cmd_char == "A") ? -32'sd1 : (cmd_char == "d" || cmd_char == "D") ? 32'sd1 : 32'sd0;
+                col_dy = (cmd_char == "w" || cmd_char == "W") ? -32'sd1 : (cmd_char == "s" || cmd_char == "S") ? 32'sd1 : 32'sd0;
+                #1;
+                target_x    = col_next_x;
+                target_y    = col_next_y;
+                target_tile = col_dest_tile;
                 target_idx  = target_x + (target_y * `MAP_WIDTH);
 
-                if (target_tile == `TILE_WALL) begin
+                if (col_blocked) begin
                     map_alert_msg = "Solid damp stone wall obstructs your path.";
-                end else if (target_tile == `TILE_GATE) begin
+                end else if (col_gate) begin
                     if (bag_keys >= 3) begin
                         ui.notify_gate_status(bag_keys);
                         game_victory = 1'b1;
@@ -458,8 +723,8 @@ module tb_play;
                     player_y   = target_y;
                     step_count = step_count + 1;
 
-                    r_roll = ($random % 100);
-                    if (r_roll < 0) r_roll = -r_roll;
+                    step_rng;
+                    r_roll = hw_rand_pct;
 
                     if (r_roll < 20) begin
                         // 20% Mimic Trap Encounter
@@ -475,10 +740,11 @@ module tb_play;
                         combat_log_msg = "MIMIC TRAP TRIGGERED! The chest sprouts razor teeth and lunges forward!";
                     end else begin
                         // 80% Safe Bounty Chest
-                        r_roll = ($random % 100);
-                        if (r_roll < 0) r_roll = -r_roll;
+                        step_rng;
+                        r_roll = hw_rand_pct;
                         if (r_roll < 35) begin
                             bag_keys = bag_keys + 1;
+                            hw_sync_item_receive(`ITEM_KEY, 8'd1);
                             ui.render_chest_open_screen(1'b0, "Dungeon Key (Ancient Runic Key)", 8'd1);
                             ui.notify_receive_item("Ancient Vault", "Dungeon Key", 8'd1);
                         end else if (r_roll < 60) begin
@@ -488,11 +754,13 @@ module tb_play;
                             ui.notify_receive_item("Ancient Vault", "Moldy Bread x2 & Dried Meat x1", 8'd3);
                         end else if (r_roll < 80) begin
                             bag_marijuana = bag_marijuana + 1;
+                            hw_sync_item_receive(`ITEM_MARIJUANA, 8'd1);
                             bag_ale       = bag_ale + 1;
                             ui.render_chest_open_screen(1'b0, "Marijuana Herb & Ale Flask", 8'd2);
                             ui.notify_receive_item("Ancient Vault", "Marijuana Herb x1 & Ale Flask x1", 8'd2);
                         end else begin
                             bag_poppy = bag_poppy + 1;
+                            hw_sync_item_receive(`ITEM_POPPY, 8'd1);
                             ui.render_chest_open_screen(1'b0, "White Poppy Flower", 8'd1);
                             ui.notify_receive_item("Ancient Vault", "Poppy Flower", 8'd1);
                         end
@@ -517,9 +785,9 @@ module tb_play;
                         end
                     end
 
-                    // Check elite
-                    r_roll = ($random % 100);
-                    if (r_roll < 0) r_roll = -r_roll;
+                    // Check elite via Hardware RNG
+                    step_rng;
+                    r_roll = hw_rand_pct;
                     cur_enemy_is_elite = (r_roll < 25) ? 1'b1 : 1'b0;
 
                     mon_db.get_monster(cur_enemy_id, cur_enemy_is_elite, cur_enemy_hp, cur_enemy_atk, cur_enemy_def, cur_enemy_weight, dummy_el);
@@ -619,11 +887,13 @@ module tb_play;
                 action_confirmed = 1'b1;
                 action_selected = 3'd0;
 
-                // [H]: TARGET HEAD (25% Decapitation Instakill, 100% if Crawling)
+                // [H]: TARGET HEAD (25% Decapitation Instakill, 100% if Crawling) - Routed via Hardware ALU
                 if (cmd_char == "h" || cmd_char == "H") begin
                     action_selected = 3'd1;
-                    r_roll = ($random % 100); if (r_roll < 0) r_roll = -r_roll;
+                    step_rng;
+                    r_roll = hw_rand_pct;
                     if (enemy_is_crawling || r_roll < 25) begin
+                        hw_calc_player_attack(3'd1, calc_dmg); // ALU Head target (1.5x crit multiplier)
                         ui.render_slash_fx();
                         if (enemy_head_hp > calc_dmg) enemy_head_hp = enemy_head_hp - calc_dmg;
                         else enemy_head_hp = 8'd0;
@@ -640,11 +910,13 @@ module tb_play;
                         player_action_log = "[MISSED]: Foe dodged away from your strike to the head!";
                     end
                 end
-                // [T]: TARGET TORSO (95% Core Vitals)
+                // [T]: TARGET TORSO (95% Core Vitals) - Routed via Hardware ALU
                 else if (cmd_char == "t" || cmd_char == "T") begin
                     action_selected = 3'd1;
-                    r_roll = ($random % 100); if (r_roll < 0) r_roll = -r_roll;
+                    step_rng;
+                    r_roll = hw_rand_pct;
                     if (r_roll < 95) begin
+                        hw_calc_player_attack(3'd0, calc_dmg); // ALU Torso target (Standard baseline)
                         ui.render_slash_fx();
                         if (enemy_torso_hp > calc_dmg) enemy_torso_hp = enemy_torso_hp - calc_dmg;
                         else enemy_torso_hp = 8'd0;
@@ -662,11 +934,13 @@ module tb_play;
                         player_action_log = "[MISSED]: Thrust to torso glanced off stone armor!";
                     end
                 end
-                // [R]: TARGET RIGHT ARM (80% Disarm Weapon)
+                // [R]: TARGET RIGHT ARM (80% Disarm Weapon) - Routed via Hardware ALU
                 else if (cmd_char == "r" || cmd_char == "R") begin
                     action_selected = 3'd1;
-                    r_roll = ($random % 100); if (r_roll < 0) r_roll = -r_roll;
+                    step_rng;
+                    r_roll = hw_rand_pct;
                     if (r_roll < 80) begin
+                        hw_calc_player_attack(3'd2, calc_dmg); // ALU Right Arm target
                         ui.render_slash_fx();
                         if (enemy_arm_r_hp > calc_dmg) enemy_arm_r_hp = enemy_arm_r_hp - calc_dmg;
                         else enemy_arm_r_hp = 8'd0;
@@ -684,11 +958,13 @@ module tb_play;
                         player_action_log = "[MISSED]: Strike to the right arm was deflected!";
                     end
                 end
-                // [L]: TARGET LEFT ARM (80% Break Guard)
+                // [L]: TARGET LEFT ARM (80% Break Guard) - Routed via Hardware ALU
                 else if (cmd_char == "l" || cmd_char == "L") begin
                     action_selected = 3'd1;
-                    r_roll = ($random % 100); if (r_roll < 0) r_roll = -r_roll;
+                    step_rng;
+                    r_roll = hw_rand_pct;
                     if (r_roll < 80) begin
+                        hw_calc_player_attack(3'd3, calc_dmg); // ALU Left Arm target
                         ui.render_slash_fx();
                         if (enemy_arm_l_hp > calc_dmg) enemy_arm_l_hp = enemy_arm_l_hp - calc_dmg;
                         else enemy_arm_l_hp = 8'd0;
@@ -705,11 +981,13 @@ module tb_play;
                         player_action_log = "[MISSED]: Strike to the left arm missed!";
                     end
                 end
-                // [K]: TARGET LEGS (85% Force Crawl)
+                // [K]: TARGET LEGS (85% Force Crawl) - Routed via Hardware ALU
                 else if (cmd_char == "k" || cmd_char == "K") begin
                     action_selected = 3'd1;
-                    r_roll = ($random % 100); if (r_roll < 0) r_roll = -r_roll;
+                    step_rng;
+                    r_roll = hw_rand_pct;
                     if (r_roll < 85) begin
+                        hw_calc_player_attack(3'd4, calc_dmg); // ALU Legs target
                         ui.render_slash_fx();
                         if (enemy_leg_r_hp > calc_dmg) enemy_leg_r_hp = enemy_leg_r_hp - calc_dmg;
                         else enemy_leg_r_hp = 8'd0;
@@ -823,8 +1101,10 @@ module tb_play;
                     action_selected = 3'd3;
                     if (bag_poppy > 0) begin
                         bag_poppy = bag_poppy - 1;
+                        hw_sync_item_consume(`ITEM_POPPY);
                         team_hp[active_member] = team_hp[active_member] + heal_poppy_val;
                         if (team_hp[active_member] > team_max[active_member]) team_hp[active_member] = team_max[active_member];
+                        hw_sync_hp(active_member, team_hp[active_member]);
                         $sformat(player_action_log, "Applied Poppy Flower! Restored +%0d HP to %s!", heal_poppy_val, team_name[active_member]);
                     end else begin
                         player_action_log = "[EMPTY]: No Poppy Flowers left in pouch!";
@@ -835,8 +1115,10 @@ module tb_play;
                     action_selected = 3'd3;
                     if (bag_marijuana > 0) begin
                         bag_marijuana = bag_marijuana - 1;
+                        hw_sync_item_consume(`ITEM_MARIJUANA);
                         team_hp[active_member] = team_hp[active_member] + heal_marijuana_val;
                         if (team_hp[active_member] > team_max[active_member]) team_hp[active_member] = team_max[active_member];
+                        hw_sync_hp(active_member, team_hp[active_member]);
                         $sformat(player_action_log, "Smoked Marijuana Herb! Restored +%0d HP to %s!", heal_marijuana_val, team_name[active_member]);
                     end else begin
                         player_action_log = "[EMPTY]: No Marijuana Herbs left in pouch!";
@@ -884,7 +1166,8 @@ module tb_play;
                 // [F]: FLEE
                 else if (cmd_char == "f" || cmd_char == "F") begin
                     action_selected = 3'd6;
-                    r_roll = ($random % 100); if (r_roll < 0) r_roll = -r_roll;
+                    step_rng;
+                    r_roll = hw_rand_pct;
                     if (r_roll < 50) begin
                         player_action_log = "[ESCAPED]: Retreated safely into dark corridors!";
                         in_combat = 1'b0;
@@ -905,10 +1188,11 @@ module tb_play;
                 end
 
                 // ------------------------------------------------------------
-                // 3. ENEMY RETALIATION TURN
+                // 3. ENEMY RETALIATION TURN (Routed via Hardware ALU & LFSR)
                 // ------------------------------------------------------------
                 if (action_confirmed && in_combat && cur_enemy_hp > 0 && !combat_fled) begin
-                    r_roll = ($random % 100); if (r_roll < 0) r_roll = -r_roll;
+                    step_rng;
+                    r_roll = hw_rand_pct;
 
                     // 30% chance lethal skill triggers Coin Flip
                     if (r_roll < 30 && !enemy_is_disarmed) begin
@@ -934,7 +1218,8 @@ module tb_play;
                             end
                         end
 
-                        r_roll = ($random % 2); if (r_roll < 0) r_roll = -r_roll;
+                        step_rng;
+                        r_roll = hw_rand_50; // Hardware 50% Boolean outcome from Galois LFSR
                         ui.render_coin_animation(coin_selected, r_roll[0]);
 
                         if (coin_selected == r_roll[0]) begin
@@ -943,27 +1228,20 @@ module tb_play;
                             $sformat(combat_log_msg, "%s | [COIN SUCCESS]: Parried lethal cleave and countered for 20 DMG!", player_action_log);
                         end else begin
                             ui.render_screen_shake();
-                            calc_dmg = cur_enemy_atk + 8'd25;
-                            if (team_hp[active_member] > calc_dmg) team_hp[active_member] = team_hp[active_member] - calc_dmg;
-                            else team_hp[active_member] = 8'd0;
+                            hw_calc_enemy_retaliation(1'b1, action_selected, calc_dmg); // ALU Lethal execution calculation
+                            if (team_hp[active_member] > calc_dmg) hw_sync_hp(active_member, team_hp[active_member] - calc_dmg);
+                            else hw_sync_hp(active_member, 8'd0);
                             if (team_mind[active_member] > 8'd20) team_mind[active_member] = team_mind[active_member] - 8'd20;
                             else team_mind[active_member] = 8'd0;
                             ui.notify_coin_result(1'b0, team_name[active_member], calc_dmg, team_hp[active_member], team_max[active_member], team_mind[active_member]);
                             $sformat(combat_log_msg, "%s | [COIN FAILED]: Lethal cleave struck! Took %0d DMG, -20 Mind!", player_action_log, calc_dmg);
                         end
                     end else begin
-                        // Regular enemy retaliation
-                        if (enemy_is_disarmed) begin
-                            calc_dmg = 8'd4;
-                        end else if (action_selected == 3'd4) begin
-                            calc_dmg = (cur_enemy_atk > team_def[active_member]) ? ((cur_enemy_atk - team_def[active_member]) * 3 / 10) : 3;
-                            if (calc_dmg < 2) calc_dmg = 2;
-                        end else begin
-                            calc_dmg = (cur_enemy_atk > team_def[active_member]) ? (cur_enemy_atk - team_def[active_member] + 4) : 6;
-                        end
+                        // Regular enemy retaliation routed through Hardware ALU
+                        hw_calc_enemy_retaliation(1'b0, action_selected, calc_dmg);
 
-                        if (team_hp[active_member] > calc_dmg) team_hp[active_member] = team_hp[active_member] - calc_dmg;
-                        else team_hp[active_member] = 8'd0;
+                        if (team_hp[active_member] > calc_dmg) hw_sync_hp(active_member, team_hp[active_member] - calc_dmg);
+                        else hw_sync_hp(active_member, 8'd0);
 
                         $sformat(combat_log_msg, "%s | Foe retaliated, striking for %0d DMG!", player_action_log, calc_dmg);
                     end
@@ -987,12 +1265,13 @@ module tb_play;
                     cleared_mask[target_idx] = 1'b1;
                     monsters_defeated_count = monsters_defeated_count + 1;
 
-                    r_roll = ($random % 100);
-                    if (r_roll < 0) r_roll = -r_roll;
+                    step_rng;
+                    r_roll = hw_rand_pct;
 
                     if (cur_enemy_is_elite || cur_enemy_id == 6'd23) begin
                         if (r_roll < 60) begin
                             bag_keys = bag_keys + 1;
+                            hw_sync_item_receive(`ITEM_KEY, 8'd1);
                             ui.notify_receive_item("Elite Adversary Remains (60% Drop)", "Dungeon Key", 8'd1);
                         end
                         bag_meat = bag_meat + 1;
@@ -1001,12 +1280,14 @@ module tb_play;
                     end else begin
                         if (r_roll < 25) begin
                             bag_keys = bag_keys + 1;
+                            hw_sync_item_receive(`ITEM_KEY, 8'd1);
                             ui.notify_receive_item("Monster Remains (25% Drop)", "Dungeon Key", 8'd1);
                         end else if (r_roll < 60) begin
                             bag_bread = bag_bread + 1;
                             ui.notify_receive_item("Monster Bounty", "Moldy Bread", 8'd1);
                         end else begin
                             bag_poppy = bag_poppy + 1;
+                            hw_sync_item_receive(`ITEM_POPPY, 8'd1);
                             ui.notify_receive_item("Monster Bounty", "Poppy Flower", 8'd1);
                         end
                     end
@@ -1018,6 +1299,7 @@ module tb_play;
                             (monsters_defeated_count >= 6 && bag_keys <= 1) ||
                             (monsters_defeated_count >= 8 && bag_keys <= 2)) begin
                             bag_keys = bag_keys + 1;
+                            hw_sync_item_receive(`ITEM_KEY, 8'd1);
                             ui.notify_receive_item("Labyrinth Guarantee (Pity Safety Net)", "Dungeon Key", 8'd1);
                         end
                     end
