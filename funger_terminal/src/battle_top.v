@@ -510,25 +510,38 @@ module battle_top (
                     `STATE_BATTLE_LOOP: begin
                         case (cmd_type)
                             4'd1: begin // [1] Tấn công (Attack)
-                                if (enemy_hp_reg > alu_dmg_to_p2)
-                                    enemy_hp_reg <= enemy_hp_reg - alu_dmg_to_p2;
-                                else
-                                    enemy_hp_reg <= 8'd0;
+                                if (cur_pal_hp > 8'd0) begin
+                                    if (enemy_hp_reg > alu_dmg_to_p2) begin
+                                        enemy_hp_reg <= enemy_hp_reg - alu_dmg_to_p2;
+                                        if (cur_pal_hp > alu_dmg_to_p1) begin
+                                            ram_target_idx <= inv_active_idx;
+                                            ram_new_hp     <= cur_pal_hp - alu_dmg_to_p1;
+                                            ram_hp_update  <= 1'b1;
+                                        end else begin
+                                            ram_target_idx <= inv_active_idx;
+                                            ram_new_hp     <= 8'd0;
+                                            ram_hp_update  <= 1'b1;
+                                        end
+                                    end else begin
+                                        enemy_hp_reg <= 8'd0;
+                                        // Thắng trận tức thì trong chu kỳ hạ gục quái vật (Fix B2)
+                                        cleared_coords_x[cleared_head*8 +: 8] <= player_x[7:0];
+                                        cleared_coords_y[cleared_head*8 +: 8] <= player_y[7:0];
+                                        cleared_valid[cleared_head]           <= 1'b1;
+                                        cleared_head                          <= (cleared_head + 1'b1) & 4'd15;
+                                        state_reg                             <= `STATE_MAP;
+                                    end
 
-                                if (cur_pal_hp > alu_dmg_to_p1) begin
-                                    ram_target_idx <= inv_active_idx;
-                                    ram_new_hp     <= cur_pal_hp - alu_dmg_to_p1;
-                                    ram_hp_update  <= 1'b1;
-                                end else begin
-                                    ram_target_idx <= inv_active_idx;
-                                    ram_new_hp     <= 8'd0;
-                                    ram_hp_update  <= 1'b1;
+                                    last_dmg_dealt  <= alu_dmg_to_p2;
+                                    last_dmg_taken  <= alu_dmg_to_p1;
+                                    last_event_flag <= 3'd1;
+                                    battle_turn     <= battle_turn + 1'b1;
+                                end else if (!inv_all_fainted) begin
+                                    // Pal đã gục không thể tấn công, tự động đổi sang Pal còn sống (Fix B3)
+                                    if (inv_p0_hp > 0)      ram_active_idx_req <= 2'd0;
+                                    else if (inv_p1_hp > 0) ram_active_idx_req <= 2'd1;
+                                    else if (inv_p2_hp > 0) ram_active_idx_req <= 2'd2;
                                 end
-
-                                last_dmg_dealt  <= alu_dmg_to_p2;
-                                last_dmg_taken  <= alu_dmg_to_p1;
-                                last_event_flag <= 3'd1;
-                                battle_turn     <= battle_turn + 1'b1;
                             end
 
                             4'd2: begin // [2] Phòng thủ (Defend)
