@@ -44,23 +44,52 @@ The script will automatically detect **Icarus Verilog**, compile the hardware RT
 
 ```
 retro_game_verilog/
-├── PLAY_GAME.bat               # Single click launcher
-├── .gitignore                  # Git ignore rules for simulation binaries
+├── PLAY_GAME.bat               # Single click game launcher
+├── GIT_WORKFLOW.md             # Team Git branching, PR & code review workflow
+├── .gitignore                  # Git ignore rules for simulation binaries & dumps
 ├── README.md                   # Project documentation
+├── .github/
+│   └── workflows/
+│       └── hardware_ci.yml     # Automated GitHub Actions 5-Gate Hardware CI Pipeline
 └── funger_terminal/
-    ├── launch_game.py          # Windows UTF-8 streaming & input resilience handler
-    ├── test_matrix.py          # Automated 7-suite verification testbench
-    ├── src/                    # Verilog RTL Modules
-    │   ├── character_rom.v     # 8 Character stats & archetype database
-    │   ├── collision_unit.v    # Maze collision and boundary logic
-    │   ├── inventory_ram.v     # Pouch RAM storage unit
-    │   ├── map_rom.v           # 36x20 Labyrinth layout ROM
-    │   ├── monster.v           # Monster database & scaling
-    │   ├── sprite_router.v     # 24-bit TrueColor pixel art ROM router
-    │   ├── terminal_ui.v       # ANSI rendering, half-block graphics, and HUDs
-    │   └── *.v                 # Hero & Monster pixel sprite ROMs
-    └── tb/
-        └── tb_play.v           # Top-level interactive simulation testbench
+    ├── run_comprehensive_verification.py # Master 5-Gate DO-254 / OpenTitan verification runner
+    ├── audit_hardware_linter.py          # Stage 1: Synthesizability & strict compiler linting
+    ├── audit_string_overflow.py          # Stage 2: String width & ANSI sequence audit
+    ├── audit_damage_accounting.py        # Stage 3: Python golden reference co-simulation
+    ├── audit_rng_pity.py                 # Stage 4: 100k-cycle LFSR chi-square & pity proof
+    ├── benchmark_hw_vs_sw.py             # Hardware vs. Software (RISC-V) benchmarking tool
+    ├── src/                              # 100% Synthesizable Verilog RTL Modules
+    │   ├── battle_defs.vh                # Global system definitions & states
+    │   ├── battle_top.v                  # Top-level hardware accelerator coordinator
+    │   ├── damage_alu.v                  # Combinational 1-cycle combat damage ALU
+    │   ├── rng_unit.v                    # 32-bit Galois LFSR pseudo-random generator
+    │   ├── collision_unit.v              # Maze collision & boundary detection unit
+    │   ├── inventory_ram.v               # Multi-port party HP & survival pouch RAM
+    │   ├── map_rom.v                     # 36x20 Labyrinth layout ROM
+    │   ├── character_rom.v               # 8 Heroes with dual-profile rebalanced stats
+    │   ├── monster_rom.v                 # 36 Monsters & Elite weight database
+    │   ├── terminal_ui.v                 # ANSI 24-bit TrueColor display generator
+    │   └── *.v                           # Hero & Monster pixel sprite ROMs
+    └── tb/                               # Comprehensive Verification Testbenches
+        ├── tb_play.v                     # Top-level interactive simulation testbench
+        ├── tb_game_check.v               # Full-feature regression check testbench
+        ├── tb_battle_auto.v              # Automated combat & sprite regression testbench
+        ├── tb_golden_trace.v             # Golden model co-simulation trace generator
+        ├── tb_fsm_fuzzer.v               # 50,000-iteration random input FSM fuzzer
+        └── tb_waveform_trace.v           # GTKWave VCD architecture waveform testbench
+```
+
+---
+
+## 🔬 Hardware Verification & Benchmarking (Kiểm định & Đo kiểm)
+
+To execute the complete industrial quality verification suite:
+```bash
+python funger_terminal/run_comprehensive_verification.py
+```
+To run the Hardware vs. Software architectural benchmark:
+```bash
+python funger_terminal/benchmark_hw_vs_sw.py
 ```
 
 ---

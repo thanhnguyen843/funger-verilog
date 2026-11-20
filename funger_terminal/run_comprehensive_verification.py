@@ -32,6 +32,16 @@ def main():
     repo_dir = os.path.abspath(os.path.join(base_dir, ".."))
     os.chdir(repo_dir)
 
+    os.makedirs("funger_terminal/sim", exist_ok=True)
+    # Ensure fuzz_sim.out is compiled on the fly
+    src_files = [os.path.join("funger_terminal/src", f) for f in os.listdir("funger_terminal/src") if f.endswith(".v")]
+    compile_fuzz = [
+        "iverilog", "-g2012", "-Ifunger_terminal/src",
+        "-o", "funger_terminal/sim/fuzz_sim.out",
+        "funger_terminal/tb/tb_fsm_fuzzer.v"
+    ] + src_files
+    subprocess.run(compile_fuzz, check=True)
+
     steps = [
         (1, "Static Synthesizability & Strict Compiler Linting", [sys.executable, "funger_terminal/audit_hardware_linter.py"]),
         (2, "String Overflow Guard & ANSI Escape Integrity", [sys.executable, "funger_terminal/audit_string_overflow.py"]),

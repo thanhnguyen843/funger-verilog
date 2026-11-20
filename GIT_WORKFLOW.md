@@ -17,10 +17,11 @@ This document outlines the standard Git workflow for the project. All contributo
 
 ## 2. Core Rules
 
-1. **Never commit directly to `main` or `develop`.** All changes must go through a branch and a Pull Request (PR).
+1. **Never commit directly to `main` or `develop`.** All changes must go through a working branch and a Pull Request (PR).
 2. **Always pull latest changes** from `develop` before starting work.
-3. **Verify locally before pushing.** Run `PLAY_GAME.bat` and ensure the game compiles and runs without warnings/errors.
+3. **Verify locally with the 5-Gate Suite before pushing.** Run `python funger_terminal/run_comprehensive_verification.py` and ensure all 5 industrial verification gates report `PASS 100%` (0 `$div`, 0 `$mod`, 0 warnings, 100% Golden Model match, 0 FSM deadlocks).
 4. **Scope your work.** Avoid editing files outside your assigned module to prevent merge conflicts.
+5. **Keep repository clean.** Never commit simulation output binaries (`*.out`, `*.vcd`, `*.csv`) or development rule notes (which reside in the `clone/` folder).
 
 ---
 
@@ -37,32 +38,41 @@ git pull origin develop
 Branch names must follow `feature/<name>` or `fix/<name>`:
 ```bash
 # Example for a new mechanic
-git checkout -b feature/sanity-drain
+git checkout -b feature/chiptune-apu
 
 # Example for a bug fix
-git checkout -b fix/combat-freeze
+git checkout -b fix/rebalance-stats
 ```
 
-### Step 3: Implement & Test Locally
-Make your changes, then verify the build:
+### Step 3: Implement & Verify Locally (Mandatory Quality Gates)
+Make your RTL or testbench changes, then run the comprehensive industrial verification suite:
+```bash
+python funger_terminal/run_comprehensive_verification.py
+```
+Expected result: **5/5 GATES PASSED (100%)**.
+
+Optionally run the interactive gameplay or full-feature checks:
 ```cmd
 PLAY_GAME.bat
 ```
-Do **not** commit if the build fails or regressions occur.
+Do **not** commit if any gate fails, compiler warnings occur, or regressions are introduced.
 
 ### Step 4: Commit and Push
-Commit with concise, conventional commit messages (`feat:`, `fix:`, `refactor:`, `docs:`):
+Commit with concise, conventional commit messages (`feat:`, `fix:`, `refactor:`, `docs:`, `ci:`):
 ```bash
 git add .
-git commit -m "feat: add sanity drain on coin-flip failure"
-git push -u origin feature/sanity-drain
+git commit -m "feat: rebalance character vitality and integrate hardware CI/CD"
+git push -u origin feature/<name>
 ```
 
-### Step 5: Open a Pull Request (PR)
+### Step 5: Open a Pull Request (PR) & Automated CI Check
 1. Go to the GitHub repository page.
 2. Click **Compare & pull request**.
 3. Set base branch:
    - **Base:** `develop` $\leftarrow$ **Compare:** `feature/<name>`
+4. Add a concise title and description summarizing changes.
+5. **Automated CI Execution:** GitHub Actions automatically executes `.github/workflows/hardware_ci.yml`, running `iverilog` linting, the 5-Gate verification suite, and integration testbenches.
+6. Ensure the green checkmark appears (`✔ DO-254 / OpenTitan 5-Gate Hardware Verification`) before requesting review from the Team Leader.
 4. Add a concise title and description summarizing changes.
 5. Request review from the Team Leader.
 
@@ -131,8 +141,9 @@ git push origin feature/<your-branch>
 ```
 
 #### Q4: How do I know if my code is ready for a Pull Request?
-**A:** Check these three criteria before opening a PR:
-1. `git status` shows only relevant files modified (no build artifacts or temporary files).
-2. Executing `PLAY_GAME.bat` compiles cleanly and the game launches without syntax errors.
-3. Your branch targets `develop`, not `main`.
+**A:** Check these four criteria before opening a PR:
+1. `git status` shows only clean, intended source modifications (no temporary files or simulation outputs).
+2. `python funger_terminal/run_comprehensive_verification.py` completes with **ALL 5 GATES PASSED (100%)**.
+3. `PLAY_GAME.bat` launches cleanly without compiler warnings or runtime errors.
+4. Your branch targets `develop`, not `main`.
 
