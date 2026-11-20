@@ -2,6 +2,9 @@
 *.out
 *.vcd
 *.vvp
+*.csv
+sim/
+funger_terminal/sim/
 
 # Python cache & temporary files
 __pycache__/

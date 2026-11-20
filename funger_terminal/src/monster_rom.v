@@ -7,6 +7,7 @@
 //   - Selected Elites with low spawn probability (Weight 1-2) & +20% Stats
 // ============================================================================
 
+`timescale 1ns / 1ps
 `include "battle_defs.vh"
 
 module monster_rom (

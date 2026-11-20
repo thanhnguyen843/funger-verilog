@@ -10,6 +10,7 @@
 //     with narrow walls blocking any path around it!
 // ============================================================================
 
+`timescale 1ns / 1ps
 `include "battle_defs.vh"
 
 module map_rom (

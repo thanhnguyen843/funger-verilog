@@ -1,0 +1,39 @@
+name: Hardware Verification CI/CD
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  verify-hardware:
+    name: DO-254 / OpenTitan 5-Gate Hardware Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Hardware Toolchain (Icarus Verilog)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+
+      - name: Run Master Comprehensive Verification Suite
+        run: |
+          python funger_terminal/run_comprehensive_verification.py
+
+      - name: Run System Integration Testbenches
+        run: |
+          cd funger_terminal
+          mkdir -p sim
+          iverilog -g2012 -Isrc -o sim/tb_game_check.out tb/tb_game_check.v src/*.v
+          vvp sim/tb_game_check.out
+          iverilog -g2012 -Isrc -o sim/tb_battle_auto.out tb/tb_battle_auto.v src/*.v
+          vvp sim/tb_battle_auto.out

@@ -10,6 +10,7 @@
 //     - STATE_END    (3'b101): Halts simulation on terminal state
 // ============================================================================
 
+`timescale 1ns / 1ps
 `include "battle_defs.vh"
 
 module battle_fsm (

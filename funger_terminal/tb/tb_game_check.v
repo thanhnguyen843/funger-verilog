@@ -33,8 +33,8 @@ module tb_game_check;
     // Module instances
     terminal_ui   ui();
     character_rom char_db();
-    monster_rom   mon_db();
-    map_rom       map_db();
+    monster_rom   mon_db(.monster_id(6'd1), .is_elite(1'b0), .base_hp(), .base_atk(), .base_def(), .spawn_weight(), .is_default_elite());
+    map_rom       map_db(.in_x(32'sd0), .in_y(32'sd0), .out_tile());
 
     // Explorer Squad state (4 companions)
     reg [255:0] team_name [0:3];
@@ -57,8 +57,8 @@ module tb_game_check;
     reg signed [31:0] player_x;
     reg signed [31:0] player_y;
     reg [31:0]        step_count;
-    reg [63:0]        cleared_mask;
-    reg [31:0]        encountered_mask;
+    reg [719:0]       cleared_mask;
+    reg [36:0]        encountered_mask;
 
     initial begin
         clk   = 0;
@@ -72,8 +72,8 @@ module tb_game_check;
         player_x      = 2;
         player_y      = 2;
         step_count    = 0;
-        cleared_mask  = 64'd0;
-        encountered_mask = 32'd0;
+        cleared_mask  = 720'd0;
+        encountered_mask = 37'd0;
 
         // ====================================================================
         // CHECK 0: TITLE SCREEN & DIFFICULTY SELECTION

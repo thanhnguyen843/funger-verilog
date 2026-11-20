@@ -25,7 +25,7 @@ module tb_battle_top;
     wire signed [31:0] player_y;
     wire [31:0] step_count;
 
-    wire [4:0]  enemy_id;
+    wire [5:0]  enemy_id;
     wire [7:0]  enemy_hp;
     wire [7:0]  enemy_max_hp;
 
@@ -102,7 +102,7 @@ module tb_battle_top;
 
     // Terminal UI Engine & Monster Database
     terminal_ui ui();
-    monster_rom mon_db();
+    monster_rom mon_db(.monster_id(6'd1), .is_elite(1'b0), .base_hp(), .base_atk(), .base_def(), .spawn_weight(), .is_default_elite());
 
     // Clock generator 100MHz
     initial begin

@@ -11,7 +11,7 @@ module tb_show_models;
 
     // Databases & Submodules
     character_rom u_char_rom();
-    monster_rom   u_mon_rom();
+    monster_rom   u_mon_rom(.monster_id(6'd1), .is_elite(1'b0), .base_hp(), .base_atk(), .base_def(), .spawn_weight(), .is_default_elite());
     sprite_router u_router();
 
     // Chest Sprite ROM instances
