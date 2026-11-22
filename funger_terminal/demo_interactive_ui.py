@@ -373,17 +373,17 @@ def render_screen():
     m_inj_3 = ""
 
     if monster["debuff_decapitated"]:
-        m_inj_1 = "\033[1;31m  [HEAD] Decapitated -> Fatal strike (Dead)\033[0m"
+        m_inj_1 = "\033[1;31m  [HEAD]  Decapitated (Dead)\033[0m"
     elif monster["debuff_legs"]:
-        m_inj_1 = "\033[1;33m  [LEGS] Broken -> Crawling (100% Flee)\033[0m"
-        m_inj_2 = "\033[1;31m  -> Decapitation hit rate boosted to 100%!\033[0m"
+        m_inj_1 = "\033[1;33m  [LEGS]  Broken (Crawling, 100% Flee)\033[0m"
+        m_inj_2 = "\033[1;31m  [HEAD]  Exposed (100% Decapitate Hit)\033[0m"
         if monster["debuff_arm_r"]:
-            m_inj_3 = "\033[1;33m  [RIGHT ARM] Severed -> Disarmed (ATK -14)\033[0m"
+            m_inj_3 = "\033[1;33m  [R-ARM] Severed (Disarmed, ATK -14)\033[0m"
     elif monster["debuff_arm_r"] or monster["debuff_arm_l"]:
         if monster["debuff_arm_r"]:
-            m_inj_1 = "\033[1;33m  [RIGHT ARM] Severed -> Disarmed (ATK -14)\033[0m"
+            m_inj_1 = "\033[1;33m  [R-ARM] Severed (Disarmed, ATK -14)\033[0m"
         if monster["debuff_arm_l"]:
-            m_inj_2 = "\033[1;36m  [LEFT ARM] Severed -> Shield broken\033[0m"
+            m_inj_2 = "\033[1;36m  [L-ARM] Severed (Guard Broken)\033[0m"
 
     # 14 Rows of Monster Card (54 cols each) - Spaced out for readability
     m_card_rows = [
