@@ -195,6 +195,68 @@ module tb_play;
         .team_all_fainted (inv_all_fainted)
     );
 
+    reg        is_hard_mode;
+
+    // 5. Hardware Tactical Stance Coprocessor (Dynamic Power Grid Routing)
+    reg        stance_cmd_en;
+    reg  [1:0] stance_select_reg;
+    wire [1:0] hw_curr_stance;
+    wire [7:0] hw_stance_eff_atk;
+    wire [7:0] hw_stance_eff_def;
+    wire [6:0] hw_stance_evasion;
+    wire [6:0] hw_stance_flee_pct;
+    wire [7:0] hw_stance_regen_hp;
+
+    tactical_stance_unit u_stance (
+        .clk             (clk),
+        .rst_n           (rst_n),
+        .stance_cmd_en   (stance_cmd_en),
+        .stance_select   (stance_select_reg),
+        .base_atk        (team_atk[active_member]),
+        .base_def        (team_def[active_member]),
+        .is_hard_mode    (is_hard_mode),
+        .curr_stance     (hw_curr_stance),
+        .eff_atk         (hw_stance_eff_atk),
+        .eff_def         (hw_stance_eff_def),
+        .evasion_pct     (hw_stance_evasion),
+        .flee_success_pct(hw_stance_flee_pct),
+        .turn_regen_hp   (hw_stance_regen_hp)
+    );
+
+    // 6. Hardware Sanity & Hunger Survival Coprocessor (Entropy Monitor)
+    reg        sanity_step_pulse;
+    reg        sanity_encounter_pulse;
+    reg        sanity_panic_strike_pulse;
+    reg        sanity_mind_restore_en;
+    reg  [7:0] sanity_mind_restore_val;
+    reg        sanity_hunger_restore_en;
+    reg  [7:0] sanity_hunger_restore_val;
+    wire [7:0] hw_mind_level;
+    wire [7:0] hw_hunger_level;
+    wire       hw_is_panic;
+    wire       hw_is_starving;
+    wire [6:0] hw_atk_penalty_pct;
+    wire       hw_starve_dmg_pulse;
+
+    sanity_meter_unit u_sanity (
+        .clk               (clk),
+        .rst_n             (rst_n),
+        .is_hard_mode      (is_hard_mode),
+        .step_pulse        (sanity_step_pulse),
+        .encounter_pulse   (sanity_encounter_pulse),
+        .panic_strike_pulse(sanity_panic_strike_pulse),
+        .mind_restore_en   (sanity_mind_restore_en),
+        .mind_restore_val  (sanity_mind_restore_val),
+        .hunger_restore_en (sanity_hunger_restore_en),
+        .hunger_restore_val(sanity_hunger_restore_val),
+        .mind_level        (hw_mind_level),
+        .hunger_level      (hw_hunger_level),
+        .is_panic          (hw_is_panic),
+        .is_starving       (hw_is_starving),
+        .atk_penalty_pct   (hw_atk_penalty_pct),
+        .starve_dmg_pulse  (hw_starve_dmg_pulse)
+    );
+
     // Interaction variables
     integer scan_ret;
     integer int_choice;
@@ -217,7 +279,6 @@ module tb_play;
     reg         combat_fled;
     integer     calc_dmg;
     integer     r_roll;
-    reg         is_hard_mode;
     reg [7:0]   heal_poppy_val;
     reg [7:0]   heal_marijuana_val;
 
@@ -230,8 +291,8 @@ module tb_play;
     reg [7:0]   enemy_leg_l_hp, enemy_leg_l_max;
     reg         enemy_is_crawling;
     reg         enemy_is_disarmed;
-    reg [511:0] combat_log_msg;
-    reg [511:0] player_action_log;
+    reg [1023:0] combat_log_msg;
+    reg [1023:0] player_action_log;
 
     // Moving Cursors & Menus
     reg         title_cursor;
@@ -349,9 +410,9 @@ module tb_play;
         begin
             alu_p1_action   = `ACTION_ATTACK;
             alu_p2_action   = `ACTION_ATTACK; // Disarm penalty is handled via alu_disarmed, not enemy defend
-            alu_p1_base_atk = team_atk[active_member];
+            alu_p1_base_atk = hw_stance_eff_atk;
             alu_p2_base_atk = cur_enemy_atk;
-            alu_p1_def      = team_def[active_member];
+            alu_p1_def      = hw_stance_eff_def;
             alu_p2_def      = cur_enemy_def;
             alu_rng_bits    = hw_lfsr_val[3:0];
             alu_p1_curr_hp  = team_hp[active_member];
@@ -360,7 +421,10 @@ module tb_play;
             alu_is_lethal   = 1'b0;
             alu_disarmed    = enemy_is_disarmed;
             #1;
-            out_dmg = alu_p2_damage;
+            if (hw_is_panic && alu_p2_damage > (alu_p2_damage >> 2))
+                out_dmg = alu_p2_damage - (alu_p2_damage >> 2);
+            else
+                out_dmg = alu_p2_damage;
         end
     endtask
 
@@ -372,9 +436,9 @@ module tb_play;
         begin
             alu_p1_action   = (player_action == 3'd4) ? `ACTION_DEFEND : `ACTION_ATTACK;
             alu_p2_action   = `ACTION_ATTACK;
-            alu_p1_base_atk = team_atk[active_member];
+            alu_p1_base_atk = hw_stance_eff_atk;
             alu_p2_base_atk = cur_enemy_atk;
-            alu_p1_def      = team_def[active_member];
+            alu_p1_def      = hw_stance_eff_def;
             alu_p2_def      = cur_enemy_def;
             alu_rng_bits    = hw_lfsr_val[7:4];
             alu_p1_curr_hp  = team_hp[active_member];
@@ -404,7 +468,7 @@ module tb_play;
 
     // Synchronize Item Consumption with Hardware Inventory RAM
     task hw_sync_item_consume;
-        input [2:0] itype;
+        input [3:0] itype;
         begin
             inv_consume_type = itype;
             inv_consume_en   = 1'b1;
@@ -416,7 +480,7 @@ module tb_play;
 
     // Synchronize Item Reception with Hardware Inventory RAM
     task hw_sync_item_receive;
-        input [2:0] itype;
+        input [3:0] itype;
         input [7:0] amt;
         begin
             inv_recv_type   = itype;
@@ -424,6 +488,78 @@ module tb_play;
             inv_recv_en     = 1'b1;
             @(posedge clk);
             inv_recv_en     = 1'b0;
+            @(posedge clk);
+        end
+    endtask
+
+    // Synchronous Hardware Stance Coprocessor Update
+    task hw_sync_stance;
+        input [1:0] next_st;
+        begin
+            stance_select_reg = next_st;
+            @(posedge clk);
+            stance_cmd_en <= 1'b1;
+            @(posedge clk);
+            stance_cmd_en <= 1'b0;
+            @(posedge clk);
+        end
+    endtask
+
+    // Synchronous Hardware Step Pulse for Sanity & Hunger
+    task hw_sync_step_pulse;
+        begin
+            @(posedge clk);
+            sanity_step_pulse <= 1'b1;
+            @(posedge clk);
+            sanity_step_pulse <= 1'b0;
+            @(posedge clk);
+        end
+    endtask
+
+    // Synchronous Hardware Encounter Shock Pulse
+    task hw_sync_encounter_pulse;
+        begin
+            @(posedge clk);
+            sanity_encounter_pulse <= 1'b1;
+            @(posedge clk);
+            sanity_encounter_pulse <= 1'b0;
+            @(posedge clk);
+        end
+    endtask
+
+    // Synchronous Hardware Panic Strike Pulse
+    task hw_sync_panic_pulse;
+        begin
+            @(posedge clk);
+            sanity_panic_strike_pulse <= 1'b1;
+            @(posedge clk);
+            sanity_panic_strike_pulse <= 1'b0;
+            @(posedge clk);
+        end
+    endtask
+
+    // Synchronous Hardware Mind Restoration
+    task hw_sync_restore_mind;
+        input [7:0] val;
+        begin
+            sanity_mind_restore_val = val;
+            @(posedge clk);
+            sanity_mind_restore_en <= 1'b1;
+            @(posedge clk);
+            sanity_mind_restore_en <= 1'b0;
+            @(posedge clk);
+        end
+    endtask
+
+    // Synchronous Hardware Hunger Restoration
+    task hw_sync_restore_hunger;
+        input [7:0] val;
+        begin
+            sanity_hunger_restore_val = val;
+            @(posedge clk);
+            sanity_hunger_restore_en <= 1'b1;
+            @(posedge clk);
+            sanity_hunger_restore_en <= 1'b0;
             @(posedge clk);
         end
     endtask
@@ -444,6 +580,16 @@ module tb_play;
         inv_recv_en     = 1'b0;
         col_dx          = 32'sd0;
         col_dy          = 32'sd0;
+
+        stance_cmd_en             = 1'b0;
+        stance_select_reg         = `STANCE_BALANCED;
+        sanity_step_pulse         = 1'b0;
+        sanity_encounter_pulse    = 1'b0;
+        sanity_panic_strike_pulse = 1'b0;
+        sanity_mind_restore_en    = 1'b0;
+        sanity_mind_restore_val   = 8'd0;
+        sanity_hunger_restore_en  = 1'b0;
+        sanity_hunger_restore_val = 8'd0;
 
         #20 rst_n = 1;
         #10;
@@ -501,11 +647,22 @@ module tb_play;
             is_hard_mode       = 1'b1;
             heal_poppy_val     = 8'd30;
             heal_marijuana_val = 8'd70;
+            bag_poppy          = 8'd10;
+            bag_marijuana      = 8'd3;
+            bag_bread          = 8'd3;
+            bag_meat           = 8'd1;
+            bag_ale            = 8'd1;
             $display("\n\033[1;31m  >> [TERROR & STARVATION ACTIVATED] The dark catacombs will show no mercy.\033[0m\n");
         end else begin
             is_hard_mode       = 1'b0;
             heal_poppy_val     = 8'd50;
             heal_marijuana_val = 8'd120;
+            // Beginner-Friendly Normal Mode Starter Supplies
+            bag_poppy          = 8'd15;
+            bag_marijuana      = 8'd6;
+            bag_bread          = 8'd6;
+            bag_meat           = 8'd4;
+            bag_ale            = 8'd5;
             $display("\n\033[1;32m  >> [FEAR & HUNGER ACTIVATED] Ready your party for the harrowing descent.\033[0m\n");
         end
 
@@ -802,6 +959,8 @@ module tb_play;
                     combat_turn = 4'd1;
                     combat_fled = 1'b0;
                     combat_log_msg = "Encounter started! Choose an action hotkey from the deck below.";
+                    hw_sync_encounter_pulse();
+                    team_mind[active_member] = hw_mind_level;
                     $display("\n\033[1;35m  >> [ENCOUNTER]: An ominous shadow descends upon you from the dark!\033[0m\a");
                 end else begin
                     // Regular pathway walk
@@ -809,18 +968,14 @@ module tb_play;
                     player_y   = target_y;
                     step_count = step_count + 1;
 
-                    // Survival ticks: Hunger +1 every 5 steps, Mind -1 every 8 steps
-                    if (step_count % 5 == 0) begin
-                        if (team_hunger[active_member] < 8'd100)
-                            team_hunger[active_member] = team_hunger[active_member] + 8'd1;
-                    end
-                    if (step_count % 8 == 0) begin
-                        if (team_mind[active_member] > 8'd0)
-                            team_mind[active_member] = team_mind[active_member] - 8'd1;
-                    end
+                    // Hardware Coprocessor: Step Pulse for Sanity & Hunger
+                    hw_sync_step_pulse();
 
-                    // Starvation penalty
-                    if (team_hunger[active_member] >= 8'd100) begin
+                    team_hunger[active_member] = hw_hunger_level;
+                    team_mind[active_member]   = hw_mind_level;
+
+                    // Starvation penalty from Hardware Coprocessor
+                    if (hw_starve_dmg_pulse) begin
                         if (team_hp[active_member] > 8'd5) team_hp[active_member] = team_hp[active_member] - 8'd5;
                         else team_hp[active_member] = 8'd1;
                         $display("\033[1;31m  >> [STARVATION]: Agonizing stomach cramps! Lost 5 HP due to starvation!\033[0m");
@@ -886,7 +1041,11 @@ module tb_play;
                     cmd_char = str_input[7:0];
                 end
 
-                calc_dmg = (team_atk[active_member] > cur_enemy_def) ? (team_atk[active_member] - cur_enemy_def + 6) : 8;
+                calc_dmg = (hw_stance_eff_atk > cur_enemy_def) ? (hw_stance_eff_atk - cur_enemy_def + 6) : 8;
+                // If panic state detected by hardware coprocessor, apply 25% penalty
+                if (hw_is_panic && calc_dmg > (calc_dmg >> 2)) begin
+                    calc_dmg = calc_dmg - (calc_dmg >> 2);
+                end
                 action_confirmed = 1'b1;
                 action_selected = 3'd0;
 
@@ -1132,8 +1291,8 @@ module tb_play;
                     action_selected = 3'd3;
                     if (bag_bread > 0) begin
                         bag_bread = bag_bread - 1;
-                        if (team_hunger[active_member] > 8'd40) team_hunger[active_member] = team_hunger[active_member] - 8'd40;
-                        else team_hunger[active_member] = 0;
+                        hw_sync_restore_hunger(8'd40);
+                        team_hunger[active_member] = hw_hunger_level;
                         player_action_log = "Swallowed Moldy Bread mid-combat! Hunger reduced by 40!";
                     end else begin
                         player_action_log = "[EMPTY]: No Bread left in pouch!";
@@ -1144,8 +1303,8 @@ module tb_play;
                     action_selected = 3'd3;
                     if (bag_ale > 0) begin
                         bag_ale = bag_ale - 1;
-                        team_mind[active_member] = team_mind[active_member] + 8'd35;
-                        if (team_mind[active_member] > 8'd100) team_mind[active_member] = 8'd100;
+                        hw_sync_restore_mind(8'd35);
+                        team_mind[active_member] = hw_mind_level;
                         player_action_log = "Drank spirits from Ale Flask! Cleansed terror, +35 Mind!";
                     end else begin
                         player_action_log = "[EMPTY]: No Ale left in pouch!";
@@ -1166,12 +1325,24 @@ module tb_play;
                     end
                     $sformat(player_action_log, "[TAG SWITCH]: %s retreats! %s takes the frontline!", team_name[old_member], team_name[active_member]);
                 end
+                // [Z]: SWITCH TACTICAL STANCE COPEN ENGINE
+                else if (cmd_char == "z" || cmd_char == "Z") begin
+                    action_selected = 3'd4;
+                    hw_sync_stance((hw_curr_stance == `STANCE_AGILE) ? `STANCE_BALANCED : (hw_curr_stance + 2'd1));
+                    case (hw_curr_stance)
+                        `STANCE_BALANCED:   player_action_log = "[STANCE HW]: Set to BALANCED stance (Standard 1.0x ATK & DEF).";
+                        `STANCE_BERSERK:    player_action_log = "[STANCE HW]: Set to BERSERK stance (+25% ATK, -25% DEF)!";
+                        `STANCE_IRON_GUARD: player_action_log = "[STANCE HW]: Set to IRON GUARD stance (+50% DEF, turn HP regen)!";
+                        `STANCE_AGILE:      player_action_log = "[STANCE HW]: Set to AGILE stance (+25% Evasion, +25% Flee Chance)!";
+                        default:            player_action_log = "[STANCE HW]: Tactical stance adjusted.";
+                    endcase
+                end
                 // [F]: FLEE
                 else if (cmd_char == "f" || cmd_char == "F") begin
                     action_selected = 3'd6;
                     step_rng;
                     r_roll = hw_rand_pct;
-                    if (r_roll < 50) begin
+                    if (r_roll < hw_stance_flee_pct) begin
                         player_action_log = "[ESCAPED]: Retreated safely into dark corridors!";
                         in_combat = 1'b0;
                         combat_fled = 1'b1;
@@ -1187,7 +1358,7 @@ module tb_play;
                 // INVALID INPUT
                 else begin
                     action_confirmed = 1'b0;
-                    combat_log_msg = "Invalid hotkey! Enter H/T/R/L/K/1/2/P/M/B/A/G/S/F.";
+                    combat_log_msg = "Invalid hotkey! Enter H/T/R/L/K/1/2/P/M/B/A/G/S/Z/F.";
                 end
 
                 // ------------------------------------------------------------
@@ -1231,11 +1402,11 @@ module tb_play;
                             $sformat(combat_log_msg, "%s | [COIN SUCCESS]: Parried lethal cleave and countered for 20 DMG!", player_action_log);
                         end else begin
                             ui.render_screen_shake();
+                            hw_sync_panic_pulse();
                             hw_calc_enemy_retaliation(1'b1, action_selected, calc_dmg); // ALU Lethal execution calculation
                             if (team_hp[active_member] > calc_dmg) hw_sync_hp(active_member, team_hp[active_member] - calc_dmg);
                             else hw_sync_hp(active_member, 8'd0);
-                            if (team_mind[active_member] > 8'd20) team_mind[active_member] = team_mind[active_member] - 8'd20;
-                            else team_mind[active_member] = 8'd0;
+                            team_mind[active_member] = hw_mind_level;
                             ui.notify_coin_result(1'b0, team_name[active_member], calc_dmg, team_hp[active_member], team_max[active_member], team_mind[active_member]);
                             $sformat(combat_log_msg, "%s | [COIN FAILED]: Lethal cleave struck! Took %0d DMG, -20 Mind!", player_action_log, calc_dmg);
                         end
@@ -1252,11 +1423,20 @@ module tb_play;
                     combat_log_msg = player_action_log;
                 end
 
-                // Turn upkeep
+                // Turn upkeep & Stance Health Regeneration
                 if (in_combat && !combat_fled && action_confirmed) begin
                     combat_turn = combat_turn + 1;
                     if (team_hunger[active_member] < 8'd100) team_hunger[active_member] = team_hunger[active_member] + 8'd1;
                     if (team_mind[active_member] > 8'd1) team_mind[active_member] = team_mind[active_member] - 8'd1;
+
+                    // Stance regeneration (Iron Guard)
+                    if (hw_stance_regen_hp > 8'd0 && team_hp[active_member] > 8'd0) begin
+                        if (team_hp[active_member] + hw_stance_regen_hp > team_max[active_member])
+                            team_hp[active_member] = team_max[active_member];
+                        else
+                            team_hp[active_member] = team_hp[active_member] + hw_stance_regen_hp;
+                        hw_sync_hp(active_member, team_hp[active_member]);
+                    end
                 end
 
                 // Check Combat Resolution
@@ -1264,6 +1444,7 @@ module tb_play;
                     $display("\n\033[1;32m+====================================================================================================+\033[0m");
                     $display("\033[1;32m|  \033[42;1;37m >>> GLORIOUS VICTORY: THE FOE HAS BEEN SLAIN! SPOILS SCATTERED ACROSS THE FLOOR! <<< \033[0m\033[1;32m         |\033[0m");
                     $display("\033[1;32m+====================================================================================================+\033[0m\a");
+                    $display("  \033[1;33m>> FINAL BLOW: %s\033[0m", player_action_log);
                     in_combat = 1'b0;
                     cleared_mask[target_idx] = 1'b1;
                     monsters_defeated_count = monsters_defeated_count + 1;

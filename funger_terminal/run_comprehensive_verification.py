@@ -42,12 +42,30 @@ def main():
     ] + src_files
     subprocess.run(compile_fuzz, check=True)
 
+    # Ensure deep_test.out is compiled on the fly
+    compile_deep = [
+        "iverilog", "-g2012", "-Ifunger_terminal/src",
+        "-o", "funger_terminal/sim/deep_test.out",
+        "funger_terminal/tb/tb_deep_logic_suite.v"
+    ] + src_files
+    subprocess.run(compile_deep, check=True)
+
+    # Ensure chaos_test.out is compiled on the fly
+    compile_chaos = [
+        "iverilog", "-g2012", "-Ifunger_terminal/src",
+        "-o", "funger_terminal/sim/chaos_test.out",
+        "funger_terminal/tb/tb_adversarial_chaos.v"
+    ] + src_files
+    subprocess.run(compile_chaos, check=True)
+
     steps = [
         (1, "Static Synthesizability & Strict Compiler Linting", [sys.executable, "funger_terminal/audit_hardware_linter.py"]),
         (2, "String Overflow Guard & ANSI Escape Integrity", [sys.executable, "funger_terminal/audit_string_overflow.py"]),
         (3, "Bit-for-bit Python Golden Reference Co-Simulation", [sys.executable, "funger_terminal/audit_damage_accounting.py"]),
         (4, "100,000-Cycle LFSR Statistical & Pity System Proof", [sys.executable, "funger_terminal/audit_rng_pity.py"]),
-        (5, "50,000-Iteration FSM Random Fuzzing & Deadlock Audit", ["vvp", "funger_terminal/sim/fuzz_sim.out"])
+        (5, "50,000-Iteration FSM Random Fuzzing & Deadlock Audit", ["vvp", "funger_terminal/sim/fuzz_sim.out"]),
+        (6, "First-Principles Deep Logic, CDC & Storage Audit", ["vvp", "funger_terminal/sim/deep_test.out"]),
+        (7, "Adversarial Stress Test & Chaos Injection Audit", ["vvp", "funger_terminal/sim/chaos_test.out"])
     ]
 
     all_passed = True

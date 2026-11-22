@@ -3,8 +3,9 @@
 *.vcd
 *.vvp
 *.csv
-sim/
-funger_terminal/sim/
+/sim/
+funger_terminal/sim/*
+!funger_terminal/sim/tour_moves.txt
 
 # Python cache & temporary files
 __pycache__/

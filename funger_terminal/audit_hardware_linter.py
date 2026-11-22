@@ -102,7 +102,9 @@ def main():
         "funger_terminal/src/monster_rom.v",
         "funger_terminal/src/character_rom.v",
         "funger_terminal/src/battle_top.v",
-        "funger_terminal/src/battle_fsm.v"
+        "funger_terminal/src/battle_fsm.v",
+        "funger_terminal/src/tactical_stance_unit.v",
+        "funger_terminal/src/sanity_meter_unit.v"
     ]
 
     total_errors = 0

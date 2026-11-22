@@ -56,9 +56,9 @@ def golden_alu_calculate(p1_act, p2_act, p1_atk, p2_atk, p1_def, p2_def, rng, hp
     else:
         eff_2to1 = raw_2to1
 
-    # Clamp to 8-bit
-    eff_1to2 = eff_1to2 & 0xFF
-    eff_2to1 = eff_2to1 & 0xFF
+    # Clamp to 8-bit (Saturation Clamping: min(255, val))
+    eff_1to2 = min(255, eff_1to2)
+    eff_2to1 = min(255, eff_2to1)
 
     # 3. Flee penalty: 30% HP via (HP * 77) >> 8
     if flee_fail == 1:
