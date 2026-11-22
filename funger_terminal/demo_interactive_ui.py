@@ -367,39 +367,39 @@ def render_screen():
         monster["debuff_arm_l"]
     )
 
-    m_inj_header = "\033[1;31mINJURIES & DEBUFFS:\033[0m" if has_monster_injury else ""
+    m_inj_header = "\033[1;31m  INJURIES & DEBUFFS:\033[0m" if has_monster_injury else ""
     m_inj_1 = ""
     m_inj_2 = ""
     m_inj_3 = ""
 
     if monster["debuff_decapitated"]:
-        m_inj_1 = "\033[1;31m[HEAD] Decapitated -> Fatal strike (Dead)\033[0m"
+        m_inj_1 = "\033[1;31m  [HEAD] Decapitated -> Fatal strike (Dead)\033[0m"
     elif monster["debuff_legs"]:
-        m_inj_1 = "\033[1;33m[LEGS] Broken -> Crawling (100% Flee chance)\033[0m"
-        m_inj_2 = "\033[1;31m-> Decapitation hit rate increased to 100%!\033[0m"
+        m_inj_1 = "\033[1;33m  [LEGS] Broken -> Crawling (100% Flee)\033[0m"
+        m_inj_2 = "\033[1;31m  -> Decapitation hit rate boosted to 100%!\033[0m"
         if monster["debuff_arm_r"]:
-            m_inj_3 = "\033[1;33m[RIGHT ARM] Severed -> Disarmed (ATK -14)\033[0m"
+            m_inj_3 = "\033[1;33m  [RIGHT ARM] Severed -> Disarmed (ATK -14)\033[0m"
     elif monster["debuff_arm_r"] or monster["debuff_arm_l"]:
         if monster["debuff_arm_r"]:
-            m_inj_1 = "\033[1;33m[RIGHT ARM] Severed -> Disarmed (ATK -14)\033[0m"
+            m_inj_1 = "\033[1;33m  [RIGHT ARM] Severed -> Disarmed (ATK -14)\033[0m"
         if monster["debuff_arm_l"]:
-            m_inj_2 = "\033[1;36m[LEFT ARM] Severed -> Shield broken\033[0m"
+            m_inj_2 = "\033[1;36m  [LEFT ARM] Severed -> Shield broken\033[0m"
 
-    # 14 Rows of Monster Card (54 cols each)
+    # 14 Rows of Monster Card (54 cols each) - Spaced out for readability
     m_card_rows = [
         m_border,
-        make_card_row(f"\033[1;31mFOE #{monster['id']:02d}: {monster['name']:<18}\033[90m[Opponent]\033[0m", c_mcard),
-        make_card_row(f" HP  : {m_hp_bar} \033[1;31m{monster['hp']:3d}/{monster['max_hp']:3d} ({m_pct:3d}%)\033[0m", c_mcard),
-        make_card_row(f" ATK : {monster['atk']:2d}  |  DEF: {monster['def']:2d} {atk_note}\033[0m", c_mcard),
-        make_card_row(f" TYPE: {monster['type_desc']}", c_mcard),
+        make_card_row(f"\033[1;31m FOE   : #{monster['id']:02d} {monster['name']:<18}\033[90m[Opponent]\033[0m", c_mcard),
+        make_card_row("", c_mcard),
+        make_card_row(f" HP    : {m_hp_bar} \033[1;31m{monster['hp']:3d}/{monster['max_hp']:3d} ({m_pct:3d}%)\033[0m", c_mcard),
+        make_card_row("", c_mcard),
+        make_card_row(f" STATS : ATK {monster['atk']:2d}   |   DEF {monster['def']:2d} {atk_note}\033[0m", c_mcard),
+        make_card_row("", c_mcard),
+        make_card_row(f" TYPE  : {monster['type_desc']}", c_mcard),
         make_card_row("", c_mcard),
         make_card_row(m_inj_header, c_mcard),
         make_card_row(m_inj_1, c_mcard),
         make_card_row(m_inj_2, c_mcard),
         make_card_row(m_inj_3, c_mcard),
-        make_card_row("", c_mcard),
-        make_card_row("", c_mcard),
-        make_card_row("", c_mcard),
         m_border
     ]
 
@@ -445,12 +445,12 @@ def render_screen():
     # Hero Buff string (Only display if active!)
     h_buff_row = ""
     if hero.get("buff"):
-        h_buff_row = f"\033[1;32mBUFF  : {hero['buff']}\033[0m"
+        h_buff_row = f"\033[1;32m  BUFF  : {hero['buff']}\033[0m"
 
     # Hero Injury / Debuffs string (Only display if injured!)
     h_injury_row = ""
     if hero.get("debuffs"):
-        h_injury_row = f"\033[1;31mINJURY: {', '.join(hero['debuffs'])}\033[0m"
+        h_injury_row = f"\033[1;31m  INJURY: {', '.join(hero['debuffs'])}\033[0m"
 
     # 14 Rows of Hero Model (42 cols each)
     h_model_rows = [
@@ -462,21 +462,21 @@ def render_screen():
     # Line 13: Omit leader/captain labels, leave clean
     h_model_rows.append(pad_str("", 42))
 
-    # 14 Rows of Hero Card (54 cols each)
+    # 14 Rows of Hero Card (54 cols each) - Spaced out for readability
     # No stance, no captain tag, no companions summary (only shown in Switch Hero menu)
     h_card_rows = [
         h_border,
-        make_card_row(f"\033[1;32mHERO: {hero['name']:<10}\033[90m[{hero['role']}]\033[0m", c_hcard),
+        make_card_row(f"\033[1;32m HERO  : {hero['name']:<10}\033[90m[{hero['role']}]\033[0m", c_hcard),
+        make_card_row("", c_hcard),
         make_card_row(f" HP    : {h_hp_bar} \033[1;32m{hero['hp']:3d}/{hero['max_hp']:3d} ({h_pct:3d}%)\033[0m", c_hcard),
+        make_card_row("", c_hcard),
         make_card_row(f" MIND  : {h_mnd_bar} \033[1;36m{hero['mind']:3d}/{hero['max_mind']:3d}\033[0m", c_hcard),
         make_card_row(f" HUNGER: {h_hng_bar} \033[1;33m{hero['hunger']:3d}/{hero['max_hunger']:3d}\033[0m", c_hcard),
-        make_card_row(f" ATK   : {hero['atk']:2d}  |  DEF: {hero['def']:2d}", c_hcard),
+        make_card_row("", c_hcard),
+        make_card_row(f" STATS : ATK {hero['atk']:2d}   |   DEF {hero['def']:2d}", c_hcard),
         make_card_row("", c_hcard),
         make_card_row(h_buff_row, c_hcard),
         make_card_row(h_injury_row, c_hcard),
-        make_card_row("", c_hcard),
-        make_card_row("", c_hcard),
-        make_card_row("", c_hcard),
         make_card_row("", c_hcard),
         h_border
     ]
