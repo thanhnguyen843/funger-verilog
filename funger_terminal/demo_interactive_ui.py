@@ -177,35 +177,35 @@ else:
         "                             "
     ]
 
-# Crawling Sprite (Collapsed on floor, legs broken)
+# Postural Crawling Sprite (Amber Palette, Disarmed, Shifted down to floor)
 MONSTER_SPRITE_CRAWLING = [
     "                             ",
     "                             ",
     "                             ",
     "                             ",
-    "                             ",
-    "      \033[1;31m▄▀▀▀▄▄▀▀▀▄\033[0m             ",
-    "     \033[1;31m▀▀ ▄ ▀▀ ▄ ▀\033[0m             ",
-    "     \033[1;31m▀▀▄▄▄▀▀▄▄▄▀\033[0m             ",
-    "      \033[1;31m▄▀▀▀▄▄▀▀▀▄\033[0m             ",
-    "   \033[1;31m▄▀▀▀▀▀▀▀▀▀▀▀▀▀▄\033[0m           ",
-    "   \033[1;31m▀▀▀▀   ▀▀  ▀▀▀▀\033[0m           ",
-    "  \033[1;33m[LEGS BROKEN: CRAWLING]\033[0m    "
+    "      \033[1;33m▄▀▀▀▄▄▀▀▀▄\033[0m             ",
+    "     \033[1;33m▀▀ ▄ ▀▀ ▄ ▀\033[0m             ",
+    "     \033[1;33m▀▀▄▄▄▀▀▄▄▄▀\033[0m             ",
+    "      \033[1;33m▄▀▀▀▄▄▀▀▀▄\033[0m             ",
+    "   \033[1;33m▄▀▀▀▀▀▀▀▀▀▀▀▀▀▄\033[0m           ",
+    "   \033[1;33m▀▀▀▀   ▀▀  ▀▀▀▀\033[0m           ",
+    "    \033[1;33m[DISARMED & CROUCHED]\033[0m    ",
+    "                             "
 ]
 
-# Decapitated Sprite (Head severed, instant death)
+# Postural Deactivated Sprite (Ash Gray Palette, Headless, Collapsed Silhouette)
 MONSTER_SPRITE_DECAPITATED = [
     "                             ",
     "                             ",
-    "     \033[1;31m[DECAPITATED]\033[0m           ",
-    "        \033[1;31m▄████▄\033[0m               ",
-    "    \033[1;31m▀▀▄▄▄▀████▄▄▄▀\033[0m           ",
-    "     \033[1;31m▄▀▀▀▄▄▀▀▀▄\033[0m              ",
-    "      \033[1;31m▀ ▀▀▀▀▀▀ ▀\033[0m             ",
-    "   \033[1;31m▄▀▀▀▀▀▀▀▀▀▀▀▀▀▄\033[0m           ",
-    "   \033[1;31m▀▀▀▀   ▀▀  ▀▀▀▀\033[0m           ",
-    "      \033[1;31m(HEAD SEVERED)\033[0m         ",
     "                             ",
+    "                             ",
+    "                             ",
+    "                             ",
+    "      \033[90m▄▀▀▀▄▄▀▀▀▄\033[0m             ",
+    "      \033[90m▀ ▀▀▀▀▀▀ ▀\033[0m             ",
+    "   \033[90m▄▀▀▀▀▀▀▀▀▀▀▀▀▀▄\033[0m           ",
+    "   \033[90m▀▀▀▀   ▀▀  ▀▀▀▀\033[0m           ",
+    "   \033[90m[HEADLESS & NEUTRALIZED]\033[0m  ",
     "                             "
 ]
 
@@ -340,10 +340,10 @@ def render_screen():
     # Select Monster Sprite (intact vs crawling vs decapitated)
     if monster["debuff_decapitated"]:
         m_sprite = MONSTER_SPRITE_DECAPITATED
-        m_model_sub = "\033[1;31m[DECAPITATED]\033[0m"
+        m_model_sub = "\033[90m[NEUTRALIZED]\033[0m"
     elif monster["debuff_legs"]:
         m_sprite = MONSTER_SPRITE_CRAWLING
-        m_model_sub = "\033[1;33m[CRAWLING]\033[0m"
+        m_model_sub = "\033[1;33m[CROUCHED]\033[0m"
     else:
         m_sprite = MONSTER_SPRITE_INTACT
         m_model_sub = ""  # Clean, no posture text when intact
@@ -360,16 +360,16 @@ def render_screen():
         monster["debuff_arm_l"]
     )
 
-    m_inj_header = "\033[1;31m  INJURIES & DEBUFFS:\033[0m" if has_monster_injury else ""
+    m_inj_header = "\033[1;33m  ANATOMY & DEBUFFS:\033[0m" if has_monster_injury else ""
     m_inj_1 = ""
     m_inj_2 = ""
     m_inj_3 = ""
 
     if monster["debuff_decapitated"]:
-        m_inj_1 = "\033[1;31m  [HEAD]  Decapitated (Dead)\033[0m"
+        m_inj_1 = "\033[90m  [HEAD]  Decapitated (Neutralized)\033[0m"
     elif monster["debuff_legs"]:
-        m_inj_1 = "\033[1;33m  [LEGS]  Broken (Crawling, 100% Flee)\033[0m"
-        m_inj_2 = "\033[1;31m  [HEAD]  Exposed (100% Decapitate Hit)\033[0m"
+        m_inj_1 = "\033[1;33m  [LEGS]  Broken (Crouched, 100% Flee)\033[0m"
+        m_inj_2 = "\033[1;33m  [HEAD]  Exposed (100% Decapitate Hit)\033[0m"
         if monster["debuff_arm_r"]:
             m_inj_3 = "\033[1;33m  [R-ARM] Severed (Disarmed, ATK -14)\033[0m"
     elif monster["debuff_arm_r"] or monster["debuff_arm_l"]:

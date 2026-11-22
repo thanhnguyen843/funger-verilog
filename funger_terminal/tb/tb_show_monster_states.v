@@ -1,6 +1,6 @@
 // ============================================================================
 // Testbench: tb_show_monster_states.v
-// Tri-State Monster Showcase (NORMAL vs INJURED vs DEAD)
+// Tri-State Postural Morphology & Amber Palette Hardware Showcase
 // Hardware RTL Verification for Fear & Hunger: Terminal Labyrinth
 // ============================================================================
 
@@ -15,7 +15,7 @@ module tb_show_monster_states;
 
     reg  [4:0] r_top, r_bot, col_idx;
 
-    // Normal instance
+    // Normal instance (State 0 - Phosphor White)
     wire       px_n_t, trans_n_t, px_n_b, trans_n_b;
     wire [4:0] w_n, h_n;
     wire [7:0] rn_t, gn_t, bn_t, rn_b, gn_b, bn_b;
@@ -33,7 +33,7 @@ module tb_show_monster_states;
         .r(rn_b), .g(gn_b), .b(bn_b)
     );
 
-    // Injured instance
+    // Injured instance (State 1 - Technical Amber)
     wire       px_i_t, trans_i_t, px_i_b, trans_i_b;
     wire [4:0] w_i, h_i;
     wire [7:0] ri_t, gi_t, bi_t, ri_b, gi_b, bi_b;
@@ -51,7 +51,7 @@ module tb_show_monster_states;
         .r(ri_b), .g(gi_b), .b(bi_b)
     );
 
-    // Dead instance
+    // Dead instance (State 2 - Deactivated Ash Gray)
     wire       px_d_t, trans_d_t, px_d_b, trans_d_b;
     wire [4:0] w_d, h_d;
     wire [7:0] rd_t, gd_t, bd_t, rd_b, gd_b, bd_b;
@@ -141,7 +141,7 @@ module tb_show_monster_states;
     initial begin
         $display("");
         $display("\033[1;30m+====================================================================================================+\033[0m");
-        $display("\033[1;30m| \033[1;37m     FEAR & HUNGER: TRI-STATE MONSTER HARDWARE MODEL SHOWCASE (NORMAL vs INJURED vs DEAD)     \033[1;30m|\033[0m");
+        $display("\033[1;30m| \033[1;37m     FEAR & HUNGER: TRI-STATE POSTURAL MORPHOLOGY SHOWCASE (NORMAL vs INJURED vs DEAD)        \033[1;30m|\033[0m");
         $display("\033[1;30m+====================================================================================================+\033[0m");
         $display("");
 
@@ -155,8 +155,8 @@ module tb_show_monster_states;
 
             $display("\033[1;33m>>> FOE #%02d: %s \033[90m(Dimensions: %0dx%0d pixels)\033[0m", mid, m_name, max_w, max_h);
             $display("\033[90m+---------------------------+    +---------------------------+    +---------------------------+\033[0m");
-            $display("\033[1;37m|    [STATE 0: NORMAL]      |    \033[1;33m|    [STATE 1: INJURED]     |    \033[1;31m|     [STATE 2: DEAD]       |\033[0m");
-            $display("\033[90m| Intact / Healthy          |    | Severed Limb / Bleeding   |    | Decapitated / Pool Blood  |\033[0m");
+            $display("\033[1;37m|    [STATE 0: NORMAL]      |    \033[1;33m|    [STATE 1: INJURED]     |    \033[90m|     [STATE 2: DEAD]       |\033[0m");
+            $display("\033[90m| Phosphor White (Standing) |    | Amber Warning (Crouched)  |    | Ash Gray (Neutralized)    |\033[0m");
             $display("\033[90m+---------------------------+    +---------------------------+    +---------------------------+\033[0m");
 
             // Render each monster side-by-side (2 rows of pixels per character row)
@@ -164,7 +164,7 @@ module tb_show_monster_states;
                 r_top = r[4:0];
                 r_bot = (r + 1 < max_h) ? (r[4:0] + 5'd1) : 5'd31;
 
-                // --- 1. STATE 0: NORMAL ---
+                // --- 1. STATE 0: NORMAL (Phosphor White) ---
                 $write("  ");
                 for (c = 0; c < 24; c = c + 1) begin
                     col_idx = c[4:0];
@@ -175,7 +175,7 @@ module tb_show_monster_states;
                         $write(" ");
                 end
 
-                // --- 2. STATE 1: INJURED ---
+                // --- 2. STATE 1: INJURED (Technical Amber) ---
                 $write("       ");
                 for (c = 0; c < 24; c = c + 1) begin
                     col_idx = c[4:0];
@@ -186,7 +186,7 @@ module tb_show_monster_states;
                         $write(" ");
                 end
 
-                // --- 3. STATE 2: DEAD ---
+                // --- 3. STATE 2: DEAD (Ash Gray) ---
                 $write("       ");
                 for (c = 0; c < 24; c = c + 1) begin
                     col_idx = c[4:0];
@@ -203,7 +203,7 @@ module tb_show_monster_states;
             $display("");
         end
 
-        $display("\033[1;32m[OK] Hoan tat trinh dien 3 trang thai (Normal / Injured / Dead) cho toan bo 36 quai vat!\033[0m\n");
+        $display("\033[1;32m[OK] Hoan tat trinh dien 3 trang thai tu the & bang mau ho phach cho toan bo 36 quai vat!\033[0m\n");
         $finish;
     end
 
