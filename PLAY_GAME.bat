@@ -15,7 +15,7 @@ if not exist sim mkdir sim
 where iverilog >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
     echo [*] Compiling Verilog RTL hardware engine...
-    iverilog -I src -o sim/funger_play.out src/damage_alu.v src/rng_unit.v src/character_rom.v src/monster_rom.v src/map_rom.v src/collision_unit.v src/inventory_ram.v src/chest_sprite_rom.v src/key_sprite_rom.v src/funger_cahara_rom.v src/funger_darce_rom.v src/funger_enki_rom.v src/funger_ragnvaldr_rom.v src/funger_legarde_rom.v src/funger_moonless_rom.v src/funger_thegirl_rom.v src/funger_nashrah_rom.v src/monster.v src/fantasy_creatures.v src/healing_items.v src/sprite_router.v src/terminal_ui.v tb/tb_play.v
+    iverilog -I src -o sim/funger_play.out src/damage_alu.v src/rng_unit.v src/character_rom.v src/monster_rom.v src/map_rom.v src/collision_unit.v src/inventory_ram.v src/chest_sprite_rom.v src/key_sprite_rom.v src/funger_cahara_rom.v src/funger_darce_rom.v src/funger_enki_rom.v src/funger_ragnvaldr_rom.v src/funger_legarde_rom.v src/funger_moonless_rom.v src/funger_thegirl_rom.v src/funger_nashrah_rom.v src/monster.v src/fantasy_creatures.v src/tactical_stance_unit.v src/sanity_meter_unit.v src/sprite_router.v src/terminal_ui.v tb/tb_play.v
     if %ERRORLEVEL% NEQ 0 (
         echo [ERROR] Compilation failed!
         pause

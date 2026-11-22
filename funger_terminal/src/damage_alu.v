@@ -68,15 +68,21 @@ module damage_alu (
             raw_dmg_1to2 = 8'd2;
         end
 
-        // Limb targeting modifier: Head attack gets +50% critical damage multiplier
+        // Limb targeting modifier: Head attack gets +50% critical damage multiplier with saturation clamping
         if (limb_target === `LIMB_HEAD) begin
-            raw_dmg_1to2 = raw_dmg_1to2 + (raw_dmg_1to2 >> 1);
+            if ({1'b0, raw_dmg_1to2} + {2'b0, raw_dmg_1to2[7:1]} > 9'd255)
+                raw_dmg_1to2 = 8'd255;
+            else
+                raw_dmg_1to2 = raw_dmg_1to2 + (raw_dmg_1to2 >> 1);
         end
 
         // Enemy base damage calculation:
         if (is_lethal_mode === 1'b1) begin
-            // Coin flip execution: brutal unblockable strike
-            raw_dmg_2to1 = eff_p2_atk + 8'd25;
+            // Coin flip execution: brutal unblockable strike with saturation clamping
+            if ({1'b0, eff_p2_atk} + 9'd25 > 9'd255)
+                raw_dmg_2to1 = 8'd255;
+            else
+                raw_dmg_2to1 = eff_p2_atk + 8'd25;
         end else if (enemy_disarmed === 1'b1) begin
             // Both arms severed: enemy reduced to feeble flailing
             raw_dmg_2to1 = (eff_p2_atk >> 2);
@@ -88,15 +94,21 @@ module damage_alu (
             raw_dmg_2to1 = 8'd2;
         end
 
-        // 2. Hardware Critical Hit Multiplier (6.25% when rng_bits == 4'b1111: 1.5x)
+        // 2. Hardware Critical Hit Multiplier (6.25% when rng_bits == 4'b1111: 1.5x) with saturation clamping
         if (rng_bits === 4'b1111 && is_lethal_mode !== 1'b1) begin
-            eff_dmg_1to2 = raw_dmg_1to2 + (raw_dmg_1to2 >> 1);
+            if ({1'b0, raw_dmg_1to2} + {2'b0, raw_dmg_1to2[7:1]} > 9'd255)
+                eff_dmg_1to2 = 8'd255;
+            else
+                eff_dmg_1to2 = raw_dmg_1to2 + (raw_dmg_1to2 >> 1);
         end else begin
             eff_dmg_1to2 = raw_dmg_1to2;
         end
 
         if (rng_bits === 4'b0000 && is_lethal_mode !== 1'b1) begin
-            eff_dmg_2to1 = raw_dmg_2to1 + (raw_dmg_2to1 >> 1);
+            if ({1'b0, raw_dmg_2to1} + {2'b0, raw_dmg_2to1[7:1]} > 9'd255)
+                eff_dmg_2to1 = 8'd255;
+            else
+                eff_dmg_2to1 = raw_dmg_2to1 + (raw_dmg_2to1 >> 1);
         end else begin
             eff_dmg_2to1 = raw_dmg_2to1;
         end

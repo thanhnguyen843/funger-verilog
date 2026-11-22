@@ -85,7 +85,8 @@ funger_terminal/
 │   ├── funger_*_rom.v                # 8 Fear & Hunger player character pixel-art ROMs
 │   ├── monster.v                     # 20 Monster pixel-art sprite sheet ROM
 │   ├── fantasy_creatures.v           # 16 Fantasy creature pixel-art sprite sheet ROM
-│   ├── healing_items.v               # Pixel-art ROM for Poppy and Marijuana
+│   ├── tactical_stance_unit.v        # Hardware Tactical Stance Coprocessor (4 stances)
+│   ├── sanity_meter_unit.v           # Hardware Sanity & Hunger Environmental Entropy Coprocessor
 │   ├── sprite_router.v               # Color sprite multiplexer for side-by-side battle rendering
 │   ├── terminal_ui.v                 # ANSI terminal UI (Map, Bag, Full-Screen Chest, Battle, Boxed Alerts)
 │   ├── damage_alu.v                  # Combat damage calculation arithmetic unit
