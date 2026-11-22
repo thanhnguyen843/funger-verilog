@@ -6,15 +6,15 @@ cd /d "%~dp0funger_terminal"
 
 cls
 echo ====================================================================
-echo   FEAR ^& HUNGER - TRINH DIEN TU DONG CAC TRANG THAI GIAO DIEN MOI
+echo   FEAR ^& HUNGER: COMBAT ARENA - AUTOMATED STATE TRACE SHOWCASE
 echo ====================================================================
-echo [*] Tu dong in ra chuoi menu 4 nut, dieu huong con tro va cac sub-menu...
+echo [*] Executing 6-step combat cycle: Limb damage, Debuff, Decapitate...
 echo.
 
 python demo_interactive_ui.py --showcase
 
 echo.
 echo ====================================================================
-echo   Hoan tat trinh dien tu dong UI.
+echo   Showcase Execution Finished.
 echo ====================================================================
 pause

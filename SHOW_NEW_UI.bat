@@ -6,14 +6,14 @@ cd /d "%~dp0funger_terminal"
 
 cls
 echo ====================================================================
-echo   FEAR ^& HUNGER: TERMINAL LABYRINTH - DEMO GIAO DIEN CHIEN DAU MOI
+echo   FEAR ^& HUNGER: COMBAT ARENA - INTERACTIVE TERMINAL UI DEMO
 echo ====================================================================
-echo [*] Khoi dong giao dien dieu huong 4 nut con tro W/S 2 tang...
+echo [*] Launching W/S cursor navigation combat interface...
 echo.
 
 where python >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERROR] Khong tim thay Python trong PATH de chay trinh demo tuong tac!
+    echo [ERROR] Python not found in system PATH!
     pause
     exit /b 1
 )
@@ -22,6 +22,6 @@ python demo_interactive_ui.py
 
 echo.
 echo ====================================================================
-echo   Hoan tat phien trai nghiem Demo UI Fear ^& Hunger.
+echo   Combat Arena UI Demo Session Terminated.
 echo ====================================================================
 pause
