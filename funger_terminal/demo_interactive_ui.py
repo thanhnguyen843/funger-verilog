@@ -350,14 +350,7 @@ def render_screen():
 
     # Monster HP & Stats
     m_pct = int(max(0, monster["hp"]) / float(monster["max_hp"]) * 100)
-    m_hp_bar = make_bar(monster["hp"], monster["max_hp"], 12, "31")
-    atk_note = ""
-    if monster["debuff_arm_r"] and monster["debuff_arm_l"]:
-        atk_note = "\033[1;31m(DISARMED & WEAKENED)\033[0m"
-    elif monster["debuff_arm_r"]:
-        atk_note = "\033[1;33m(DISARMED)\033[0m"
-    elif monster["debuff_arm_l"]:
-        atk_note = "\033[1;36m(GUARD BROKEN)\033[0m"
+    m_hp_bar = make_bar(monster["hp"], monster["max_hp"], 16, "31")
 
     # Monster Injuries / Debuffs (Only display if injured!)
     has_monster_injury = (
@@ -385,21 +378,21 @@ def render_screen():
         if monster["debuff_arm_l"]:
             m_inj_2 = "\033[1;36m  [L-ARM] Severed (Guard Broken)\033[0m"
 
-    # 14 Rows of Monster Card (54 cols each) - Spaced out for readability
+    # 14 Rows of Monster Card (54 cols each) - Option 1: Uniform Spacing, No Type, No Stats
     m_card_rows = [
         m_border,
-        make_card_row(f"\033[1;31m FOE   : #{monster['id']:02d} {monster['name']:<18}\033[90m[Opponent]\033[0m", c_mcard),
+        make_card_row(f"\033[1;31m  FOE   : #{monster['id']:02d} {monster['name']:<18}\033[90m[Opponent]\033[0m", c_mcard),
         make_card_row("", c_mcard),
-        make_card_row(f" HP    : {m_hp_bar} \033[1;31m{monster['hp']:3d}/{monster['max_hp']:3d} ({m_pct:3d}%)\033[0m", c_mcard),
+        make_card_row(f"  HP    : {m_hp_bar} \033[1;31m{monster['hp']:3d}/{monster['max_hp']:3d} ({m_pct:3d}%)\033[0m", c_mcard),
         make_card_row("", c_mcard),
-        make_card_row(f" STATS : ATK {monster['atk']:2d}   |   DEF {monster['def']:2d} {atk_note}\033[0m", c_mcard),
-        make_card_row("", c_mcard),
-        make_card_row(f" TYPE  : {monster['type_desc']}", c_mcard),
         make_card_row("", c_mcard),
         make_card_row(m_inj_header, c_mcard),
+        make_card_row("", c_mcard),
         make_card_row(m_inj_1, c_mcard),
         make_card_row(m_inj_2, c_mcard),
         make_card_row(m_inj_3, c_mcard),
+        make_card_row("", c_mcard),
+        make_card_row("", c_mcard),
         m_border
     ]
 
@@ -436,11 +429,11 @@ def render_screen():
     hero_key = hero["name"]
     h_sprite = HERO_SPRITES.get(hero_key, HERO_SPRITES.get("CAHARA", []))
 
-    # Hero Bars & Stats
+    # Hero Bars & Stats (Widened bars, Option 1 spacing)
     h_pct = int(max(0, hero["hp"]) / float(hero["max_hp"]) * 100)
-    h_hp_bar = make_bar(hero["hp"], hero["max_hp"], 12, "32")
-    h_mnd_bar = make_bar(hero["mind"], hero["max_mind"], 10, "36")
-    h_hng_bar = make_bar(hero["hunger"], hero["max_hunger"], 10, "33")
+    h_hp_bar = make_bar(hero["hp"], hero["max_hp"], 16, "32")
+    h_mnd_bar = make_bar(hero["mind"], hero["max_mind"], 12, "36")
+    h_hng_bar = make_bar(hero["hunger"], hero["max_hunger"], 12, "33")
 
     # Hero Buff string (Only display if active!)
     h_buff_row = ""
@@ -462,20 +455,19 @@ def render_screen():
     # Line 13: Omit leader/captain labels, leave clean
     h_model_rows.append(pad_str("", 42))
 
-    # 14 Rows of Hero Card (54 cols each) - Spaced out for readability
-    # No stance, no captain tag, no companions summary (only shown in Switch Hero menu)
+    # 14 Rows of Hero Card (54 cols each) - Option 1: Uniform Spacing, No Stats (ATK/DEF)
     h_card_rows = [
         h_border,
-        make_card_row(f"\033[1;32m HERO  : {hero['name']:<10}\033[90m[{hero['role']}]\033[0m", c_hcard),
+        make_card_row(f"\033[1;32m  HERO  : {hero['name']:<10}\033[90m[{hero['role']}]\033[0m", c_hcard),
         make_card_row("", c_hcard),
-        make_card_row(f" HP    : {h_hp_bar} \033[1;32m{hero['hp']:3d}/{hero['max_hp']:3d} ({h_pct:3d}%)\033[0m", c_hcard),
+        make_card_row(f"  HP    : {h_hp_bar} \033[1;32m{hero['hp']:3d}/{hero['max_hp']:3d} ({h_pct:3d}%)\033[0m", c_hcard),
         make_card_row("", c_hcard),
-        make_card_row(f" MIND  : {h_mnd_bar} \033[1;36m{hero['mind']:3d}/{hero['max_mind']:3d}\033[0m", c_hcard),
-        make_card_row(f" HUNGER: {h_hng_bar} \033[1;33m{hero['hunger']:3d}/{hero['max_hunger']:3d}\033[0m", c_hcard),
+        make_card_row(f"  MIND  : {h_mnd_bar} \033[1;36m{hero['mind']:3d}/{hero['max_mind']:3d}\033[0m", c_hcard),
         make_card_row("", c_hcard),
-        make_card_row(f" STATS : ATK {hero['atk']:2d}   |   DEF {hero['def']:2d}", c_hcard),
+        make_card_row(f"  HUNGER: {h_hng_bar} \033[1;33m{hero['hunger']:3d}/{hero['max_hunger']:3d}\033[0m", c_hcard),
         make_card_row("", c_hcard),
         make_card_row(h_buff_row, c_hcard),
+        make_card_row("", c_hcard),
         make_card_row(h_injury_row, c_hcard),
         make_card_row("", c_hcard),
         h_border
