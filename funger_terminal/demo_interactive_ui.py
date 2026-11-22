@@ -2,27 +2,30 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-FEAR & HUNGER: TERMINAL LABYRINTH - COMBAT ARENA (DUAL TACTICAL CARDS EDITION)
+FEAR & HUNGER: TERMINAL LABYRINTH - DUAL MODEL & DYNAMIC DEBUFF ARENA
 ================================================================================
-Cải tiến toàn diện theo ý kiến người dùng:
-1. NỬA TRÊN: Dual Tactical Cards (Hai Thẻ Chiến Thuật Song Song):
-   - Thẻ Trái (Quái Vật): Máu tổng + Bảng Giải Phẫu Tứ Chi (Đầu, Thân, Tứ chi)
-     Hiển thị rõ ràng trạng thái Cầm kiếm, Khiên, Đứng vững. Khi bị chặt tay hoặc
-     bẻ gãy chân, dòng đó lập tức đổi trạng thái trực quan [ĐÃ BỊ CHẶT] / [BÒ LÊ LẾT].
-   - Thẻ Phải (Đội Hình): Máu (HP), Tâm trí (MND), Độ đói (HNG), Thế trận & Nội tại
-     kèm thanh tóm tắt đồng đội dự bị phía sau.
-2. ĐỔI NHÂN VẬT THÔNG MINH (TACTICAL SQUAD SWITCH):
-   - Khi chọn "Đổi Tướng", in ra Bảng Danh Sách Đội Hình đầy đủ (Cahara, D'arce,
-     Enki, The Girl) với chỉ số Máu, Tâm trí, Đói và Chức nghiệp.
-   - Dùng W/S điều hướng chọn người muốn đổi, Enter để chuyển quyền điều khiển!
-   - Thẻ bên phải lập tức cập nhật thông tin vị tướng tiên phong mới.
-3. NỬA DƯỚI: Menu 4 nút lớn W/S, highlight 1 mục duy nhất, in đè tại chỗ.
+Tích hợp hoàn hảo theo yêu cầu người dùng:
+1. TÁCH DUAL CARDS THÀNH 2 KHỐI CÓ SPRITE MODEL ĐỨNG KẾ BÊN:
+   - Khối Quái Vật (Bên Trái): Model Quái Pixel Art đứng cạnh Thẻ Quái Vật
+     (1 Thanh Máu Tổng Lớn + Ô Debuff Tứ Chi Động, KHÔNG CÒN 5 THANH MÁU CON).
+   - Khối Phe Ta (Bên Phải): Model Anh Hùng Pixel Art đứng cạnh Thẻ Tiên Phong
+     (Thanh Máu Tổng + Mind + Hunger + Ô Debuff Phe Mình + Dải Đồng Đội Dự Bị).
+2. CƠ CHẾ CHẶT CHI GÂY DEBUFF ĐỘNG:
+   - Bình thường ô Debuff hoàn toàn sạch sẽ, lành lặn.
+   - Chặt tay phải thành công -> Hiện Debuff: [TAY PHẢI: ĐÃ CHẶT] (Tước vũ khí).
+   - Bẻ chân thành công -> Hiện Debuff: [ĐÔI CHÂN: ĐÃ GÃY] (100% Chạy trốn | Đầu 100%).
+   - Phe mình bị cào -> Hiện Debuff: [VẾT THƯƠNG CÀO] (-4 HP/lượt).
+3. ĐỔI TƯỚNG TỰ CHỌN VỚI BẢNG ĐIỀU ĐỘNG ĐỘI HÌNH:
+   - Xem rõ máu, tâm trí, đói và sprite của 4 anh hùng, đổi tướng mượt mà.
+4. MENU 4 NÚT CON TRỎ W/S IN ĐÈ TẠI CHỖ:
+   - Highlight 1 mục duy nhất, không lòe loẹt, căn lề 100 cột chuẩn mực.
 ================================================================================
 """
 
 import sys
 import os
 import time
+import re
 
 # Enable Windows ANSI Virtual Terminal Support & UTF-8
 if os.name == 'nt':
@@ -39,7 +42,101 @@ if os.name == 'nt':
         pass
     import msvcrt
 
-# Monster State
+ANSI_REGEX = re.compile(r'\x1b\[[0-9;]*[mGKH]')
+
+def visible_len(s):
+    return len(ANSI_REGEX.sub('', s))
+
+def pad_str(s, n):
+    cur = visible_len(s)
+    if cur < n:
+        return s + " " * (n - cur)
+    return s
+
+def make_bar(curr, max_v, bar_len=12, color_code="32"):
+    if max_v <= 0:
+        ratio = 0
+    else:
+        ratio = max(0.0, min(1.0, curr / float(max_v)))
+    filled = int(ratio * bar_len)
+    if filled == 0 and curr > 0:
+        filled = 1
+    empty = bar_len - filled
+    return f"\033[1;{color_code}m" + "█" * filled + "\033[90m" + "░" * empty + "\033[0m"
+
+# =============================================================================
+# SPRITE PIXEL ART MODELS (12 chars wide, 8 half-block lines tall)
+# =============================================================================
+# Monster Sprite (Shadow Swordsman)
+MONSTER_SPRITE_INTACT = [
+    "\033[1;31m   ▄▀▀▀▀▀▄  \033[0m",
+    "\033[1;31m  ▀  \033[1;37m█ █\033[1;31m  ▀ \033[0m",
+    "\033[1;31m  ▀▀▄▀▀▀▀▄▀▀\033[0m",
+    "\033[1;31m   ▀▀ ▀ ▀▀  \033[0m",
+    "\033[1;31m    ▀▀▀▀▀   \033[0m",
+    "\033[1;31m    ▀▀▀▀▀▄  \033[0m",
+    "\033[1;31m    ▀ ▀ ▀   \033[0m",
+    "\033[1;31m    ▀   ▀   \033[0m"
+]
+
+MONSTER_SPRITE_CRAWLING = [
+    "\033[1;31m            \033[0m",
+    "\033[1;31m            \033[0m",
+    "\033[1;31m   ▄▀▀▀▀▀▄  \033[0m",
+    "\033[1;31m  ▀  \033[1;37m█ █\033[1;31m  ▀ \033[0m",
+    "\033[1;31m  ▀▀▄▀▀▀▀▄▀▀\033[0m",
+    "\033[1;31m   ▀▀ ▀ ▀▀  \033[0m",
+    "\033[1;31m ▄▀▀▀▀▀▀▀▀▀▄\033[0m",
+    "\033[1;31m ▀▀▀▀  ▀▀▀▀ \033[0m"
+]
+
+# Hero Sprites
+HERO_SPRITES = {
+    "CAHARA": [
+        "\033[1;32m    ▄▀▀▀▄   \033[0m",
+        "\033[1;32m   ▀▀▀▀▀▀▀  \033[0m",
+        "\033[1;32m   ▄▀▀▀▀▀▄  \033[0m",
+        "\033[1;32m    ▀▀▀▀▀   \033[0m",
+        "\033[1;32m  ▄▀▀▀▀▀▀▀▄ \033[0m",
+        "\033[1;32m  ▀▀▀▀▀▀▀▀▀ \033[0m",
+        "\033[1;32m   ▀▀   ▀▀  \033[0m",
+        "\033[1;32m   ▀▀   ▀▀  \033[0m"
+    ],
+    "D'ARCE": [
+        "\033[1;33m   ▄▀▀▀▀▀▄  \033[0m",
+        "\033[1;33m  ▀▀▀▀▀▀▀▀▀ \033[0m",
+        "\033[1;33m  ▀▀▀▀▀▀▀▀▀ \033[0m",
+        "\033[1;33m ▀▄▄▀▀▀▀▀▄▀ \033[0m",
+        "\033[1;33m ▀▀▀▀▀▀▀▀▀▀ \033[0m",
+        "\033[1;33m ▀▀▀▀▀▀▀▀▀▀ \033[0m",
+        "\033[1;33m  ▀▀▀  ▀▀▀  \033[0m",
+        "\033[1;33m   ▀    ▀   \033[0m"
+    ],
+    "ENKI": [
+        "\033[1;35m    ▄▀▀▀▄   \033[0m",
+        "\033[1;35m   ▀▀▀▀▀▀▀  \033[0m",
+        "\033[1;35m  ▀▀▀▀▀▀▀▀▀ \033[0m",
+        "\033[1;35m   ▀▀▀▀▀▀▀  \033[0m",
+        "\033[1;35m   ▄▀▀▀▀▀▄  \033[0m",
+        "\033[1;35m  ▄▀▀▀▀▀▀▀▄ \033[0m",
+        "\033[1;35m  ▀▀▀▀▀▀▀▀▀ \033[0m",
+        "\033[1;35m  ▀▀▀   ▀▀▀ \033[0m"
+    ],
+    "THE GIRL": [
+        "\033[1;36m            \033[0m",
+        "\033[1;36m    ▄▀▀▀▄   \033[0m",
+        "\033[1;36m   ▀▀▀▀▀▀▀  \033[0m",
+        "\033[1;36m   ▄▀▀▀▀▀▄  \033[0m",
+        "\033[1;36m    ▀▀▀▀▀   \033[0m",
+        "\033[1;36m   ▄▀▀▀▀▀▄  \033[0m",
+        "\033[1;36m   ▀▀▀▀▀▀▀  \033[0m",
+        "\033[1;36m    ▀   ▀   \033[0m"
+    ]
+}
+
+# =============================================================================
+# GAME DATA
+# =============================================================================
 monster = {
     "name": "SHADOW SWORDSMAN",
     "id": 8,
@@ -47,23 +144,13 @@ monster = {
     "max_hp": 95,
     "atk": 24,
     "def": 14,
-    "head_hp": 24,
-    "head_max": 24,
-    "torso_hp": 95,
-    "torso_max": 95,
-    "arm_r_hp": 30,
-    "arm_r_max": 30,
-    "arm_l_hp": 30,
-    "arm_l_max": 30,
-    "legs_hp": 35,
-    "legs_max": 35,
-    "is_crawling": False,
-    "is_disarmed": False,
-    "is_guard_broken": False,
-    "is_decapitated": False
+    # Debuff flags
+    "debuff_arm_r": False,     # Disarmed
+    "debuff_arm_l": False,     # Guard Broken
+    "debuff_legs": False,      # Crawling -> 100% flee, 100% head hit
+    "debuff_decapitated": False
 }
 
-# 4 Playable Companions in the Squad
 squad = [
     {
         "name": "CAHARA",
@@ -76,9 +163,9 @@ squad = [
         "max_hunger": 100,
         "atk": 33,
         "def": 21,
-        "passive": "Bàn Tay Nhanh (-80% Mimic, +15% Né)",
-        "stance": "STANDARD BALANCED",
-        "is_guarding": False
+        "stance": "STANDARD",
+        "is_guarding": False,
+        "debuffs": []  # e.g. "Vết thương cào (-4 HP)"
     },
     {
         "name": "D'ARCE",
@@ -91,9 +178,9 @@ squad = [
         "max_hunger": 100,
         "atk": 30,
         "def": 30,
-        "passive": "Thiết Thuẫn Hoàng Gia (Thủ -85% DMG)",
-        "stance": "IRON GUARD BASTION",
-        "is_guarding": False
+        "stance": "IRON GUARD",
+        "is_guarding": False,
+        "debuffs": []
     },
     {
         "name": "ENKI",
@@ -106,9 +193,9 @@ squad = [
         "max_hunger": 100,
         "atk": 48,
         "def": 24,
-        "passive": "Tâm Trí Cổ Thuật (Phép Xuyên 100% DEF)",
-        "stance": "STANDARD BALANCED",
-        "is_guarding": False
+        "stance": "STANDARD",
+        "is_guarding": False,
+        "debuffs": []
     },
     {
         "name": "THE GIRL",
@@ -121,19 +208,19 @@ squad = [
         "max_hunger": 100,
         "atk": 30,
         "def": 39,
-        "passive": "Hộ Mệnh Ngây Thơ (25% Quái Bỏ Qua, 35% Né)",
         "stance": "AGILE DANCE",
-        "is_guarding": False
+        "is_guarding": False,
+        "debuffs": []
     }
 ]
 
 active_hero_idx = 0
 
 inventory = {
-    "poppy": 2,      # +50 HP
+    "poppy": 2,      # +50 HP, xóa vết thương cào
     "weed": 1,       # +120 HP
     "bread": 3,      # -40 Hunger
-    "ale": 2         # +35 Mind
+    "ale": 2         # +35 Mind, xóa hoảng loạn
 }
 
 combat_log = "Trận chiến bắt đầu! Shadow Swordsman rút kiếm bóng tối thủ thế."
@@ -141,147 +228,131 @@ combat_log = "Trận chiến bắt đầu! Shadow Swordsman rút kiếm bóng t�
 current_menu = "MAIN"
 cursor_idx = 0
 
-import re
-
-ANSI_REGEX = re.compile(r'\x1b\[[0-9;]*[mGKH]')
-
-def visible_len(s):
-    return len(ANSI_REGEX.sub('', s))
-
-def pad_str(s, n):
-    cur = visible_len(s)
-    if cur < n:
-        return s + " " * (n - cur)
-    return s
-
-def make_bar(curr, max_v, bar_len=10, color_code="32"):
-    if max_v <= 0:
-        ratio = 0
-    else:
-        ratio = max(0.0, min(1.0, curr / float(max_v)))
-    filled = int(ratio * bar_len)
-    if filled == 0 and curr > 0:
-        filled = 1
-    empty = bar_len - filled
-    return f"\033[1;{color_code}m" + "█" * filled + "\033[90m" + "░" * empty + "\033[0m"
-
+# =============================================================================
+# RENDER SCREEN
+# =============================================================================
 def render_screen():
     global active_hero_idx
     hero = squad[active_hero_idx]
 
     sys.stdout.write("\033[2J\033[H")
 
-    # =========================================================================
     # HEADER
-    # =========================================================================
     print("\033[1;30m+====================================================================================================+\033[0m")
-    print("\033[1;30m| \033[1;37m        FEAR & HUNGER: TERMINAL LABYRINTH - ĐẤU TRƯỜNG CHIẾN THUẬT (DUAL TACTICAL CARDS)           \033[1;30m|\033[0m")
+    print("\033[1;30m| \033[1;37m     FEAR & HUNGER: TERMINAL LABYRINTH - ĐẤU TRƯỜNG CHIẾN THUẬT (MODEL & DYNAMIC DEBUFF)          \033[1;30m|\033[0m")
     print("\033[1;30m+====================================================================================================+\033[0m")
-    print()  # Breathing room: 1 blank line
+    print()  # 1 blank line spacing
 
-    # =========================================================================
-    # SECTION 1: DUAL TACTICAL CARDS (50 columns Left vs 49 columns Right)
-    # =========================================================================
-    # Card Left: Monster & Limb Anatomy
-    m_hp_bar = make_bar(monster["hp"], monster["max_hp"], 12, "31")
-
-    # Limbs bars & labels
-    if monster["is_decapitated"]:
-        head_line = "\033[1;31m[ĐẦU / HEAD]  : [TRẢM ĐẦU TỨC THÌ] 💀 KẾT LIỄU       \033[0m"
-    else:
-        hb = make_bar(monster["head_hp"], monster["head_max"], 6, "31")
-        chint = "100% Trúng!" if monster["is_crawling"] else "25% Trảm"
-        head_line = f"• [ĐẦU / HEAD]  : {hb} \033[1;31m{monster['head_hp']:2d}/{monster['head_max']:2d}\033[0m ({chint}) "
-
-    tb = make_bar(monster["torso_hp"], monster["torso_max"], 6, "33")
-    torso_line = f"• [THÂN / TORSO]: {tb} \033[1;33m{monster['torso_hp']:2d}/{monster['torso_max']:2d}\033[0m (Vùng Cốt Lõi) "
-
-    if monster["is_disarmed"]:
-        arm_r_line = "\033[1;33m• [TAY PHẢI]    : [ĐÃ BỊ CHẶT] ⚔️ ĐÃ TƯỚC KHÍ        \033[0m"
-    else:
-        arb = make_bar(monster["arm_r_hp"], monster["arm_r_max"], 6, "36")
-        arm_r_line = f"• [TAY PHẢI]    : {arb} \033[1;36m{monster['arm_r_hp']:2d}/{monster['arm_r_max']:2d}\033[0m 🗡️ Kiếm Quỷ   "
-
-    if monster["is_guard_broken"]:
-        arm_l_line = "\033[1;33m• [TAY TRÁI]    : [ĐÃ BỊ CHẶT] 🛡️ PHÁ KHIÊN (-50% ATK)\033[0m"
-    else:
-        alb = make_bar(monster["arm_l_hp"], monster["arm_l_max"], 6, "36")
-        arm_l_line = f"• [TAY TRÁI]    : {alb} \033[1;36m{monster['arm_l_hp']:2d}/{monster['arm_l_max']:2d}\033[0m 🛡️ Khiên Tối   "
-
-    if monster["is_crawling"]:
-        legs_line = "\033[1;31m• [ĐÔI CHÂN]    : [BỊ BẺ GÃY] ⚠️ BÒ LÊ LẾT (ĐẦU 100%)\033[0m"
-    else:
-        lb = make_bar(monster["legs_hp"], monster["legs_max"], 6, "32")
-        legs_line = f"• [ĐÔI CHÂN]    : {lb} \033[1;32m{monster['legs_hp']:2d}/{monster['legs_max']:2d}\033[0m 🦵 Đứng Vững   "
-
-    # Card Right: Active Hero & Squad overview
-    h_hp_bar = make_bar(hero["hp"], hero["max_hp"], 10, "32")
-    h_mnd_bar = make_bar(hero["mind"], hero["max_mind"], 8, "36")
-    h_hng_bar = make_bar(hero["hunger"], hero["max_hunger"], 8, "33")
-
-    # Reserve companions status strip
-    reserves = []
-    for idx, c in enumerate(squad):
-        if idx != active_hero_idx:
-            status_icon = "🟢" if c["hp"] > 0 else "💀"
-            short_name = c["name"][:5]
-            reserves.append(f"{short_name}:{c['hp']:3d}HP{status_icon}")
-    reserve_str = " | ".join(reserves)
-
-    # Context-Aware Card Highlighting:
-    # If in TARGET_LIMB, left card border is highlighted Amber!
-    # If in SWITCH_HERO or POUCH, right card border is highlighted Green!
+    # -------------------------------------------------------------------------
+    # DUAL ARENA CARDS: MODEL STANDS RIGHT BESIDE TACTICAL INFO
+    # -------------------------------------------------------------------------
     c_left = "\033[1;33m" if current_menu == "TARGET_LIMB" else "\033[1;30m"
     c_right = "\033[1;32m" if current_menu in ("SWITCH_HERO", "POUCH") else "\033[1;30m"
 
     top_border = f"{c_left}+" + "-" * 49 + f"+{c_right}" + "-" * 48 + f"+{c_left}\033[0m"
     bot_border = f"{c_left}+" + "-" * 49 + f"+{c_right}" + "-" * 48 + f"+{c_left}\033[0m"
 
+    # Select Monster Sprite (intact vs crawling)
+    m_sprite = MONSTER_SPRITE_CRAWLING if monster["debuff_legs"] else MONSTER_SPRITE_INTACT
+
+    # Select Hero Sprite
+    h_sprite = HERO_SPRITES.get(hero["name"], HERO_SPRITES["CAHARA"])
+
+    # Prepare Monster Debuff Lines (32 chars visible width)
+    m_debuff_lines = []
+    if monster["debuff_decapitated"]:
+        m_debuff_lines.append("\033[1;31m💀 [TRẢM ĐẦU TỨC THÌ] CHẾT NGAY!\033[0m")
+        m_debuff_lines.append("\033[90m   Quái vật đã bị kết liễu.\033[0m")
+    else:
+        if monster["debuff_arm_r"]:
+            m_debuff_lines.append("\033[1;33m⚠️ [TAY PHẢI: ĐÃ CHẶT ĐỨT]\033[0m")
+            m_debuff_lines.append("\033[1;33m   -> Rơi Kiếm (TƯỚC VŨ KHÍ)\033[0m")
+        if monster["debuff_arm_l"]:
+            m_debuff_lines.append("\033[1;36m⚠️ [TAY TRÁI: ĐÃ CHẶT ĐỨT]\033[0m")
+            m_debuff_lines.append("\033[1;36m   -> Phá Khiên (GIẢM 50% CÔNG)\033[0m")
+        if monster["debuff_legs"]:
+            m_debuff_lines.append("\033[1;31m⚠️ [ĐÔI CHÂN: ĐÃ BỊ BẺ GÃY]\033[0m")
+            m_debuff_lines.append("\033[1;32m   -> 100% CHẠY TRỐN THOÁT THÂN!\033[0m")
+            m_debuff_lines.append("\033[1;31m   -> TỶ LỆ TRẢM ĐẦU = 100%!\033[0m")
+
+    if not m_debuff_lines:
+        m_debuff_lines.append("\033[90m• Thân thể lành lặn, chưa dính vết\033[0m")
+        m_debuff_lines.append("\033[90m  thương hay tật nguyền nào.\033[0m")
+
+    # Prepare Hero Debuff Lines (31 chars visible width)
+    h_debuff_lines = []
+    if hero["debuffs"]:
+        for d in hero["debuffs"]:
+            h_debuff_lines.append(f"\033[1;31m⚠️ {d}\033[0m")
+    else:
+        h_debuff_lines.append("\033[1;32m• Thể trạng sung mãn, khỏe mạnh.\033[0m")
+
+    # Reserve companions status (compact 31 chars)
+    res_list = []
+    for idx, comp in enumerate(squad):
+        if idx != active_hero_idx:
+            short_name = comp["name"][:5]
+            res_list.append(f"{short_name}:{comp['hp']:3d}")
+    res_str = " | ".join(res_list)
+
+    # 10 Rows for Left Card
+    m_hp_bar = make_bar(monster["hp"], monster["max_hp"], 12, "31")
     l_rows = [
-        f"\033[1;31m👹 QUÁI VẬT: #{monster['id']:02d} {monster['name']:<18}\033[90m[Standard]\033[0m",
-        f" Sinh Lực Tổng : {m_hp_bar} \033[1;31m{monster['hp']:3d}/{monster['max_hp']:3d} HP\033[0m",
-        f" Công / Thủ    : ATK: {monster['atk']:2d} | DEF: {monster['def']:2d}",
-        "",
-        "\033[1;37mGIẢI PHẪU TỨ CHI (LIMB ANATOMY):\033[0m",
-        head_line,
-        torso_line,
-        arm_r_line,
-        arm_l_line,
-        legs_line
+        f"\033[1;31m👹 #{monster['id']:02d} {monster['name']:<16}\033[90m[Standard]\033[0m",
+        f" Máu : {m_hp_bar} \033[1;31m{monster['hp']:3d}/{monster['max_hp']:3d} HP\033[0m",
+        f" Công/Thủ: ATK: {monster['atk']:2d} | DEF: {monster['def']:2d}",
+        "\033[1;37m-- [MODEL] ---- [TRẠNG THÁI DEBUFF] --------\033[0m"
     ]
+    # Next 6 rows combine: Sprite (12 chars) + " | " + Debuff line (32 chars)
+    for r in range(6):
+        sp_line = m_sprite[r] if r < len(m_sprite) else "            "
+        db_line = m_debuff_lines[r] if r < len(m_debuff_lines) else ""
+        l_rows.append(f"{sp_line} \033[1;30m|\033[0m {pad_str(db_line, 32)}")
 
+    # 10 Rows for Right Card
+    h_hp_bar = make_bar(hero["hp"], hero["max_hp"], 10, "32")
+    h_mnd_bar = make_bar(hero["mind"], hero["max_mind"], 8, "36")
+    h_hng_bar = make_bar(hero["hunger"], hero["max_hunger"], 8, "33")
     r_rows = [
-        f"\033[1;32m🛡️ TIÊN PHONG: {hero['name']:<10}\033[90m[{hero['role'][:18]}]\033[0m",
-        f" Máu (HP)    : {h_hp_bar} \033[1;32m{hero['hp']:3d}/{hero['max_hp']:3d} HP\033[0m",
-        f" Tâm Trí(MND): {h_mnd_bar} \033[1;36m{hero['mind']:3d}/100\033[0m | Đói: {h_hng_bar}\033[1;33m{hero['hunger']:2d}\033[0m",
-        f" Thế Trận    : \033[1;37m{hero['stance'][:20]:<20}\033[0m",
-        f" Nội Tại     : \033[90m{hero['passive'][:30]:<30}\033[0m",
-        "",
-        "\033[1;37mĐỒNG ĐỘI DỰ BỊ PHÍA SAU:\033[0m",
-        f"\033[1;37m{reserve_str}\033[0m",
-        "\033[90m(Bấm [Hành Động] -> [Đổi Tướng] để chọn người)\033[0m",
-        ""
+        f"\033[1;32m🛡️ {hero['name']:<10}\033[90m[{hero['role'][:16]}]\033[0m",
+        f" Máu : {h_hp_bar} \033[1;32m{hero['hp']:3d}/{hero['max_hp']:3d} HP\033[0m",
+        f" Tâm : {h_mnd_bar} \033[1;36m{hero['mind']:3d}\033[0m | Đói: {h_hng_bar}\033[1;33m{hero['hunger']:2d}\033[0m",
+        "\033[1;37m-- [MODEL] ---- [TÌNH TRẠNG & ĐỒNG ĐỘI] ----\033[0m"
     ]
+    # Rows 4-9 for Right Card
+    r_info = [
+        h_debuff_lines[0] if len(h_debuff_lines) > 0 else "",
+        h_debuff_lines[1] if len(h_debuff_lines) > 1 else "",
+        f"Thế trận: \033[1;37m{hero['stance']}\033[0m",
+        "\033[1;37mĐỒNG ĐỘI DỰ BỊ:\033[0m",
+        f"\033[90m{res_str}\033[0m",
+        "\033[90m(Vào [Hành Động]->[Đổi Tướng] để đổi)\033[0m"
+    ]
+    for r in range(6):
+        sp_line = h_sprite[r] if r < len(h_sprite) else "            "
+        rf_line = r_info[r]
+        r_rows.append(f"{sp_line} \033[1;30m|\033[0m {pad_str(rf_line, 31)}")
 
+    # Print the Dual Cards
     print(top_border)
-    for row_idx in range(len(l_rows)):
-        l_text = pad_str(l_rows[row_idx], 47)
-        r_text = pad_str(r_rows[row_idx], 46)
-        print(f"{c_left}| {l_text} |{c_right} {r_text} |{c_left}\033[0m")
+    for r_idx in range(len(l_rows)):
+        lt = pad_str(l_rows[r_idx], 47)
+        rt = pad_str(r_rows[r_idx], 46)
+        print(f"{c_left}| {lt} |{c_right} {rt} |{c_left}\033[0m")
     print(bot_border)
-    print()  # Breathing room: 1 blank line
+    print()  # 1 blank line spacing
 
-    # =========================================================================
+    # -------------------------------------------------------------------------
     # SECTION 2: COMBAT LOG BOX
-    # =========================================================================
+    # -------------------------------------------------------------------------
     print("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
-    print(f"| \033[1;33m🔔 BẢNG TIN CHIẾN SỰ:\033[0m \033[1;37m{combat_log:<75}\033[1;30m |\033[0m")
+    print(f"| \033[1;33m🔔 BẢNG TIN CHIẾN SỰ:\033[0m \033[1;37m{pad_str(combat_log, 75)}\033[1;30m |\033[0m")
     print("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
-    print()  # Breathing room: 1 blank line
+    print()  # 1 blank line spacing
 
-    # =========================================================================
-    # SECTION 3: HIERARCHICAL DYNAMIC MENU
-    # =========================================================================
+    # -------------------------------------------------------------------------
+    # SECTION 3: DYNAMIC 4-BUTTON MENU (IN-PLACE REPLACEMENT)
+    # -------------------------------------------------------------------------
     menu_data = get_current_menu_data()
     title = menu_data["title"]
     options = menu_data["options"]
@@ -301,16 +372,15 @@ def render_screen():
         else:
             print(f"       \033[90m[{idx+1}] {icon}   {label:<22} {desc}\033[0m")
 
-    # Consistent spacing
-    pad_lines = 6 - len(options)
-    for _ in range(max(0, pad_lines)):
+    # Consistent menu height (6 lines)
+    for _ in range(max(0, 6 - len(options))):
         print()
 
-    print()  # Breathing room: 1 blank line
+    print()  # 1 blank line spacing
 
-    # =========================================================================
+    # -------------------------------------------------------------------------
     # FOOTER: CONTROL GUIDE
-    # =========================================================================
+    # -------------------------------------------------------------------------
     print("\033[1;30m====================================================================================================\033[0m")
     if current_menu == "MAIN":
         print("  \033[90m[ĐIỀU HƯỚNG]:\033[0m \033[1;37m[W/S]\033[0m Lên/Xuống  |  \033[1;37m[Enter / Space]\033[0m Mở Menu Con  |  \033[1;31m[Q]\033[0m Thoát Demo")
@@ -319,6 +389,9 @@ def render_screen():
     print("\033[1;30m====================================================================================================\033[0m")
     sys.stdout.flush()
 
+# =============================================================================
+# MENU DATA RESOLUTION
+# =============================================================================
 def get_current_menu_data():
     if current_menu == "MAIN":
         return {
@@ -331,12 +404,14 @@ def get_current_menu_data():
             ]
         }
     elif current_menu == "ACTION":
+        flee_text = "Tháo chạy khỏi trận (100% THOÁT THÀNH CÔNG)" if monster["debuff_legs"] else "Tháo chạy khỏi trận (50/50 nguy hiểm)"
         return {
             "title": "HÀNH ĐỘNG > CHỌN LOẠI TÁC CHIẾN (SUBMENU 1)",
             "options": [
-                {"icon": "🎯", "label": "TẤN CÔNG (ATTACK)",      "desc": "-> Chọn bộ phận cơ thể để nhắm đánh (Đầu, Thân, Tứ chi)"},
+                {"icon": "🎯", "label": "TẤN CÔNG (ATTACK)",      "desc": "-> Chọn bộ phận cơ thể để nhắm đánh & gài Debuff"},
                 {"icon": "🛡️", "label": "PHÒNG THỦ (GUARD)",     "desc": "-> Giảm 70% sát thương nhận vào ở hiệp này, hồi nhẹ HP"},
                 {"icon": "🔄", "label": "ĐỔI TƯỚNG (SWITCH)",     "desc": "-> Mở Bảng Danh Sách Đội Hình để chọn tướng tiên phong"},
+                {"icon": "🏃", "label": "THÁO CHẠY (FLEE)",       "desc": f"-> {flee_text}"},
                 {"icon": "↩️", "label": "QUAY LẠI (BACK)",       "desc": "-> Trở về Danh mục Lệnh chính bên ngoài"}
             ]
         }
@@ -344,11 +419,11 @@ def get_current_menu_data():
         opts = []
         for idx, h in enumerate(squad):
             is_active = (idx == active_hero_idx)
-            tag = " \033[1;32m[ĐANG TIÊN PHONG]\033[0m" if is_active else ""
+            tag = " \033[1;32m[TIÊN PHONG]\033[0m" if is_active else ""
             st_icon = "🟢" if h["hp"] > 0 else "💀"
             opts.append({
                 "icon": st_icon,
-                "label": f"{h['name']} [{h['role'][:12]}]",
+                "label": f"{h['name']} [{h['role'][:10]}]",
                 "desc": f"HP: {h['hp']:3d}/{h['max_hp']:3d} | MND: {h['mind']:3d} | HNG: {h['hunger']:2d}{tag}"
             })
         opts.append({"icon": "↩️", "label": "QUAY LẠI (BACK)", "desc": "-> Giữ nguyên đội hình, quay lại menu Hành Động"})
@@ -357,15 +432,15 @@ def get_current_menu_data():
             "options": opts
         }
     elif current_menu == "TARGET_LIMB":
-        crawl_hint = "\033[1;32m(100% TRÚNG VÌ QUÁI ĐANG BÒ!)\033[0m" if monster["is_crawling"] else "(25% Trúng | TRẢM ĐẦU TỨC THÌ)"
+        crawl_hint = "\033[1;32m(100% TRÚNG KẾT LIỄU!)\033[0m" if monster["debuff_legs"] else "(25% Trúng | TRẢM ĐẦU TỨC THÌ)"
         return {
-            "title": "HÀNH ĐỘNG > TẤN CÔNG > CHỌN VỊ TRÍ NHẮM ĐÁNH (SUBMENU 2)",
+            "title": "HÀNH ĐỘNG > TẤN CÔNG > CHỌN VỊ TRÍ NHẮM ĐÁNH (GÀI DEBUFF)",
             "options": [
                 {"icon": "💀", "label": "ĐẦU (HEAD)",            "desc": f"-> {crawl_hint}"},
-                {"icon": "🎯", "label": "THÂN (TORSO)",          "desc": "-> 100% Trúng | Đòn đánh an toàn, bào mòn máu tổng"},
-                {"icon": "🗡️", "label": "TAY PHẢI (R-ARM)",      "desc": "-> 100% Trúng | Chặt đứt tay cầm vũ khí -> TƯỚC VŨ KHÍ"},
+                {"icon": "🎯", "label": "THÂN (TORSO)",          "desc": "-> 100% Trúng | Đòn đánh an toàn, trừ lượng máu tổng lớn"},
+                {"icon": "🗡️", "label": "TAY PHẢI (R-ARM)",      "desc": "-> 100% Trúng | Chặt đứt tay cầm kiếm -> TƯỚC VŨ KHÍ"},
                 {"icon": "🛡️", "label": "TAY TRÁI (L-ARM)",      "desc": "-> 100% Trúng | Phá khiên/tay phụ -> GIẢM 50% CÔNG QUÁI"},
-                {"icon": "🦵", "label": "ĐÔI CHÂN (LEGS)",        "desc": "-> 100% Trúng | Bẻ gãy chân -> ÉP QUÁI BÒ LÊ LẾT"},
+                {"icon": "🦵", "label": "ĐÔI CHÂN (LEGS)",        "desc": "-> 100% Trúng | Bẻ gãy chân -> ÉP BÒ (100% CHẠY TRỐN!)"},
                 {"icon": "↩️", "label": "QUAY LẠI (BACK)",       "desc": "-> Quay lại menu Hành Động"}
             ]
         }
@@ -383,10 +458,10 @@ def get_current_menu_data():
         return {
             "title": "TÚI ĐỒ & VẬT PHẨM SINH TỒN (SUBMENU)",
             "options": [
-                {"icon": "🌸", "label": f"HOA POPPY [{inventory['poppy']}]",  "desc": "-> Búp hoa anh túc trắng | Hồi phục +50 HP"},
+                {"icon": "🌸", "label": f"HOA POPPY [{inventory['poppy']}]",  "desc": "-> Búp hoa anh túc | Hồi +50 HP & Xóa vết thương cào"},
                 {"icon": "🌿", "label": f"THẢO DƯỢC [{inventory['weed']}]",  "desc": "-> Thảo dược quý | Đại hồi phục +120 HP"},
                 {"icon": "🍞", "label": f"BÁNH MÌ [{inventory['bread']}]",    "desc": "-> Lương khô ngục tối | Giảm ngay 40 điểm Hunger"},
-                {"icon": "🍺", "label": f"RƯỢU ALE [{inventory['ale']}]",     "desc": "-> Rượu lên men cổ | Khôi phục +35 điểm Mind"},
+                {"icon": "🍺", "label": f"RƯỢU ALE [{inventory['ale']}]",     "desc": "-> Rượu lên men cổ | Khôi phục +35 Mind & Xóa hoảng loạn"},
                 {"icon": "↩️", "label": "QUAY LẠI (BACK)",       "desc": "-> Trở về Danh mục Lệnh chính bên ngoài"}
             ]
         }
@@ -397,44 +472,62 @@ def get_current_menu_data():
                 {"icon": "💥", "label": "THẾ BERSERK",           "desc": "-> +50% Sức Công Kích, nhưng nhận thêm 30% sát thương"},
                 {"icon": "🛡️", "label": "THẾ IRON GUARD",        "desc": "-> Chặn 70% sát thương nhận vào, tự hồi 5% HP mỗi lượt"},
                 {"icon": "💨", "label": "THẾ AGILE DANCE",       "desc": "-> Tăng 35% tỷ lệ né tránh, 100% tháo chạy thành công"},
-                {"icon": "🏃", "label": "THÁO CHẠY (FLEE)",       "desc": "-> Cố gắng rút lui khỏi trận đánh về hành lang mê cung"},
                 {"icon": "↩️", "label": "QUAY LẠI (BACK)",       "desc": "-> Trở về Danh mục Lệnh chính bên ngoài"}
             ]
         }
     return {"title": "MENU", "options": []}
 
+# =============================================================================
+# SELECTION LOGIC & COMBAT SIMULATION
+# =============================================================================
 def handle_selection():
     global current_menu, cursor_idx, combat_log, active_hero_idx
     hero = squad[active_hero_idx]
 
     if current_menu == "MAIN":
-        if cursor_idx == 0:    # Hành động
+        if cursor_idx == 0:
             current_menu = "ACTION"
             cursor_idx = 0
-        elif cursor_idx == 1:  # Kỹ năng
+        elif cursor_idx == 1:
             current_menu = "SKILL"
             cursor_idx = 0
-        elif cursor_idx == 2:  # Túi đồ
+        elif cursor_idx == 2:
             current_menu = "POUCH"
             cursor_idx = 0
-        elif cursor_idx == 3:  # Chiến thuật
+        elif cursor_idx == 3:
             current_menu = "TACTICS"
             cursor_idx = 0
 
     elif current_menu == "ACTION":
-        if cursor_idx == 0:    # Tấn công -> mở Target Limb
+        if cursor_idx == 0:    # Tấn công
             current_menu = "TARGET_LIMB"
             cursor_idx = 0
         elif cursor_idx == 1:  # Phòng thủ
             hero["is_guarding"] = True
-            combat_log = f"{hero['name']} giương khiên thủ thế! Sát thương nhận vào giảm 70% trong lượt này."
+            combat_log = f"{hero['name']} giương khiên thủ thế! Giảm 70% sát thương nhận vào lượt này."
             enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
-        elif cursor_idx == 2:  # Đổi tướng -> mở bảng Tactical Roster Switch
+        elif cursor_idx == 2:  # Đổi tướng
             current_menu = "SWITCH_HERO"
             cursor_idx = active_hero_idx
-        elif cursor_idx == 3:  # Quay lại
+        elif cursor_idx == 3:  # Tháo chạy
+            if monster["debuff_legs"]:
+                combat_log = "THÁO CHẠY THÀNH CÔNG 100%! Quái vật đã bị gãy chân bò lê lết, không thể đuổi theo!"
+                time.sleep(1.2)
+                sys.exit(0)
+            else:
+                import random
+                if random.random() < 0.5:
+                    combat_log = "May mắn thoát hiểm! Đội thám hiểm tháo chạy thành công về hành lang mê cung."
+                    time.sleep(1.2)
+                    sys.exit(0)
+                else:
+                    combat_log = "THÁO CHẠY THẤT BẠI! Quái vật chặn đứng lối thoát và chém phản đòn!"
+                    enemy_turn()
+                    current_menu = "MAIN"
+                    cursor_idx = 0
+        elif cursor_idx == 4:  # Quay lại
             current_menu = "MAIN"
             cursor_idx = 0
 
@@ -450,63 +543,60 @@ def handle_selection():
             current_menu = "MAIN"
             cursor_idx = 0
         else:
-            # Quay lại
             current_menu = "ACTION"
             cursor_idx = 2
 
     elif current_menu == "TARGET_LIMB":
         if cursor_idx == 0:    # Đầu
-            if monster["is_crawling"]:
+            if monster["debuff_legs"]:
                 dmg = monster["hp"]
                 monster["hp"] = 0
-                monster["head_hp"] = 0
-                monster["is_decapitated"] = True
+                monster["debuff_decapitated"] = True
                 combat_log = f"CRITICAL INSTAKILL! Quái đang bò, {hero['name']} trảm ngọt đầu đối thủ! Gây {dmg} DMG!"
             else:
                 import random
                 if random.random() < 0.35:
                     dmg = monster["hp"]
                     monster["hp"] = 0
-                    monster["head_hp"] = 0
-                    monster["is_decapitated"] = True
+                    monster["debuff_decapitated"] = True
                     combat_log = f"TRẢM ĐẦU TỨC THÌ (DECAPITATION)! Lưỡi gươm phạt đứt cổ quái vật! Gây {dmg} DMG!"
                 else:
-                    dmg = 15
+                    dmg = 18
                     monster["hp"] = max(0, monster["hp"] - dmg)
-                    monster["head_hp"] = max(0, monster["head_hp"] - 12)
                     combat_log = f"Đòn chém sượt qua đầu quái vật! Gây {dmg} sát thương sứt mẻ."
             enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
         elif cursor_idx == 1:  # Thân
             dmg = hero["atk"] - (monster["def"] // 2)
-            dmg = max(18, dmg)
+            dmg = max(24, dmg)
             monster["hp"] = max(0, monster["hp"] - dmg)
-            monster["torso_hp"] = max(0, monster["torso_hp"] - dmg)
-            combat_log = f"{hero['name']} đâm thẳng vào ngực đối thủ! Gây {dmg} DMG sát thương chuẩn."
+            combat_log = f"{hero['name']} chém thẳng vào ngực đối thủ! Trừ {dmg} Máu Tổng."
             enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
         elif cursor_idx == 2:  # Tay phải
-            monster["arm_r_hp"] = 0
-            monster["is_disarmed"] = True
-            monster["atk"] = max(10, monster["atk"] - 10)
-            combat_log = "CHẶT ĐỨT TAY PHẢI! Thanh kiếm quỷ rơi xuống đất, quái vật bị tước vũ khí!"
+            dmg = 20
+            monster["hp"] = max(0, monster["hp"] - dmg)
+            monster["debuff_arm_r"] = True
+            monster["atk"] = max(8, monster["atk"] - 14)
+            combat_log = f"CHẶT ĐỨT TAY PHẢI! Trừ {dmg} Máu Tổng. Kiếm quỷ rơi xuống sàn đá -> TƯỚC VŨ KHÍ!"
             enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
         elif cursor_idx == 3:  # Tay trái
-            monster["arm_l_hp"] = 0
-            monster["is_guard_broken"] = True
-            monster["atk"] = max(8, monster["atk"] - 6)
-            combat_log = "PHÁ HỦY TAY TRÁI! Khiên bảo vệ vỡ nát, sức tấn công của quái giảm 50%!"
+            dmg = 18
+            monster["hp"] = max(0, monster["hp"] - dmg)
+            monster["debuff_arm_l"] = True
+            combat_log = f"CHẶT ĐỨT TAY TRÁI! Trừ {dmg} Máu Tổng. Khiên tối vỡ nát -> GIẢM 50% SỨC CÔNG!"
             enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
         elif cursor_idx == 4:  # Đôi chân
-            monster["legs_hp"] = 0
-            monster["is_crawling"] = True
-            combat_log = "BẺ GÃY CHÂN QUÁI! Shadow Swordsman đổ gục xuống sàn đá, rơi vào thế BÒ LÊ LẾT!"
+            dmg = 22
+            monster["hp"] = max(0, monster["hp"] - dmg)
+            monster["debuff_legs"] = True
+            combat_log = f"BẺ GÃY CHÂN QUÁI! Trừ {dmg} Máu Tổng. Quái vật sụp đổ bò lê lết -> 100% CHẠY TRỐN ĐƯỢC!"
             enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
@@ -523,20 +613,22 @@ def handle_selection():
                 combat_log = f"BLACK ORB! Hắc cầu xé toang hư không bắn XUYÊN 100% GIÁP! Gây {dmg} DMG!"
                 enemy_turn()
             else:
-                combat_log = "Không đủ điểm Tâm Trí (Mind) để thi triển ma pháp hắc ám Black Orb!"
+                combat_log = "Không đủ điểm Tâm Trí (Mind) để thi triển ma pháp Black Orb!"
             current_menu = "MAIN"
             cursor_idx = 0
         elif cursor_idx == 1:  # Leg sweep
-            monster["legs_hp"] = 0
-            monster["is_crawling"] = True
-            combat_log = "LEG SWEEP! Cú gạt chân hoàn hảo ép đối phương lập tức bò lê lết!"
+            dmg = 15
+            monster["hp"] = max(0, monster["hp"] - dmg)
+            monster["debuff_legs"] = True
+            combat_log = "LEG SWEEP! Cú quét trụ thần tốc bẻ gãy chân quái vật -> BÒ LÊ LẾT 100%!"
             enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
         elif cursor_idx == 2:  # Devour
-            monster["hp"] = max(0, monster["hp"] - 20)
+            dmg = 20
+            monster["hp"] = max(0, monster["hp"] - dmg)
             hero["hunger"] = max(0, hero["hunger"] - 40)
-            combat_log = f"DEVOUR! {hero['name']} cắn xé máu thịt quái gây 20 DMG! Độ đói giảm mạnh -40 Hunger!"
+            combat_log = f"DEVOUR! {hero['name']} cắn xé máu thịt quái gây {dmg} DMG! Độ đói giảm mạnh -40 Hunger!"
             enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
@@ -549,7 +641,10 @@ def handle_selection():
             if inventory["poppy"] > 0:
                 inventory["poppy"] -= 1
                 hero["hp"] = min(hero["max_hp"], hero["hp"] + 50)
-                combat_log = f"{hero['name']} nhai Hoa Anh Túc trắng (White Poppy)! Vết thương khép lại, hồi phục +50 HP."
+                # Clear wound debuff
+                if "Vết thương cào (-4 HP)" in hero["debuffs"]:
+                    hero["debuffs"].remove("Vết thương cào (-4 HP)")
+                combat_log = f"{hero['name']} nhai Hoa Anh Túc (White Poppy)! Hồi phục +50 HP & làm lành vết thương cào."
                 enemy_turn()
             else:
                 combat_log = "Đã hết Hoa Anh Túc trong túi đồ!"
@@ -559,7 +654,7 @@ def handle_selection():
             if inventory["weed"] > 0:
                 inventory["weed"] -= 1
                 hero["hp"] = min(hero["max_hp"], hero["hp"] + 120)
-                combat_log = f"{hero['name']} đốt Thảo Dược quý (Marijuana Weed)! Khí huyết dâng trào, hồi phục +120 HP."
+                combat_log = f"{hero['name']} đốt Thảo Dược quý (Weed)! Đại hồi phục +120 HP sinh lực."
                 enemy_turn()
             else:
                 combat_log = "Đã hết Thảo Dược trong túi đồ!"
@@ -569,7 +664,7 @@ def handle_selection():
             if inventory["bread"] > 0:
                 inventory["bread"] -= 1
                 hero["hunger"] = max(0, hero["hunger"] - 40)
-                combat_log = f"{hero['name']} nuốt vội mẩu Bánh Mì mốc (Moldy Bread)! Dạ dày ấm lại, giảm -40 điểm Đói."
+                combat_log = f"{hero['name']} ăn Bánh Mì mốc (Moldy Bread)! Giảm ngay -40 điểm Đói."
             else:
                 combat_log = "Đã hết Bánh Mì trong túi đồ!"
             current_menu = "MAIN"
@@ -578,7 +673,7 @@ def handle_selection():
             if inventory["ale"] > 0:
                 inventory["ale"] -= 1
                 hero["mind"] = min(hero["max_mind"], hero["mind"] + 35)
-                combat_log = f"{hero['name']} nốc một ngụm Bình Rượu Ale cay nồng! Tinh thần tỉnh táo, hồi phục +35 Mind."
+                combat_log = f"{hero['name']} uống Rượu Ale cay nồng! Hồi phục +35 Mind & trấn an tinh thần."
             else:
                 combat_log = "Đã hết Rượu Ale trong túi đồ!"
             current_menu = "MAIN"
@@ -595,22 +690,21 @@ def handle_selection():
             cursor_idx = 0
         elif cursor_idx == 1:  # Iron Guard
             hero["stance"] = "IRON GUARD (-70% DMG)"
-            combat_log = f"{hero['name']} vào THẾ IRON GUARD! Dựng khiên sắt, giảm 70% mọi sát thương nhận vào."
+            combat_log = f"{hero['name']} vào THẾ IRON GUARD! Dựng khiên sắt, giảm 70% sát thương nhận vào."
             current_menu = "MAIN"
             cursor_idx = 0
         elif cursor_idx == 2:  # Agile
             hero["stance"] = "AGILE DANCE (+35% DODGE)"
-            combat_log = f"{hero['name']} chuyển sang THẾ AGILE DANCE! Thân pháp thoăn thoắt, tăng 35% tỷ lệ né đòn."
+            combat_log = f"{hero['name']} chuyển sang THẾ AGILE DANCE! Thân pháp thoăn thoắt, tăng 35% né đòn."
             current_menu = "MAIN"
             cursor_idx = 0
-        elif cursor_idx == 3:  # Flee
-            combat_log = "Tháo chạy thành công khỏi cuộc giao tranh! Trở về hành lang an toàn."
-            time.sleep(1)
-            sys.exit(0)
-        elif cursor_idx == 4:  # Quay lại
+        elif cursor_idx == 3:  # Quay lại
             current_menu = "MAIN"
             cursor_idx = 0
 
+# =============================================================================
+# ENEMY TURN & DAMAGE RESOLUTION
+# =============================================================================
 def enemy_turn():
     global combat_log, active_hero_idx
     hero = squad[active_hero_idx]
@@ -618,6 +712,10 @@ def enemy_turn():
     if monster["hp"] <= 0:
         combat_log += " | Quái vật gục ngã trên vũng máu! CHIẾN THẮNG!"
         return
+
+    # Turn bleed from wound debuff
+    if "Vết thương cào (-4 HP)" in hero["debuffs"]:
+        hero["hp"] = max(0, hero["hp"] - 4)
 
     dmg = monster["atk"] - (hero["def"] // 2)
     if hero["is_guarding"]:
@@ -628,16 +726,24 @@ def enemy_turn():
     hero["hp"] = max(0, hero["hp"] - dmg)
     combat_log += f" | Quái phản kích chém trúng giáp! {hero['name']} mất {dmg} HP."
 
+    # Chance monster inflicts scratch wound debuff on player
+    import random
+    if random.random() < 0.4 and "Vết thương cào (-4 HP)" not in hero["debuffs"]:
+        hero["debuffs"].append("Vết thương cào (-4 HP)")
+        combat_log += " Móng vuốt quỷ để lại VẾT THƯƠNG CÀO (-4 HP mỗi lượt)!"
+
     # Hero Down check
     if hero["hp"] == 0:
         combat_log += f" | ⚠️ HERO DOWN! {hero['name']} đã gục ngã!"
-        # Auto swap to next living companion
         for idx, comp in enumerate(squad):
             if comp["hp"] > 0:
                 active_hero_idx = idx
                 combat_log += f" -> {comp['name']} khẩn cấp nhảy lên thế chỗ!"
                 break
 
+# =============================================================================
+# MAIN INTERACTIVE LOOP
+# =============================================================================
 def run_interactive_loop():
     global current_menu, cursor_idx
 
@@ -683,14 +789,17 @@ def run_interactive_loop():
             elif line in ('b', 'q'):
                 break
 
+# =============================================================================
+# SHOWCASE AUTO TRACE
+# =============================================================================
 def run_showcase_trace():
     print("\n>>> BẮT ĐẦU SHOWCASE TỰ ĐỘNG CHUỖI GIAO DIỆN MỚI <<<\n")
     states = [
-        ("MAIN", 0, "BƯỚC 1: DUAL CARDS & MENU GỐC - Thẻ quái vật & Thẻ tiên phong Cahara"),
-        ("ACTION", 2, "BƯỚC 2: Vào 'Hành Động' -> Chọn 'Đổi Tướng'"),
-        ("SWITCH_HERO", 1, "BƯỚC 3: MỞ BẢNG ĐIỀU ĐỘNG ĐỘI HÌNH - D'arce đang sáng (xem HP/MND/HNG rõ ràng)"),
-        ("TARGET_LIMB", 2, "BƯỚC 4: Vào 'Tấn Công' -> Chọn chặt 'Tay Phải' của quái để tước kiếm quỷ"),
-        ("POUCH", 0, "BƯỚC 5: Mở 'Túi Đồ' cắn thuốc hồi phục sinh lực")
+        ("MAIN", 0, "BƯỚC 1: DUAL CARDS & SPRITES - Model đứng cạnh Thẻ Quái & Thẻ Anh Hùng"),
+        ("ACTION", 2, "BƯỚC 2: Vào 'Hành Động' -> Chuẩn bị mở Bảng Đổi Tướng"),
+        ("SWITCH_HERO", 1, "BƯỚC 3: BẢNG ĐIỀU ĐỘNG ĐỘI HÌNH - D'arce đang sáng (Xem đủ HP/MND/HNG)"),
+        ("TARGET_LIMB", 2, "BƯỚC 4: Vào 'Tấn Công' -> Chọn chặt 'Tay Phải' để tước vũ khí"),
+        ("TARGET_LIMB", 4, "BƯỚC 5: Chọn bẻ gãy 'Đôi Chân' -> Kích hoạt Debuff Bò lê lết (100% Chạy Trốn)")
     ]
 
     global current_menu, cursor_idx
