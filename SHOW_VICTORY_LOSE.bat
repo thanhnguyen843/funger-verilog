@@ -8,37 +8,36 @@ cls
 echo ====================================================================
 echo   FEAR ^& HUNGER: TERMINAL LABYRINTH - VICTORY ^& DEFEAT SCREENS
 echo ====================================================================
-echo [*] Dang khoi tao mo phong phan cung Verilog RTL cho Victory ^& Lose...
+echo [*] Initializing Verilog RTL hardware engine for end screens...
 echo.
 
 if not exist sim mkdir sim
 
 where iverilog >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
-    echo [*] Bien dich Hardware Engine cho man hinh Chien thang va Game Over...
+    echo [*] Compiling hardware engine for Victory and Game Over screens...
     iverilog -g2012 -I src -o sim/show_victory_lose.out tb/tb_show_victory_lose.v
     if %ERRORLEVEL% NEQ 0 (
-        echo [ERROR] Loi bien dich Verilog!
+        echo [ERROR] Verilog compilation failed!
         pause
         exit /b %ERRORLEVEL%
     )
-    echo [OK] Bien dich thanh cong!
+    echo [OK] Compilation successful!
     echo.
 ) else (
     if not exist sim\show_victory_lose.out (
-        echo [ERROR] Khong tim thay trinh bien dich iverilog trong PATH va file binary chua ton tai!
-        echo Vui long cai dat Icarus Verilog de bien dich mo phong phan cung.
+        echo [ERROR] iverilog compiler was not found in PATH and binary is missing!
         pause
         exit /b 1
     )
 )
 
-echo [*] Dang render Banner ASCII Victory, Gothic Game Over va 5 kich ban tu nan...
+echo [*] Rendering ASCII Victory banner, Gothic Game Over, and 5 demise scenarios...
 echo.
 vvp sim/show_victory_lose.out
 
 echo.
 echo ====================================================================
-echo   Hoan tat xuat toan bo thong bao Victory ^& Lose Fear ^& Hunger.
+echo   End-screen simulation complete.
 echo ====================================================================
 pause

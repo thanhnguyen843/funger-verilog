@@ -203,7 +203,7 @@ module tb_show_monster_states;
             $display("");
         end
 
-        $display("\033[1;32m[OK] Hoan tat trinh dien 3 trang thai tu the & bang mau ho phach cho toan bo 36 quai vat!\033[0m\n");
+        $display("\033[1;32m[OK] Tri-State Postural Morphology & Amber Palette showcase complete for all 36 monsters!\033[0m\n");
         $finish;
     end
 

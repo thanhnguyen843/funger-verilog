@@ -97,10 +97,10 @@ def get_sprite_lines(mid, state):
         # Generic Postural Transformation
         if state == 0: # Normal
             return [
-                "       \033[1;37m▄▀▀▀▀▀▀▄\033[0m              ",
+                "       \033[1;37m▄▀▀▀▀▀▀▀▄\033[0m              ",
                 "      \033[1;37m▀▀ ▄  ▄ ▀▀\033[0m             ",
                 "      \033[1;37m▀▀▀▀▀▀▀▀▀▀\033[0m             ",
-                "       \033[1;37m▄▀▀▀▀▄\033[0m   \033[1;37m▄▀\033[0m(WEAPON)   ",
+                "       \033[1;37m▄▀▀▀▀▀▄\033[0m   \033[1;37m▄▀\033[0m(WEAPON)   ",
                 "      \033[1;37m▀▀▀▀▀▀▀▀ ▄▀▀\033[0m           ",
                 "      \033[1;37m▀▀▀▀▀▀▀▀▀▀▀▀\033[0m           ",
                 "      \033[1;37m▀▀ ▀▀▀▀ ▀▀\033[0m             ",
@@ -116,12 +116,12 @@ def get_sprite_lines(mid, state):
                 "                             ",
                 "                             ",
                 "                             ",
-                "       \033[1;33m▄▀▀▀▀▀▀▄\033[0m              ",
+                "       \033[1;33m▄▀▀▀▀▀▀▀▄\033[0m              ",
                 "      \033[1;33m▀▀ ▄  ▄ ▀▀\033[0m             ",
                 "      \033[1;33m▀▀▀▀▀▀▀▀▀▀\033[0m             ",
-                "       \033[1;33m▄▀▀▀▀▄\033[0m   (DISARMED)   ",
+                "       \033[1;33m▄▀▀▀▀▀▄\033[0m   (DISARMED)   ",
                 "      \033[1;33m▀▀▀▀▀▀▀▀\033[0m               ",
-                "    \033[1;33m▄▀▀▀▀▀▀▀▀▀▀▄\033[0m (CROUCHED)  ",
+                "    \033[1;33m▄▀▀▀▀▀▀▀▀▀▀▀▄\033[0m (CROUCHED)  ",
                 "   \033[1;33m▀▀▀▀▀▀▀▀▀▀▀▀▀▀\033[0m            ",
                 "                             "
             ]
@@ -134,9 +134,9 @@ def get_sprite_lines(mid, state):
                 "                             ",
                 "                             ",
                 "                             ",
-                "       \033[90m▄▀▀▀▀▄\033[0m   (HEADLESS)   ",
+                "       \033[90m▄▀▀▀▀▀▄\033[0m   (HEADLESS)   ",
                 "      \033[90m▀▀▀▀▀▀▀▀\033[0m               ",
-                "    \033[90m▄▀▀▀▀▀▀▀▀▀▀▄\033[0m (NEUTRALIZED)",
+                "    \033[90m▄▀▀▀▀▀▀▀▀▀▀▀▄\033[0m (NEUTRALIZED)",
                 "   \033[90m░░░░░░░░░░░░░░\033[0m            ",
                 "                             "
             ]
@@ -172,28 +172,28 @@ def render_interactive():
 
     if current_state == 0:
         card_rows += [
-            "|  • Weapon Arm: \033[1;37mWIELDING (Full Attack Power)\033[0m      |",
-            "|  • Lower Body: \033[1;37mUPRIGHT (Standing Stance)\033[0m         |",
-            "|  • Head/Neck : \033[1;37mINTACT (100% Armor Guard)\033[0m         |",
-            "|  • Aesthetics: \033[1;37mPure Phosphor White (#FFFFFF)\033[0m     |",
+            "|  * Weapon Arm: \033[1;37mWIELDING (Full Attack Power)\033[0m      |",
+            "|  * Lower Body: \033[1;37mUPRIGHT (Standing Stance)\033[0m         |",
+            "|  * Head/Neck : \033[1;37mINTACT (100% Armor Guard)\033[0m         |",
+            "|  * Aesthetics: \033[1;37mPure Phosphor White (#FFFFFF)\033[0m     |",
             "|                                                  |",
             "|  \033[90m(Press [2] to inflict Postural Limb Damage)\033[0m     |",
         ]
     elif current_state == 1:
         card_rows += [
-            "|  • Weapon Arm: \033[1;33mSEVERED (Disarmed - Column Off)\033[0m   |",
-            "|  • Lower Body: \033[1;33mBROKEN (Crouched - Row Shift -4)\033[0m  |",
-            "|  • Mobility  : \033[1;33mCRAWLING (100% Flee Success)\033[0m      |",
-            "|  • Aesthetics: \033[1;33mTechnical Warning Amber (#FFAA28)\033[0m |",
+            "|  * Weapon Arm: \033[1;33mSEVERED (Disarmed - Column Off)\033[0m   |",
+            "|  * Lower Body: \033[1;33mBROKEN (Crouched - Row Shift -4)\033[0m  |",
+            "|  * Mobility  : \033[1;33mCRAWLING (100% Flee Success)\033[0m      |",
+            "|  * Aesthetics: \033[1;33mTechnical Warning Amber (#FFAA28)\033[0m |",
             "|                                                  |",
             "|  \033[1;33m[MECHANIC]: Foe cannot chase; weapon lost!\033[0m      |",
         ]
     else:
         card_rows += [
-            "|  • Head/Neck : \033[90mDECAPITATED (Rows 0-5 Masked Off)\033[0m |",
-            "|  • Posture   : \033[90mCOLLAPSED (Floor Silhouette)\033[0m      |",
-            "|  • Integrity : \033[90m0 / MAX HP (NEUTRALIZED)\033[0m          |",
-            "|  • Aesthetics: \033[90mDeactivated Ash Gray (#6E7378)\033[0m   |",
+            "|  * Head/Neck : \033[90mDECAPITATED (Rows 0-5 Masked Off)\033[0m |",
+            "|  * Posture   : \033[90mCOLLAPSED (Floor Silhouette)\033[0m      |",
+            "|  * Integrity : \033[90m0 / MAX HP (NEUTRALIZED)\033[0m          |",
+            "|  * Aesthetics: \033[90mDeactivated Ash Gray (#6E7378)\033[0m   |",
             "|                                                  |",
             "|  \033[1;32m[VICTORY]: Target neutralized cleanly!\033[0m          |",
         ]
@@ -207,8 +207,8 @@ def render_interactive():
 
     print()
     print("\033[1;30m====================================================================================================\033[0m")
-    print("  \033[90m[CHỌN TRẠNG THÁI]:\033[0m \033[1;37m[1]\033[0m Normal (Trắng)  |  \033[1;33m[2]\033[0m Injured (Hổ Phách)  |  \033[90m[3]\033[0m Dead (Tro Tàn)  |  \033[1;37m[Space]\033[0m Đổi Vòng")
-    print("  \033[90m[ĐỔI QUÁI VẬT]:   \033[0m \033[1;37m[A / ←]\033[0m Quái Trước   |  \033[1;37m[D / →]\033[0m Quái Kế Tiếp       |  \033[1;31m[Q]\033[0m Thoát Trình Xem")
+    print("  \033[90m[SELECT STATE]:\033[0m \033[1;37m[1]\033[0m Normal (White)   |  \033[1;33m[2]\033[0m Injured (Amber)   |  \033[90m[3]\033[0m Dead (Ash)   |  \033[1;37m[Space]\033[0m Cycle")
+    print("  \033[90m[SELECT FOE]:  \033[0m \033[1;37m[A / Left]\033[0m Prev Foe  |  \033[1;37m[D / Right]\033[0m Next Foe   |  \033[1;31m[Q]\033[0m Quit Viewer")
     print("\033[1;30m====================================================================================================\033[0m")
     sys.stdout.flush()
 
@@ -237,7 +237,7 @@ def main():
             elif ch in (b' ', b'\r', b'\n'):
                 current_state = (current_state + 1) % 3
             elif ch in (b'q', b'Q', b'\x1b'):
-                print("\n[OK] Thoát trình xem Model 3 trạng thái tư thế.")
+                print("\n[OK] Tri-State Monster Inspector session terminated.")
                 break
         else:
             line = sys.stdin.readline().strip().lower()

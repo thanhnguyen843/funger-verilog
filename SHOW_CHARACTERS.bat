@@ -6,16 +6,16 @@ cd /d "%~dp0funger_terminal"
 
 cls
 echo ====================================================================
-echo   FEAR ^& HUNGER: TERMINAL LABYRINTH - PLAYABLE CHARACTER ENCYCLOPEDIA
+echo   FEAR ^& HUNGER: TERMINAL LABYRINTH - PLAYABLE HERO ROSTER (RTL)
 echo ====================================================================
-echo [*] Dang khoi tao mo phong phan cung Verilog RTL...
+echo [*] Initializing Verilog RTL hardware engine...
 echo.
 
 if not exist sim mkdir sim
 
 where iverilog >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
-    echo [*] Bien dich Hardware Engine cho 8 nhan vat tham hiem...
+    echo [*] Compiling hardware engine for 8 expedition heroes...
     iverilog -g2012 -I src -o sim/show_characters.out ^
         src/character_rom.v ^
         src/funger_cahara_rom.v ^
@@ -31,27 +31,26 @@ if %ERRORLEVEL% EQU 0 (
         src/sprite_router.v ^
         tb/tb_show_characters.v
     if %ERRORLEVEL% NEQ 0 (
-        echo [ERROR] Loi bien dich Verilog!
+        echo [ERROR] Verilog compilation failed!
         pause
         exit /b %ERRORLEVEL%
     )
-    echo [OK] Bien dich thanh cong!
+    echo [OK] Compilation successful!
     echo.
 ) else (
     if not exist sim\show_characters.out (
-        echo [ERROR] Khong tim thay trinh bien dich iverilog trong PATH va file binary chua ton tai!
-        echo Vui long cai dat Icarus Verilog de bien dich mo phong phan cung.
+        echo [ERROR] iverilog compiler was not found in PATH and binary is missing!
         pause
         exit /b 1
     )
 )
 
-echo [*] Dang render sprite pixel art TrueColor va chi so chien thuat...
+echo [*] Rendering TrueColor pixel art sprites and tactical attributes...
 echo.
 vvp sim/show_characters.out
 
 echo.
 echo ====================================================================
-echo   Hoan tat xuat thong tin 8 nhan vat tham hiem Fear ^& Hunger.
+echo   Render complete for all 8 Fear ^& Hunger heroes.
 echo ====================================================================
 pause

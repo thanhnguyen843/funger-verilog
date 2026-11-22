@@ -2,19 +2,18 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-FEAR & HUNGER: TERMINAL LABYRINTH - POKÉMON-STYLE COMBAT ARENA
+FEAR & HUNGER: TERMINAL LABYRINTH - TACTICAL ARENA (BALANCED HERO ROSTER)
 ================================================================================
-Refactored per user requirements:
-1. Full English localization, concise military-grade CRPG style.
-2. Monster initial intact state: no status/stance clutter.
-3. Hero healthy state: no normal health text.
-4. Buffs: display ONLY when active. If none, display nothing.
-5. Injuries/Debuffs: display ONLY when wounded. If healthy, display nothing.
-6. Leader/captain titles omitted.
-7. Companions/teammates omitted from main card; only visible upon opening Switch Hero.
-8. Authentic TrueColor 24-bit half-block sprites (29 chars x 12 lines).
-9. Exact 100-column alignment with 4-space center gap (54 + 4 + 42 = 100).
-10. Icon-free, distraction-free Gothic terminal menus.
+Standardized Features:
+1. Pokémon-Style Diagonal Combat Arena (100 Columns exact width).
+2. Four Unique, Differentiated Heroes with Distinct Roles, Passives & Skills:
+   - CAHARA: Mercenary Rogue (High Dodge, Item Stealing, 100% Flee).
+   - D'ARCE: Holy Paladin Tank (Damage Reduction, Heavy Armor, Holy Heal).
+   - ENKI: Occult Sorcerer Glass Cannon (Auto Mind Regen, 100% Armor Pierce).
+   - THE GIRL: Ward Support & Evasion (Enemy ATK -30%, 100% Evasion, Mind Healing).
+3. Tri-State Postural Morphology (Zero blood/gore, clean dismemberment, amber warning).
+4. Uniform Spaced-Out Layout with Colons Aligned at Column 9.
+5. 100% Icon-Free Gothic CRPG Navigation with W/S or Arrow Keys.
 ================================================================================
 """
 
@@ -24,6 +23,7 @@ import time
 import re
 import unicodedata
 import json
+import random
 
 # Enable Windows ANSI Virtual Terminal Support & UTF-8
 if os.name == 'nt':
@@ -63,7 +63,7 @@ def pad_str(s, n):
 def make_card_row(content, c_card):
     return f"{c_card}| {pad_str(content, 50)} {c_card}|"
 
-def make_bar(curr, max_v, bar_len=12, color_code="32"):
+def make_bar(curr, max_v, bar_len=16, color_code="32"):
     if max_v <= 0:
         ratio = 0
     else:
@@ -92,7 +92,6 @@ if os.path.exists(SPRITES_FILE):
     except Exception:
         pass
 
-# Fallback basic models if json is not loaded
 if not HERO_SPRITES:
     HERO_SPRITES = {
         "CAHARA": [
@@ -153,23 +152,22 @@ if not HERO_SPRITES:
         ]
     }
 
-# Build Monster 8 variants (Intact, Crawling, Decapitated) in 12 lines x 29 columns
 MONSTER_SPRITE_INTACT = []
 if RAW_MONSTER_8:
     for idx in range(12):
         if idx < len(RAW_MONSTER_8) and RAW_MONSTER_8[idx].strip():
-            MONSTER_SPRITE_INTACT.append(f"\033[1;31m{RAW_MONSTER_8[idx]}\033[0m")
+            MONSTER_SPRITE_INTACT.append(f"\033[1;37m{RAW_MONSTER_8[idx]}\033[0m")
         else:
             MONSTER_SPRITE_INTACT.append(" " * 29)
 else:
     MONSTER_SPRITE_INTACT = [
-        "      ▄▀▀▀▄▄▀▀▀▄             ",
-        "     ▀▀ ▄ ▀▀ ▄ ▀             ",
-        "     ▀▀▄▄▄▀▀▄▄▄▀             ",
-        "      ▄▀▀▀▄▄▀▀▀▄             ",
-        "      ▀ ▀▀▀▀▀▀ ▀             ",
-        "      ▀  ▀▄ ▀▄ ▀             ",
-        "      ▀▀  ▀  ▀ ▀             ",
+        "      \033[1;37m▄▀▀▀▄▄▀▀▀▄\033[0m             ",
+        "     \033[1;37m▀▀ ▄ ▀▀ ▄ ▀\033[0m             ",
+        "     \033[1;37m▀▀▄▄▄▀▀▄▄▄▀\033[0m             ",
+        "      \033[1;37m▄▀▀▀▄▄▀▀▀▄\033[0m  \033[1;37m▄▀\033[0m(SWORD)  ",
+        "      \033[1;37m▀ ▀▀▀▀▀▀ ▀\033[0m  \033[1;37m▀▀▀\033[0m        ",
+        "      \033[1;37m▀  ▀▄ ▀▄ ▀\033[0m             ",
+        "      \033[1;37m▀▀  ▀  ▀ ▀\033[0m             ",
         "                             ",
         "                             ",
         "                             ",
@@ -177,7 +175,7 @@ else:
         "                             "
     ]
 
-# Postural Crawling Sprite (Amber Palette, Disarmed, Shifted down to floor)
+# Postural Crawling Sprite (Technical Amber, Disarmed, Shifted down to floor)
 MONSTER_SPRITE_CRAWLING = [
     "                             ",
     "                             ",
@@ -210,11 +208,10 @@ MONSTER_SPRITE_DECAPITATED = [
 ]
 
 def format_model_row(sp_line):
-    # Left pad 6 spaces, right pad 7 spaces -> 6 + 29 + 7 = 42 visible cols
     return " " * 6 + sp_line + " " * 7
 
 # =============================================================================
-# GAME DATA
+# GAME DATA: MONSTER & BALANCED HERO ROSTER
 # =============================================================================
 monster = {
     "name": "SHADOW SWORDSMAN",
@@ -223,72 +220,79 @@ monster = {
     "max_hp": 95,
     "atk": 24,
     "def": 14,
-    "type_desc": "Ancient Shadow Blade",
-    "debuff_arm_r": False,     # Disarmed (Sword lost)
-    "debuff_arm_l": False,     # Guard Broken (Shield lost)
-    "debuff_legs": False,      # Crawling -> 100% flee, 100% head hit
-    "debuff_decapitated": False # Head severed -> Instant death
+    "debuff_arm_r": False,     # Disarmed
+    "debuff_arm_l": False,     # Guard Broken
+    "debuff_legs": False,      # Crouched / Crawling
+    "debuff_decapitated": False # Neutralized
 }
 
 squad = [
     {
         "name": "CAHARA",
         "role": "Mercenary",
-        "hp": 125,
-        "max_hp": 125,
-        "mind": 100,
+        "hp": 115,
+        "max_hp": 115,
+        "mind": 90,
         "max_mind": 100,
         "hunger": 20,
         "max_hunger": 100,
-        "atk": 33,
-        "def": 21,
+        "atk": 32,
+        "def": 18,
         "buff": "",
         "is_guarding": False,
+        "dodge_rate": 0.20,
+        "passive": "Fast Hands (+20% Dodge, 100% Flee)",
         "debuffs": []
     },
     {
         "name": "D'ARCE",
         "role": "Paladin",
-        "hp": 145,
-        "max_hp": 145,
-        "mind": 90,
+        "hp": 150,
+        "max_hp": 150,
+        "mind": 85,
         "max_mind": 100,
         "hunger": 35,
         "max_hunger": 100,
-        "atk": 30,
-        "def": 30,
+        "atk": 28,
+        "def": 32,
         "buff": "",
         "is_guarding": False,
+        "dodge_rate": 0.05,
+        "passive": "Iron Will (-25% DMG taken, Holy Heal)",
         "debuffs": []
     },
     {
         "name": "ENKI",
         "role": "Occultist",
-        "hp": 95,
-        "max_hp": 95,
-        "mind": 100,
-        "max_mind": 100,
+        "hp": 85,
+        "max_hp": 85,
+        "mind": 130,
+        "max_mind": 130,
         "hunger": 15,
         "max_hunger": 100,
         "atk": 48,
-        "def": 24,
+        "def": 16,
         "buff": "",
         "is_guarding": False,
+        "dodge_rate": 0.10,
+        "passive": "Enlightenment (+5 MND/turn, Armor Pierce)",
         "debuffs": []
     },
     {
         "name": "THE GIRL",
         "role": "Ward",
-        "hp": 105,
-        "max_hp": 105,
-        "mind": 80,
+        "hp": 95,
+        "max_hp": 95,
+        "mind": 100,
         "max_mind": 100,
         "hunger": 10,
         "max_hunger": 100,
-        "atk": 30,
-        "def": 39,
+        "atk": 24,
+        "def": 36,
         "buff": "",
         "is_guarding": False,
+        "dodge_rate": 0.30,
+        "passive": "Innocent Aura (Foe ATK -30%, High Dodge)",
         "debuffs": []
     }
 ]
@@ -325,7 +329,7 @@ def render_screen():
     pad_right = 96 - len(title_str) - pad_left
     print(f"\033[1;30m| \033[1;37m{' ' * pad_left}{title_str}{' ' * pad_right}\033[1;30m |\033[0m")
     print("\033[1;30m+====================================================================================================+\033[0m")
-    print()  # 1 blank line spacing
+    print()
 
     # -------------------------------------------------------------------------
     # ZONE 1: OPPONENT ZONE (TOP)
@@ -337,7 +341,6 @@ def render_screen():
     c_mcard = "\033[1;33m" if current_menu == "TARGET_LIMB" else "\033[1;30m"
     m_border = f"{c_mcard}+" + "-" * 52 + f"+{c_mcard}\033[0m"
 
-    # Select Monster Sprite (intact vs crawling vs decapitated)
     if monster["debuff_decapitated"]:
         m_sprite = MONSTER_SPRITE_DECAPITATED
         m_model_sub = "\033[90m[NEUTRALIZED]\033[0m"
@@ -346,13 +349,11 @@ def render_screen():
         m_model_sub = "\033[1;33m[CROUCHED]\033[0m"
     else:
         m_sprite = MONSTER_SPRITE_INTACT
-        m_model_sub = ""  # Clean, no posture text when intact
+        m_model_sub = ""
 
-    # Monster HP & Stats
     m_pct = int(max(0, monster["hp"]) / float(monster["max_hp"]) * 100)
     m_hp_bar = make_bar(monster["hp"], monster["max_hp"], 16, "31")
 
-    # Monster Injuries / Debuffs (Only display if injured!)
     has_monster_injury = (
         monster["debuff_decapitated"] or
         monster["debuff_legs"] or
@@ -378,7 +379,7 @@ def render_screen():
         if monster["debuff_arm_l"]:
             m_inj_2 = "\033[1;36m  [L-ARM] Severed (Guard Broken)\033[0m"
 
-    # 14 Rows of Monster Card (54 cols each) - Option 1: Uniform Spacing, No Type, No Stats
+    # 14 Rows of Monster Card (54 cols each) - Uniform Spacing
     m_card_rows = [
         m_border,
         make_card_row(f"\033[1;31m  FOE   : #{monster['id']:02d} {monster['name']:<18}\033[90m[Opponent]\033[0m", c_mcard),
@@ -396,24 +397,19 @@ def render_screen():
         m_border
     ]
 
-    # 14 Rows of Monster Model (42 cols each)
     m_model_rows = [
         pad_str("          \033[1;31m[ENEMY]\033[0m", 42)
     ]
     for r in range(12):
         sp = m_sprite[r] if r < len(m_sprite) else " " * 29
         m_model_rows.append(format_model_row(sp))
-    # Line 13: Subtitle if wounded/decapitated, else blank
     m_sub_pad = pad_str(f"       {m_model_sub}", 42) if m_model_sub else pad_str("", 42)
     m_model_rows.append(m_sub_pad)
 
-    # Print Top Zone (Card Left + Model Right) with 4-space gap
     for r_idx in range(14):
-        left_str = m_card_rows[r_idx]
-        right_str = m_model_rows[r_idx]
-        print(f"{left_str}    {right_str}\033[0m")
+        print(f"{m_card_rows[r_idx]}    {m_model_rows[r_idx]}\033[0m")
 
-    print()  # 1 blank line spacing
+    print()
 
     # -------------------------------------------------------------------------
     # ZONE 2: PLAYER SQUAD ZONE (BOTTOM)
@@ -425,40 +421,34 @@ def render_screen():
     c_hcard = "\033[1;32m" if current_menu in ("SWITCH_HERO", "POUCH", "TACTICS") else "\033[1;30m"
     h_border = f"{c_hcard}+" + "-" * 52 + f"+{c_hcard}\033[0m"
 
-    # Select Hero Sprite
     hero_key = hero["name"]
     h_sprite = HERO_SPRITES.get(hero_key, HERO_SPRITES.get("CAHARA", []))
 
-    # Hero Bars & Stats (Widened bars, Option 1 spacing)
     h_pct = int(max(0, hero["hp"]) / float(hero["max_hp"]) * 100)
     h_hp_bar = make_bar(hero["hp"], hero["max_hp"], 16, "32")
     h_mnd_bar = make_bar(hero["mind"], hero["max_mind"], 12, "36")
     h_hng_bar = make_bar(hero["hunger"], hero["max_hunger"], 12, "33")
 
-    # Hero Buff string (Only display if active!)
     h_buff_row = ""
     if hero.get("buff"):
         h_buff_row = f"\033[1;32m  BUFF  : {hero['buff']}\033[0m"
 
-    # Hero Injury / Debuffs string (Only display if injured!)
     h_injury_row = ""
     if hero.get("debuffs"):
         h_injury_row = f"\033[1;31m  INJURY: {', '.join(hero['debuffs'])}\033[0m"
 
-    # 14 Rows of Hero Model (42 cols each)
     h_model_rows = [
         pad_str("          \033[1;32m[HERO]\033[0m", 42)
     ]
     for r in range(12):
         sp = h_sprite[r] if r < len(h_sprite) else " " * 29
         h_model_rows.append(format_model_row(sp))
-    # Line 13: Omit leader/captain labels, leave clean
     h_model_rows.append(pad_str("", 42))
 
-    # 14 Rows of Hero Card (54 cols each) - Option 1: Uniform Spacing, No Stats (ATK/DEF)
+    # 14 Rows of Hero Card (54 cols each) - Uniform Spacing
     h_card_rows = [
         h_border,
-        make_card_row(f"\033[1;32m  HERO  : {hero['name']:<10}\033[90m[{hero['role']}]\033[0m", c_hcard),
+        make_card_row(f"\033[1;32m  HERO  : {hero['name']:<9} \033[90m[{hero['role']}]\033[0m", c_hcard),
         make_card_row("", c_hcard),
         make_card_row(f"  HP    : {h_hp_bar} \033[1;32m{hero['hp']:3d}/{hero['max_hp']:3d} ({h_pct:3d}%)\033[0m", c_hcard),
         make_card_row("", c_hcard),
@@ -473,13 +463,10 @@ def render_screen():
         h_border
     ]
 
-    # Print Bottom Zone (Model Left + Card Right) with 4-space gap
     for r_idx in range(14):
-        left_str = h_model_rows[r_idx]
-        right_str = h_card_rows[r_idx]
-        print(f"{left_str}    {right_str}\033[0m")
+        print(f"{h_model_rows[r_idx]}    {h_card_rows[r_idx]}\033[0m")
 
-    print()  # 1 blank line spacing
+    print()
 
     # -------------------------------------------------------------------------
     # SECTION 3: COMBAT LOG BOX (100 COLUMNS)
@@ -488,7 +475,7 @@ def render_screen():
     log_content = pad_str(f"\033[1;33m[LOG]\033[0m \033[1;37m{combat_log}\033[0m", 96)
     print(f"| {log_content} \033[1;30m|")
     print("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
-    print()  # 1 blank line spacing
+    print()
 
     # -------------------------------------------------------------------------
     # SECTION 4: 4-BUTTON MENU (IN ENGLISH, NO ICONS, IN-PLACE REPLACEMENT)
@@ -511,11 +498,10 @@ def render_screen():
         else:
             print(f"       \033[90m[{idx+1}]   {label:<22} {desc}\033[0m")
 
-    # Consistent menu height (6 lines)
     for _ in range(max(0, 6 - len(options))):
         print()
 
-    print()  # 1 blank line spacing
+    print()
 
     # -------------------------------------------------------------------------
     # FOOTER: CONTROL GUIDE (100 COLUMNS)
@@ -529,25 +515,30 @@ def render_screen():
     sys.stdout.flush()
 
 # =============================================================================
-# MENU DATA RESOLUTION (CLEAN ENGLISH, ZERO ICONS)
+# MENU DATA RESOLUTION WITH DIVERSE CHARACTER SKILLS
 # =============================================================================
 def get_current_menu_data():
+    global active_hero_idx
+    h = squad[active_hero_idx]
+
     if current_menu == "MAIN":
         return {
-            "title": "MAIN COMMANDS",
+            "title": f"MAIN COMMANDS ({h['name']} - {h['role']})",
             "options": [
                 {"label": "ACTION",   "desc": "-> Attack, Guard, Switch Vanguard, Flee"},
-                {"label": "SKILL",    "desc": "-> Hexen occult magic & combat skills"},
+                {"label": "SKILL",    "desc": f"-> Unique class abilities ({h['name']})"},
                 {"label": "ITEM",     "desc": "-> Poppy herb, Healing weed, Rations, Ale"},
                 {"label": "TACTICS",  "desc": "-> Stances (Berserk / Iron Guard / Agile)"}
             ]
         }
     elif current_menu == "ACTION":
         flee_text = "Escape battle (\033[1;32m100% Guaranteed - Foe crawling\033[0m)" if monster["debuff_legs"] else "Escape battle (50% Chance)"
+        if h["name"] == "CAHARA":
+            flee_text = "Escape battle (\033[1;32m100% Guaranteed - Fast Hands Passive\033[0m)"
         return {
             "title": "ACTION > SELECT TACTICAL COMMAND",
             "options": [
-                {"label": "ATTACK",  "desc": "-> Target specific limbs to cripple foe"},
+                {"label": "ATTACK",  "desc": "-> Target specific limbs to disable foe"},
                 {"label": "GUARD",   "desc": "-> Brace for impact (-70% incoming damage)"},
                 {"label": "SWITCH",  "desc": "-> Open Squad Roster to change active vanguard"},
                 {"label": "FLEE",    "desc": f"-> {flee_text}"},
@@ -556,13 +547,13 @@ def get_current_menu_data():
         }
     elif current_menu == "SWITCH_HERO":
         opts = []
-        for idx, h in enumerate(squad):
+        for idx, comp in enumerate(squad):
             is_active = (idx == active_hero_idx)
             tag = " \033[1;32m[ACTIVE]\033[0m" if is_active else " \033[90m[RESERVE]\033[0m"
-            status_tag = "" if h["hp"] > 0 else " \033[1;31m[DOWN]\033[0m"
+            status_tag = "" if comp["hp"] > 0 else " \033[1;31m[DOWN]\033[0m"
             opts.append({
-                "label": f"{h['name']:<9} [{h['role']:<9}]",
-                "desc": f"HP: {h['hp']:3d}/{h['max_hp']:3d} | MND: {h['mind']:3d} | HNG: {h['hunger']:2d}{status_tag}{tag}"
+                "label": f"{comp['name']:<9} [{comp['role']:<9}]",
+                "desc": f"HP:{comp['hp']:3d}/{comp['max_hp']:3d} MND:{comp['mind']:3d} | {comp['passive'][:26]}{status_tag}{tag}"
             })
         opts.append({"label": "BACK", "desc": "-> Keep current vanguard, return to action menu"})
         return {
@@ -578,20 +569,51 @@ def get_current_menu_data():
                 {"label": "TORSO",      "desc": "-> 100% Hit | Safe strike, heavy body damage"},
                 {"label": "RIGHT ARM",  "desc": "-> 100% Hit | Sever sword arm -> Disarm foe"},
                 {"label": "LEFT ARM",   "desc": "-> 100% Hit | Sever shield arm -> Weaken attack"},
-                {"label": "LEGS",       "desc": "-> 100% Hit | Break legs -> Force crawl (100% Flee)"},
+                {"label": "LEGS",       "desc": "-> 100% Hit | Break legs -> Force crouch (100% Flee)"},
                 {"label": "BACK",       "desc": "-> Return to action menu"}
             ]
         }
     elif current_menu == "SKILL":
-        return {
-            "title": "SKILLS & HEXEN OCCULT MAGIC",
-            "options": [
-                {"label": "BLACK ORB",  "desc": "-> 15 Mind | Pierce 100% enemy defense (45 DMG)"},
-                {"label": "LEG SWEEP",  "desc": "-> 10 HP | Break enemy legs immediately (15 DMG)"},
-                {"label": "DEVOUR",     "desc": "-> Bite enemy for 20 DMG | Reduce 40 Hunger"},
-                {"label": "BACK",       "desc": "-> Return to main commands"}
-            ]
-        }
+        if h["name"] == "CAHARA":
+            return {
+                "title": "SKILLS & ROGUE TECHNIQUES (CAHARA)",
+                "options": [
+                    {"label": "EN GARDE",     "desc": "-> 100% precision strike inflicting +35 limb DMG"},
+                    {"label": "STEAL ITEM",   "desc": "-> Pickpocket foe: steal 1 Poppy/Bread from target"},
+                    {"label": "SMOKE BOMB",   "desc": "-> Blind opponent: 100% flee battle immediately"},
+                    {"label": "BACK",         "desc": "-> Return to main commands"}
+                ]
+            }
+        elif h["name"] == "D'ARCE":
+            return {
+                "title": "HOLY KNIGHT VOWS & PRAYERS (D'ARCE)",
+                "options": [
+                    {"label": "DEFENSE STANCE", "desc": "-> Brace shield: block 75% dmg & restore 15 HP"},
+                    {"label": "HEALING PRAYER", "desc": "-> Spend 15 Mind: restore +45 HP instantly"},
+                    {"label": "HOLY SMITE",     "desc": "-> Empower blade: heavy physical slash for 42 DMG"},
+                    {"label": "BACK",           "desc": "-> Return to main commands"}
+                ]
+            }
+        elif h["name"] == "ENKI":
+            return {
+                "title": "HEXEN OCCULT & DARK SORCERY (ENKI)",
+                "options": [
+                    {"label": "BLACK ORB",       "desc": "-> Spend 15 Mind: pierce 100% armor for 50 DMG"},
+                    {"label": "BLOOD SACRIFICE", "desc": "-> Convert 20 HP into +35 Mind points"},
+                    {"label": "HEXEN BIND",      "desc": "-> Spend 10 Mind: paralyze foe, guaranteed head hit"},
+                    {"label": "BACK",            "desc": "-> Return to main commands"}
+                ]
+            }
+        else: # THE GIRL
+            return {
+                "title": "SUPPORT AURA & EVASIVE TACTICS (THE GIRL)",
+                "options": [
+                    {"label": "NIMBLE DODGE",   "desc": "-> Duck into shadows: 100% dodge enemy's next hit"},
+                    {"label": "LOVING EMBRACE", "desc": "-> Comfort party: restore +35 Mind & calm nerves"},
+                    {"label": "DISTRACT FOE",   "desc": "-> Wave lantern: reduce enemy attack power by 50%"},
+                    {"label": "BACK",           "desc": "-> Return to main commands"}
+                ]
+            }
     elif current_menu == "POUCH":
         return {
             "title": "ITEM POUCH & SURVIVAL SUPPLIES",
@@ -651,12 +673,11 @@ def handle_selection():
             current_menu = "SWITCH_HERO"
             cursor_idx = active_hero_idx
         elif cursor_idx == 3:  # Flee
-            if monster["debuff_legs"]:
-                combat_log = "ESCAPE SUCCESSFUL! Foe is crawling and cannot pursue."
+            if monster["debuff_legs"] or hero["name"] == "CAHARA":
+                combat_log = "ESCAPE SUCCESSFUL! Party safely retreats into the labyrinth corridors."
                 time.sleep(1.2)
                 sys.exit(0)
             else:
-                import random
                 if random.random() < 0.5:
                     combat_log = "ESCAPE SUCCESSFUL! Party retreats into dungeon corridors."
                     time.sleep(1.2)
@@ -678,7 +699,7 @@ def handle_selection():
                 combat_log = f"{squad[cursor_idx]['name']} is unconscious and cannot fight."
             else:
                 active_hero_idx = cursor_idx
-                combat_log = f"VANGUARD DEPLOYED! {squad[active_hero_idx]['name']} takes point."
+                combat_log = f"VANGUARD DEPLOYED! {squad[active_hero_idx]['name']} [{squad[active_hero_idx]['role']}] takes point."
             current_menu = "MAIN"
             cursor_idx = 0
         else:
@@ -691,9 +712,8 @@ def handle_selection():
                 dmg = monster["hp"]
                 monster["hp"] = 0
                 monster["debuff_decapitated"] = True
-                combat_log = f"CRITICAL FINISH! Foe is crawling; {hero['name']} decapitates target! VICTORY!"
+                combat_log = f"CRITICAL FINISH! Foe is crouched; {hero['name']} cleanly severs head! VICTORY!"
             else:
-                import random
                 if random.random() < 0.35:
                     dmg = monster["hp"]
                     monster["hp"] = 0
@@ -702,7 +722,7 @@ def handle_selection():
                 else:
                     dmg = 18
                     monster["hp"] = max(0, monster["hp"] - dmg)
-                    combat_log = f"Glancing blow across the head for {dmg} DMG."
+                    combat_log = f"Glancing strike across the head for {dmg} DMG."
             enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
@@ -719,7 +739,7 @@ def handle_selection():
             monster["hp"] = max(0, monster["hp"] - dmg)
             monster["debuff_arm_r"] = True
             monster["atk"] = max(8, monster["atk"] - 14)
-            combat_log = f"SEVERED RIGHT ARM! -{dmg} HP. Foe drops weapon -> DISARMED (ATK reduced to 10)!"
+            combat_log = f"DISARMED! Weapon arm severed (-{dmg} HP). Foe's ATK reduced to 10!"
             enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
@@ -727,7 +747,7 @@ def handle_selection():
             dmg = 18
             monster["hp"] = max(0, monster["hp"] - dmg)
             monster["debuff_arm_l"] = True
-            combat_log = f"SEVERED LEFT ARM! -{dmg} HP. Foe's shield broken!"
+            combat_log = f"SHIELD BROKEN! Left arm disabled (-{dmg} HP). Foe defense shattered!"
             enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
@@ -735,7 +755,7 @@ def handle_selection():
             dmg = 22
             monster["hp"] = max(0, monster["hp"] - dmg)
             monster["debuff_legs"] = True
-            combat_log = f"BROKEN LEGS! -{dmg} HP. Foe collapses to CRAWL -> 100% FLEE & 100% HEAD HIT!"
+            combat_log = f"LEGS BROKEN! -{dmg} HP. Foe collapses to floor -> 100% FLEE & 100% HEAD HIT!"
             enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
@@ -744,34 +764,89 @@ def handle_selection():
             cursor_idx = 0
 
     elif current_menu == "SKILL":
-        if cursor_idx == 0:    # Black Orb
-            if hero["mind"] >= 15:
-                hero["mind"] -= 15
-                dmg = 45
+        h = squad[active_hero_idx]
+        if h["name"] == "CAHARA":
+            if cursor_idx == 0:    # En Garde
+                dmg = 35
                 monster["hp"] = max(0, monster["hp"] - dmg)
-                combat_log = f"BLACK ORB! Dark orb pierces 100% armor for {dmg} DMG!"
+                combat_log = f"EN GARDE! Cahara executes swift lunging strike for {dmg} DMG!"
                 enemy_turn()
-            else:
-                combat_log = "Insufficient Mind points for Black Orb!"
+            elif cursor_idx == 1:  # Steal
+                stolen_item = "poppy" if random.random() < 0.5 else "bread"
+                inventory[stolen_item] += 1
+                combat_log = f"STEAL SUCCESS! Cahara pickpockets the foe and secures 1x {stolen_item.upper()}!"
+                enemy_turn()
+            elif cursor_idx == 2:  # Smoke bomb
+                combat_log = "SMOKE BOMB! Dense fog blinds opponent. 100% ESCAPE SUCCESSFUL!"
+                time.sleep(1.2)
+                sys.exit(0)
             current_menu = "MAIN"
             cursor_idx = 0
-        elif cursor_idx == 1:  # Leg sweep
-            dmg = 15
-            monster["hp"] = max(0, monster["hp"] - dmg)
-            monster["debuff_legs"] = True
-            combat_log = f"LEG SWEEP! Sweeping kick breaks enemy legs -> CRAWLING!"
-            enemy_turn()
+
+        elif h["name"] == "D'ARCE":
+            if cursor_idx == 0:    # Defense stance
+                h["is_guarding"] = True
+                h["hp"] = min(h["max_hp"], h["hp"] + 15)
+                h["buff"] = "IRON VOW (-75% DMG)"
+                combat_log = "DEFENSE STANCE! D'arce braces tower shield (+15 HP, -75% incoming DMG)!"
+                enemy_turn()
+            elif cursor_idx == 1:  # Healing prayer
+                if h["mind"] >= 15:
+                    h["mind"] -= 15
+                    h["hp"] = min(h["max_hp"], h["hp"] + 45)
+                    combat_log = "HEALING PRAYER! Sacred light restores +45 HP!"
+                    enemy_turn()
+                else:
+                    combat_log = "Insufficient Mind points for Healing Prayer!"
+            elif cursor_idx == 2:  # Holy smite
+                dmg = 42
+                monster["hp"] = max(0, monster["hp"] - dmg)
+                combat_log = f"HOLY SMITE! Heavy sanctified downward cleave inflicts {dmg} DMG!"
+                enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
-        elif cursor_idx == 2:  # Devour
-            dmg = 20
-            monster["hp"] = max(0, monster["hp"] - dmg)
-            hero["hunger"] = max(0, hero["hunger"] - 40)
-            combat_log = f"DEVOUR! {hero['name']} bites enemy for {dmg} DMG. Hunger reduced by 40!"
-            enemy_turn()
+
+        elif h["name"] == "ENKI":
+            if cursor_idx == 0:    # Black orb
+                if h["mind"] >= 15:
+                    h["mind"] -= 15
+                    dmg = 50
+                    monster["hp"] = max(0, monster["hp"] - dmg)
+                    combat_log = f"BLACK ORB! Dark sphere pierces 100% defense for {dmg} unblockable DMG!"
+                    enemy_turn()
+                else:
+                    combat_log = "Insufficient Mind points for Black Orb!"
+            elif cursor_idx == 1:  # Blood sacrifice
+                if h["hp"] > 20:
+                    h["hp"] -= 20
+                    h["mind"] = min(h["max_mind"], h["mind"] + 35)
+                    combat_log = "BLOOD SACRIFICE! Enki cuts own flesh (-20 HP) to harvest +35 Mind!"
+                else:
+                    combat_log = "HP too low for Blood Sacrifice!"
+            elif cursor_idx == 2:  # Hexen bind
+                if h["mind"] >= 10:
+                    h["mind"] -= 10
+                    monster["debuff_legs"] = True
+                    combat_log = "HEXEN BIND! Occult shadows root the foe to floor (100% Head hit rate)!"
+                    enemy_turn()
+                else:
+                    combat_log = "Insufficient Mind for Hexen Bind!"
             current_menu = "MAIN"
             cursor_idx = 0
-        elif cursor_idx == 3:  # Back
+
+        else: # THE GIRL
+            if cursor_idx == 0:    # Nimble dodge
+                h["buff"] = "NIMBLE DODGE (100% EVADE)"
+                combat_log = "NIMBLE DODGE! The Girl slips into shadows, guaranteeing 100% evasion!"
+                enemy_turn()
+            elif cursor_idx == 1:  # Loving embrace
+                h["mind"] = min(h["max_mind"], h["mind"] + 35)
+                combat_log = "LOVING EMBRACE! Heartwarming comfort restores +35 Mind and dispels panic!"
+                enemy_turn()
+            elif cursor_idx == 2:  # Distract foe
+                monster["temp_debuff"] = "DISTRACTED (-50% ATK)"
+                combat_log = "DISTRACT FOE! The Girl waves lantern: enemy's attack power halved by 50%!"
+                enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
 
@@ -842,32 +917,61 @@ def handle_selection():
             cursor_idx = 0
 
 # =============================================================================
-# ENEMY TURN & DAMAGE RESOLUTION
+# ENEMY TURN & DAMAGE RESOLUTION WITH HERO PASSIVES
 # =============================================================================
 def enemy_turn():
     global combat_log, active_hero_idx
     hero = squad[active_hero_idx]
 
     if monster["hp"] <= 0 or monster["debuff_decapitated"]:
-        combat_log += " | Foe collapses into pool of blood! VICTORY!"
+        combat_log += " | Foe neutralized! VICTORY!"
         return
 
     # Bleed effect
     if "Bleeding (-4 HP/turn)" in hero["debuffs"]:
         hero["hp"] = max(0, hero["hp"] - 4)
 
-    dmg = monster["atk"] - (hero["def"] // 2)
+    # Passive 1: Enki automatically regenerates +5 Mind per turn!
+    if hero["name"] == "ENKI" and hero["mind"] < hero["max_mind"]:
+        hero["mind"] = min(hero["max_mind"], hero["mind"] + 5)
+
+    # Passive 2: Check Dodge (Cahara 20%, The Girl 30%, Agile buff +35%, Nimble buff 100%)
+    effective_dodge = hero.get("dodge_rate", 0.05)
+    if "NIMBLE DODGE" in hero.get("buff", ""):
+        hero["buff"] = ""
+        combat_log += f" | {hero['name']} swiftly slips into shadows! Attack COMPLETELY EVADED!"
+        return
+    elif "AGILE DANCE" in hero.get("buff", ""):
+        effective_dodge += 0.35
+
+    if random.random() < effective_dodge:
+        combat_log += f" | {hero['name']} deftly dodges the incoming attack! (+0 DMG)"
+        return
+
+    # Incoming Damage calculation with passives
+    base_atk = monster["atk"]
+    if hero["name"] == "THE GIRL":
+        base_atk = int(base_atk * 0.70)
+    if "DISTRACTED (-50% ATK)" in monster.get("temp_debuff", ""):
+        base_atk = int(base_atk * 0.50)
+        monster["temp_debuff"] = ""
+
+    dmg = base_atk - (hero["def"] // 2)
+
+    # D'arce Passive: Iron Will reduces physical damage by 25%
+    if hero["name"] == "D'ARCE":
+        dmg = int(dmg * 0.75)
+
     if hero["is_guarding"]:
-        dmg = int(dmg * 0.3)
+        dmg = int(dmg * 0.25)
         hero["is_guarding"] = False
 
-    dmg = max(4, dmg)
+    dmg = max(3, dmg)
     hero["hp"] = max(0, hero["hp"] - dmg)
-    combat_log += f" | Foe strikes back! {hero['name']} takes {dmg} DMG."
+    combat_log += f" | Foe strikes! {hero['name']} takes {dmg} DMG."
 
     # Chance foe inflicts bleeding scratch
-    import random
-    if random.random() < 0.4 and "Bleeding (-4 HP/turn)" not in hero["debuffs"]:
+    if random.random() < 0.35 and "Bleeding (-4 HP/turn)" not in hero["debuffs"]:
         hero["debuffs"].append("Bleeding (-4 HP/turn)")
         combat_log += " Claws inflict Bleeding (-4 HP/turn)!"
 
@@ -934,12 +1038,12 @@ def run_interactive_loop():
 def run_showcase_trace():
     print("\n>>> STARTING POKÉMON-STYLE COMBAT ARENA SHOWCASE <<<\n")
     states = [
-        ("MAIN", 0, "STEP 1: POKÉMON-STYLE COMBAT ARENA - Clean layout, 100 columns, no icon clutter"),
+        ("MAIN", 0, "STEP 1: POKÉMON-STYLE COMBAT ARENA - Balanced Hero Roster & Clean Uniform Spacing"),
         ("ACTION", 0, "STEP 2: Select 'Action' -> Prepare to target limbs"),
         ("TARGET_LIMB", 2, "STEP 3: Sever 'Right Arm' -> Foe drops sword, DISARMED (ATK reduced to 10)"),
-        ("TARGET_LIMB", 4, "STEP 4: Break 'Legs' -> Foe collapses to CRAWL (100% Flee & 100% Decapitate)"),
-        ("SWITCH_HERO", 1, "STEP 5: Squad Roster -> Switch D'ARCE to Vanguard"),
-        ("TARGET_LIMB", 0, "STEP 6: D'ARCE decapitates crawling foe -> 100% CRITICAL FINISH! VICTORY!")
+        ("TARGET_LIMB", 4, "STEP 4: Break 'Legs' -> Foe collapses to CROUCH (100% Flee & 100% Decapitate)"),
+        ("SWITCH_HERO", 1, "STEP 5: Squad Roster -> Switch D'ARCE (Holy Tank) to Vanguard"),
+        ("TARGET_LIMB", 0, "STEP 6: D'ARCE decapitates crouched foe -> 100% CRITICAL FINISH! VICTORY!")
     ]
 
     global current_menu, cursor_idx, active_hero_idx, combat_log
@@ -947,23 +1051,22 @@ def run_showcase_trace():
         current_menu = m_state
         cursor_idx = c_idx
 
-        # Simulate actions at each step
         if idx == 2: # Step 3: cut right arm
             monster["debuff_arm_r"] = True
             monster["atk"] = 10
             monster["hp"] = 75
-            combat_log = "SEVERED RIGHT ARM! Foe drops weapon -> DISARMED (ATK reduced to 10)!"
+            combat_log = "DISARMED! Weapon arm severed (-20 HP). Foe drops dark blade, ATK reduced to 10!"
         elif idx == 3: # Step 4: break legs
             monster["debuff_legs"] = True
             monster["hp"] = 53
-            combat_log = "BROKEN LEGS! Foe collapses to CRAWL -> 100% FLEE & 100% DECAPITATE!"
+            combat_log = "LEGS BROKEN! -22 HP. Foe collapses to floor -> 100% FLEE & 100% HEAD HIT!"
         elif idx == 4: # Step 5: switch to D'arce
             active_hero_idx = 1
-            combat_log = "VANGUARD DEPLOYED! D'ARCE [Paladin] takes point."
+            combat_log = "VANGUARD DEPLOYED! D'ARCE [Paladin Tank] takes point (-25% incoming DMG)!"
         elif idx == 5: # Step 6: decapitate head
             monster["debuff_decapitated"] = True
             monster["hp"] = 0
-            combat_log = "CRITICAL FINISH! Foe is crawling; D'ARCE decapitates target! VICTORY!"
+            combat_log = "CRITICAL FINISH! Foe is crouched; D'ARCE cleanly severs head! VICTORY!"
 
         render_screen()
         print(f"\n  \033[1;32m>>> [SHOWCASE]: {step_desc} <<<\033[0m")

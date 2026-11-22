@@ -6,16 +6,16 @@ cd /d "%~dp0funger_terminal"
 
 cls
 echo ====================================================================
-echo   FEAR ^& HUNGER: TERMINAL LABYRINTH - COMPLETE MONSTER ENCYCLOPEDIA
+echo   FEAR ^& HUNGER: TERMINAL LABYRINTH - MONSTER ENCYCLOPEDIA (RTL)
 echo ====================================================================
-echo [*] Dang khoi tao mo phong phan cung Verilog RTL cho 36 Quai vat...
+echo [*] Initializing Verilog RTL hardware engine for 36 monsters...
 echo.
 
 if not exist sim mkdir sim
 
 where iverilog >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
-    echo [*] Bien dich Hardware Engine cho 36 quai vat va sinh vat huyen bi...
+    echo [*] Compiling hardware engine for 36 beasts and mythological entities...
     iverilog -g2012 -I src -o sim/show_monsters.out ^
         src/character_rom.v ^
         src/funger_cahara_rom.v ^
@@ -32,27 +32,27 @@ if %ERRORLEVEL% EQU 0 (
         src/monster_rom.v ^
         tb/tb_show_monsters.v
     if %ERRORLEVEL% NEQ 0 (
-        echo [ERROR] Loi bien dich Verilog!
+        echo [ERROR] Verilog compilation failed!
         pause
         exit /b %ERRORLEVEL%
     )
-    echo [OK] Bien dich thanh cong!
+    echo [OK] Compilation successful!
     echo.
 ) else (
     if not exist sim\show_monsters.out (
-        echo [ERROR] Khong tim thay trinh bien dich iverilog trong PATH va file binary chua ton tai!
-        echo Vui long cai dat Icarus Verilog de bien dich mo phong phan cung.
+        echo [ERROR] iverilog compiler was not found in PATH and binary is missing!
         pause
         exit /b 1
     )
 )
 
-echo [*] Dang render sprite pixel art va thong so chien thuat 36 quai vat...
+echo [*] Rendering 36 monster sprites and tactical specifications...
 echo.
 vvp sim/show_monsters.out
 
 echo.
 echo ====================================================================
-echo   Hoan tat xuat toan bo 36 quai vat Fear ^& Hunger: Terminal Labyrinth.
+echo   Render complete for all 36 Fear ^& Hunger monsters.
+echo   Tip: Run SHOW_MONSTER_STATES.bat to inspect tri-state morphology!
 echo ====================================================================
 pause
