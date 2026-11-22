@@ -97,6 +97,12 @@
 `define DIR_LEFT            1'b0  // Opponent Monster (Faces Left)
 `define DIR_RIGHT           1'b1  // Active Character (Faces Right)
 
+// Tactical Stances (2-bit) - Hardware Stance Coprocessor
+`define STANCE_BALANCED     2'd0   // Neutral standard stance
+`define STANCE_BERSERK      2'd1   // +25% ATK, -25% DEF
+`define STANCE_IRON_GUARD   2'd2   // +50% DEF, -12.5% ATK, HP regen per turn
+`define STANCE_AGILE        2'd3   // +25% Evasion, +25% Flee probability
+
 // Squad Size
 `define SQUAD_SIZE          4
 

@@ -113,26 +113,41 @@ module inventory_ram (
                 r_char_hp[target_char_idx] <= new_hp_val;
             end
 
-            // 3. Tiêu hao vật phẩm hồi máu
-            if (item_consume_en) begin
-                if (consume_item_type == `ITEM_POPPY && r_poppy_qty > 8'd0)
-                    r_poppy_qty <= r_poppy_qty - 8'd1;
-                else if (consume_item_type == `ITEM_MARIJUANA && r_marijuana_qty > 8'd0)
-                    r_marijuana_qty <= r_marijuana_qty - 8'd1;
+            // 3 & 4. Quản lý Kho đồ: Hợp nhất Tiêu hao & Nhận vật phẩm (Có bão hòa chống tràn & chống ghi đè)
+            if (item_consume_en && item_receive_en && (consume_item_type == receive_item_type)) begin
+                if (consume_item_type == `ITEM_POPPY) begin
+                    if (r_poppy_qty + receive_amount > 8'd1)
+                        r_poppy_qty <= r_poppy_qty + receive_amount - 8'd1;
+                    else
+                        r_poppy_qty <= 8'd0;
+                end else if (consume_item_type == `ITEM_MARIJUANA) begin
+                    if (r_marijuana_qty + receive_amount > 8'd1)
+                        r_marijuana_qty <= r_marijuana_qty + receive_amount - 8'd1;
+                    else
+                        r_marijuana_qty <= 8'd0;
+                end
+            end else begin
+                if (item_consume_en) begin
+                    if (consume_item_type == `ITEM_POPPY && r_poppy_qty > 8'd0)
+                        r_poppy_qty <= r_poppy_qty - 8'd1;
+                    else if (consume_item_type == `ITEM_MARIJUANA && r_marijuana_qty > 8'd0)
+                        r_marijuana_qty <= r_marijuana_qty - 8'd1;
+                end
+
+                if (item_receive_en) begin
+                    if (receive_item_type == `ITEM_POPPY)
+                        r_poppy_qty <= (r_poppy_qty + receive_amount > 8'd255) ? 8'd255 : (r_poppy_qty + receive_amount);
+                    else if (receive_item_type == `ITEM_MARIJUANA)
+                        r_marijuana_qty <= (r_marijuana_qty + receive_amount > 8'd255) ? 8'd255 : (r_marijuana_qty + receive_amount);
+                    else if (receive_item_type == `ITEM_KEY)
+                        r_key_qty <= (r_key_qty + receive_amount > 8'd255) ? 8'd255 : (r_key_qty + receive_amount);
+                end
             end
 
-            // 4. Nhận vật phẩm (Rương mở hoặc Quái rớt)
-            if (item_receive_en) begin
-                if (receive_item_type == `ITEM_POPPY)
-                    r_poppy_qty <= r_poppy_qty + receive_amount;
-                else if (receive_item_type == `ITEM_MARIJUANA)
-                    r_marijuana_qty <= r_marijuana_qty + receive_amount;
-                else if (receive_item_type == `ITEM_KEY)
-                    r_key_qty <= r_key_qty + receive_amount;
+            // 5. Đổi nhân vật chiến đấu active (bảo vệ không ghi đè khi draft_load_en)
+            if (!draft_load_en) begin
+                r_active_idx <= active_idx_in;
             end
-
-            // 5. Đổi nhân vật chiến đấu active
-            r_active_idx <= active_idx_in;
         end
     end
 

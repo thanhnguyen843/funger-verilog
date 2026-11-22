@@ -31,7 +31,9 @@ module rng_unit (
             else
                 lfsr_val <= 32'hACE1_5729;
         end else if (step_en) begin
-            if (lfsr_feedback)
+            if (lfsr_val == 32'd0)
+                lfsr_val <= 32'hACE1_5729; // Auto-recovery from all-zero SEU lockup state
+            else if (lfsr_feedback)
                 lfsr_val <= (lfsr_val << 1) ^ 32'h0040_0007;
             else
                 lfsr_val <= (lfsr_val << 1);
@@ -43,7 +45,9 @@ module rng_unit (
 
     // 0..99 percentage using Lemire Fast Multiplier Scaling (eliminates hardware modulo divider)
     // (lfsr_val[15:0] * 100) >> 16 maps [0, 65535] uniformly onto [0, 99]
-    assign rand_pct = (lfsr_val[15:0] * 16'd100) >> 16;
+    // Intermediate product widened to 24-bit to prevent 16-bit truncation
+    wire [23:0] scaled_pct_prod = lfsr_val[15:0] * 8'd100;
+    assign rand_pct = scaled_pct_prod[22:16];
 
     // Uniform pseudo-random monster ID 1 to 36 without hardware modulo
     // Maps [0, 255] onto [0, 35] via scale, then adds 1 -> [1, 36]

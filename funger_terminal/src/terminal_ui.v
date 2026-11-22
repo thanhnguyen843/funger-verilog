@@ -22,7 +22,7 @@ module terminal_ui;
 
     map_rom       u_map(.in_x(32'sd0), .in_y(32'sd0), .out_tile());
     monster_rom   u_mon_db(.monster_id(6'd1), .is_elite(1'b0), .base_hp(), .base_atk(), .base_def(), .spawn_weight(), .is_default_elite());
-    character_rom u_char_db();
+    character_rom u_char_db(.char_id(4'd1), .is_hard_mode(1'b0), .char_hp(), .char_atk(), .char_def(), .char_name(), .char_class());
 
     // Sprite models for Chest and Key
     reg  [5:0] c_row_t, c_col_t, c_row_b, c_col_b;
@@ -1512,8 +1512,8 @@ module terminal_ui;
         input [7:0]   arm_l_hp, arm_l_max;
         input [7:0]   leg_r_hp, leg_r_max;
         input         is_crawling, is_disarmed;
-        // Event log
-        input [511:0] last_action_msg;
+        // Event log (128 characters / 1024 bits to prevent truncation)
+        input [1023:0] last_action_msg;
         integer lp, c;
         integer pw, ph, mw, mh;
         reg        pt_trans, pb_trans, mt_trans, mb_trans;
@@ -1693,10 +1693,10 @@ module terminal_ui;
             // ----------------------------------------------------------------
             // DIRECT ACTION DECK (INSTANT 1-KEY COMMANDS)
             // ----------------------------------------------------------------
-            $display("\033[1;37m  TARGET LIMB : \033[1;31m[H]\033[0m Head (Instakill)  \033[1;33m[T]\033[0m Torso  \033[1;36m[R]\033[0m R-Arm (Disarm)  \033[1;36m[L]\033[0m L-Arm  \033[1;32m[K]\033[0m Legs");
-            $display("\033[1;37m  HEXEN SKILL : \033[1;35m[1]\033[0m %-16s  \033[1;35m[2]\033[0m %-16s", sk1_name, sk2_name);
-            $display("\033[1;37m  USE POUCH   : \033[1;31m[P]\033[0m Poppy (+HP)  \033[1;32m[M]\033[0m Weed (+HP)  \033[1;33m[B]\033[0m Bread (-Hng)  \033[1;34m[A]\033[0m Ale (+Mnd)");
-            $display("\033[1;37m  TACTICS     : \033[1;36m[G]\033[0m Guard (-70%% DMG)  \033[1;33m[S]\033[0m Switch Hero  \033[1;31m[F]\033[0m Flee (50%%)");
+            $display("\033[1;37m  TARGET LIMB : \033[1;31m[H]\033[0m Head (Instakill)  \033[1;33m[T]\033[0m Torso  \033[1;36m[R]\033[0m R-Arm (Disarm)  \033[1;36m[L]\033[0m L-Arm  \033[1;32m[K]\033[0m Legs\033[0m");
+            $display("\033[1;37m  HEXEN SKILL : \033[1;35m[1]\033[0m %-16s  \033[1;35m[2]\033[0m %-16s\033[0m", sk1_name, sk2_name);
+            $display("\033[1;37m  USE POUCH   : \033[1;31m[P]\033[0m Poppy (+HP)  \033[1;32m[M]\033[0m Weed (+HP)  \033[1;33m[B]\033[0m Bread (-Hng)  \033[1;34m[A]\033[0m Ale (+Mnd)\033[0m");
+            $display("\033[1;37m  TACTICS     : \033[1;36m[G]\033[0m Guard (-70%%)  \033[1;33m[S]\033[0m Switch Hero  \033[1;31m[F]\033[0m Flee  \033[1;32m[Z]\033[0m Stance (Brsrk/Grd/Agl)\033[0m");
             $display("\033[1;36m====================================================================================================\033[0m");
         end
     endtask
