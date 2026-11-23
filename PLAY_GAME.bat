@@ -26,6 +26,7 @@ if %ERRORLEVEL% EQU 0 (
         src/inventory_ram.v ^
         src/chest_sprite_rom.v ^
         src/key_sprite_rom.v ^
+        src/sprite_rom.v ^
         src/funger_cahara_rom.v ^
         src/funger_darce_rom.v ^
         src/funger_enki_rom.v ^

@@ -431,6 +431,7 @@ def run_master_game():
             "bread": 6,
             "meat": 4,
             "vial": 3,
+            "ale": 3,
             "key": 0
         }
     else:
@@ -441,6 +442,7 @@ def run_master_game():
             "bread": 4,
             "meat": 2,
             "vial": 2,
+            "ale": 2,
             "key": 0
         }
 
@@ -650,9 +652,23 @@ def run_master_game():
                     key_count = min(3, key_count + 1)
                     recent_log = f"[{solo_hero['name']}]: Keen perception disarms spring needle safely! Obtained Runic Key ({key_count}/3)!"
                 else:
-                    solo_hero["hp"] = max(1, solo_hero["hp"] - 20)
-                    key_count = min(3, key_count + 1)
-                    recent_log = f"[TRAP TRIGGERED]: Spring needle grazed {solo_hero['name']} (-20 HP)! Retrieved Runic Key ({key_count}/3)!"
+                    trap_dmg = 20
+                    if solo_hero["hp"] <= trap_dmg:
+                        if inventory.get("totem", 0) > 0:
+                            inventory["totem"] -= 1
+                            solo_hero["hp"] = max(1, solo_hero["max_hp"] // 2)
+                            key_count = min(3, key_count + 1)
+                            if "debuffs" in solo_hero:
+                                solo_hero["debuffs"].clear()
+                            recent_log = f"\033[1;33m★ [TOTEM OF UNDYING DETONATES]! Lethal trap deflected! Restored to {solo_hero['hp']} HP! Got Key ({key_count}/3)!\033[0m"
+                        else:
+                            solo_hero["hp"] = 0
+                            show_game_over_screen(solo_hero, "SPRING NEEDLE TRAP")
+                            return "GAME_OVER"
+                    else:
+                        solo_hero["hp"] -= trap_dmg
+                        key_count = min(3, key_count + 1)
+                        recent_log = f"[TRAP TRIGGERED]: Spring needle grazed {solo_hero['name']} (-20 HP)! Retrieved Runic Key ({key_count}/3)!"
             else:
                 # Regular supply chest: 25% chance of Chest Mimic encounter!
                 is_mimic = (random.random() < 0.25) and (MIMIC_ID not in encountered_monsters_this_run)
@@ -761,8 +777,21 @@ def run_master_game():
         if step_count % 35 == 0 and solo_hero["name"] != "NAS'HRAH":
             solo_hero["hunger"] = min(100, solo_hero.get("hunger", 0) + 15)
             if solo_hero["hunger"] >= 80:
-                solo_hero["hp"] = max(1, solo_hero["hp"] - 10)
-                recent_log = f"[STARVATION]: Severe stomach cramps drain -10 HP! Eat bread in pouch [I]."
+                if solo_hero["hp"] <= 10:
+                    if inventory.get("totem", 0) > 0:
+                        inventory["totem"] -= 1
+                        solo_hero["hp"] = max(1, solo_hero["max_hp"] // 2)
+                        solo_hero["hunger"] = 0
+                        if "debuffs" in solo_hero:
+                            solo_hero["debuffs"].clear()
+                        recent_log = f"\033[1;33m★ [TOTEM OF UNDYING DETONATES]! Fatal starvation shock reversed! Restored to {solo_hero['hp']} HP!\033[0m"
+                    else:
+                        solo_hero["hp"] = 0
+                        show_game_over_screen(solo_hero, "STARVATION & EXHAUSTION")
+                        return "GAME_OVER"
+                else:
+                    solo_hero["hp"] -= 10
+                    recent_log = f"[STARVATION]: Severe stomach cramps drain -10 HP! Eat bread in pouch [I]."
 
     # Exploration Game Loop
     in_pouch = False
@@ -936,8 +965,10 @@ def run_master_game():
             elif line == 'd':
                 res = handle_map_move(1, 0)
             elif line in ('i', 'pouch'):
-                in_pouch = True
-                pouch_cur = 0
+                inventory["key"] = key_count
+                run_pouch_interactive(hero=solo_hero, inv_dict=inventory, is_hardcore=is_hardcore)
+                key_count = inventory.get("key", key_count)
+                recent_log = "[SURVIVAL POUCH]: Returned to labyrinth exploration."
                 continue
             elif line in ('g', 'guide'):
                 run_guide_modal()

@@ -226,7 +226,7 @@ def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardc
                             if "debuffs" in hero:
                                 hero["debuffs"].clear()
                             if "severed_limbs" in hero:
-                                hero["severed_limbs"] = {"head": 100, "torso": 100, "arm_r": 100, "arm_l": 100, "leg_r": 100, "leg_r": 100}
+                                hero["severed_limbs"] = {"head": 100, "torso": 100, "arm_r": 100, "arm_l": 100, "leg_r": 100, "leg_l": 100}
                             hero["hp"] = hero.get("max_hp", 100)
                         status_msg = f"★ [KÍCH HOẠT TOTEM OF UNDYING]: Tái sinh toàn bộ tứ chi bị đứt! Sinh lực hồi phục 100%!"
 

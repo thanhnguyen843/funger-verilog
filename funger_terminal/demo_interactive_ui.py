@@ -1017,15 +1017,21 @@ def get_current_menu_data():
         }
     elif current_menu == "POUCH":
         cap = h.get("bag_cap", 5)
+        p_opts = []
+        if inventory.get("totem", 0) > 0:
+            p_opts.append({"label": f"TOTEM OF UNDYING [{inventory.get('totem',0)}]", "desc": "-> Ancestral golden artifact: Auto-revives or full restore"})
+        p_opts.append({"label": f"WHITE POPPY [{inventory.get('poppy',0)}/{cap}]", "desc": "-> Restores HP & heals wounds"})
+        p_opts.append({"label": f"MEDICINAL HERB [{inventory.get('weed',0)}/{cap}]", "desc": "-> Restores +120 HP potent medicine"})
+        p_opts.append({"label": f"MOLDY BREAD [{inventory.get('bread',0)}/{cap}]",  "desc": "-> Dungeon rations | Relieves hunger"})
+        if inventory.get("meat", 0) > 0:
+            p_opts.append({"label": f"DRIED MEAT [{inventory.get('meat',0)}/{cap}]", "desc": "-> +20 HP & -60 Hunger cured rations"})
+        p_opts.append({"label": f"VINTAGE ALE [{inventory.get('ale',0)}/{cap}]",    "desc": "-> Cleanses terror | Restores Mind"})
+        if inventory.get("vial", 0) > 0:
+            p_opts.append({"label": f"ALCHEMICAL VIAL [{inventory.get('vial',0)}/{cap}]", "desc": "-> Cleanses poison, bleeding & +25 Mind"})
+        p_opts.append({"label": "BACK",                                       "desc": "-> Return to main combat menu"})
         return {
             "title": f"ITEM POUCH & SURVIVAL SUPPLIES (Capacity: {cap})",
-            "options": [
-                {"label": f"WHITE POPPY [{inventory['poppy']}/{cap}]", "desc": "-> Restores HP & heals wounds"},
-                {"label": f"MEDICINAL HERB [{inventory['weed']}/{cap}]", "desc": "-> Restores +120 HP potent medicine"},
-                {"label": f"MOLDY BREAD [{inventory['bread']}/{cap}]",  "desc": "-> Dungeon rations | Relieves hunger"},
-                {"label": f"VINTAGE ALE [{inventory['ale']}/{cap}]",    "desc": "-> Cleanses terror | Restores Mind"},
-                {"label": "BACK",                                       "desc": "-> Return to main combat menu"}
-            ]
+            "options": p_opts
         }
     elif current_menu == "TACTICS":
         return {
@@ -1540,10 +1546,32 @@ def handle_selection():
         cursor_idx = 0
 
     elif current_menu == "POUCH":
+        opts = get_menu_options()["options"]
+        if cursor_idx >= len(opts):
+            cursor_idx = 0
+            current_menu = "MAIN"
+            return
+
+        chosen_opt = opts[cursor_idx]["label"]
         max_t = hero.get("max_toxicity", 100)
 
-        if cursor_idx == 0:    # Poppy
-            if inventory["poppy"] > 0:
+        if "TOTEM" in chosen_opt:
+            if inventory.get("totem", 0) > 0:
+                inventory["totem"] -= 1
+                hero["hp"] = hero["max_hp"]
+                if "debuffs" in hero:
+                    hero["debuffs"].clear()
+                if "severed_limbs" in hero:
+                    hero["severed_limbs"] = {"head": 100, "torso": 100, "arm_r": 100, "arm_l": 100, "leg_r": 100, "leg_l": 100}
+                combat_log = f"\033[1;33m★ [TOTEM OF UNDYING DETONATES]! Golden amber aura mends all severed limbs and restores {hero['name']} to full HP!\033[0m"
+                enemy_turn()
+            else:
+                combat_log = "Out of Totems!"
+            current_menu = "MAIN"
+            cursor_idx = 0
+
+        elif "POPPY" in chosen_opt:
+            if inventory.get("poppy", 0) > 0:
                 inventory["poppy"] -= 1
                 if hero["name"] == "NAS'HRAH":
                     combat_log = "NAS'HRAH SNEERS: 'I have no mortal stomach for your weeds!' (0 HP healed)."
@@ -1565,8 +1593,8 @@ def handle_selection():
             current_menu = "MAIN"
             cursor_idx = 0
 
-        elif cursor_idx == 1:  # Weed
-            if inventory["weed"] > 0:
+        elif "HERB" in chosen_opt or "WEED" in chosen_opt:
+            if inventory.get("weed", 0) > 0:
                 inventory["weed"] -= 1
                 if hero["name"] == "NAS'HRAH":
                     combat_log = "NAS'HRAH SNEERS: 'Mortal herbalism is beneath me!' (0 HP healed)."
@@ -1586,8 +1614,8 @@ def handle_selection():
             current_menu = "MAIN"
             cursor_idx = 0
 
-        elif cursor_idx == 2:  # Bread
-            if inventory["bread"] > 0:
+        elif "BREAD" in chosen_opt:
+            if inventory.get("bread", 0) > 0:
                 inventory["bread"] -= 1
                 if hero["name"] == "NAS'HRAH":
                     combat_log = "NAS'HRAH requires no mortal bread! Hunger remains 0."
@@ -1605,8 +1633,19 @@ def handle_selection():
             current_menu = "MAIN"
             cursor_idx = 0
 
-        elif cursor_idx == 3:  # Ale
-            if inventory["ale"] > 0:
+        elif "MEAT" in chosen_opt:
+            if inventory.get("meat", 0) > 0:
+                inventory["meat"] -= 1
+                hero["hunger"] = max(0, hero.get("hunger", 0) - 60)
+                hero["hp"] = min(hero["max_hp"], hero["hp"] + 20)
+                combat_log = f"{hero['name']} eats Dried Meat (+20 HP, -60 Hunger)."
+            else:
+                combat_log = "Out of Dried Meat!"
+            current_menu = "MAIN"
+            cursor_idx = 0
+
+        elif "ALE" in chosen_opt:
+            if inventory.get("ale", 0) > 0:
                 inventory["ale"] -= 1
                 if hero["name"] == "MOONLESS":
                     combat_log = "Moonless sniffs the vintage ale and growls! Beasts cannot drink alcohol!"
@@ -1628,7 +1667,19 @@ def handle_selection():
             current_menu = "MAIN"
             cursor_idx = 0
 
-        elif cursor_idx == 4:  # Back
+        elif "VIAL" in chosen_opt:
+            if inventory.get("vial", 0) > 0:
+                inventory["vial"] -= 1
+                hero["mind"] = min(hero["max_mind"], hero.get("mind", 100) + 25)
+                if "debuffs" in hero:
+                    hero["debuffs"].clear()
+                combat_log = f"{hero['name']} applies Alchemical Vial (+25 Mind, cleansed all debuffs)."
+            else:
+                combat_log = "Out of Alchemical Vials!"
+            current_menu = "MAIN"
+            cursor_idx = 0
+
+        elif "BACK" in chosen_opt:
             current_menu = "MAIN"
             cursor_idx = 0
 
@@ -1870,8 +1921,18 @@ def enemy_turn():
 
     # Down check
     if hero["hp"] == 0:
-        combat_log += f" | {hero['name']} has fallen in the dark catacombs! DEFEAT!"
-        combat_outcome = "DEFEAT"
+        if inventory.get("totem", 0) > 0:
+            inventory["totem"] -= 1
+            revive_hp = max(1, hero["max_hp"] // 2)
+            hero["hp"] = revive_hp
+            if "debuffs" in hero:
+                hero["debuffs"].clear()
+            if "severed_limbs" in hero:
+                hero["severed_limbs"] = {"head": 100, "torso": 100, "arm_r": 100, "arm_l": 100, "leg_r": 100, "leg_l": 100}
+            combat_log += f" | \033[1;33m★ [TOTEM OF UNDYING DETONATES]! Golden amber aura defies death! Severed limbs restored & {hero['name']} revived to {hero['hp']} HP!\033[0m"
+        else:
+            combat_log += f" | {hero['name']} has fallen in the dark catacombs! DEFEAT!"
+            combat_outcome = "DEFEAT"
 
 # =============================================================================
 # MAIN INTERACTIVE LOOP
