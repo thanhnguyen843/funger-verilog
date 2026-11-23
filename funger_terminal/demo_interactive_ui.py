@@ -106,6 +106,7 @@ def make_bar(curr, max_v, bar_len=16, color_code="32"):
 # =============================================================================
 HERO_SPRITES = {}
 RAW_MONSTER_8 = []
+ALL_MONSTER_SPRITES = {}
 try:
     sprite_json_path = os.path.join(os.path.dirname(__file__), "extracted_sprites.json")
     if os.path.exists(sprite_json_path):
@@ -113,6 +114,10 @@ try:
             sp_data = json.load(f)
             HERO_SPRITES = sp_data.get("heroes", {})
             RAW_MONSTER_8 = sp_data.get("monster_8", [])
+    mon_json_path = os.path.join(os.path.dirname(__file__), "all_monster_sprites.json")
+    if os.path.exists(mon_json_path):
+        with open(mon_json_path, "r", encoding="utf-8") as f:
+            ALL_MONSTER_SPRITES = json.load(f)
 except Exception:
     pass
 
@@ -329,10 +334,10 @@ ALL_HEROES = [
         "crit_rate": 0.35,
         "passive": "Deep Pockets (2x Bag), +25% Dodge",
         "skills": [
-            {"label": "TWIN DAGGERS", "desc": "-> Rapid dual slice: 2x 18 Physical DMG"},
-            {"label": "POISON DART",  "desc": "-> Occult Chem: 28 Magic DMG (bypasses DEF, poisons)"},
-            {"label": "STEAL ITEM",   "desc": "-> Pickpocket foe: steal 1 Poppy/Bread from target"},
-            {"label": "SMOKE BOMB",   "desc": "-> Blind opponent: 100% flee battle immediately"}
+            {"label": "TWIN DAGGERS", "desc": "-> 12 Mind | Rapid dual slice: 38 Phys DMG"},
+            {"label": "POISON DART",  "desc": "-> 15 Mind | Occult Chem: 28 Magic DMG (Poisons foe)"},
+            {"label": "STEAL ITEM",   "desc": "-> 15 Mind | Pickpocket: Steal 1 Poppy/Bread from target"},
+            {"label": "SMOKE BOMB",   "desc": "-> 20 Mind | Blind opponent: 100% flee battle immediately"}
         ],
         "assessment": [
             "Extremely versatile survivor. Deep pockets allow carrying twice",
@@ -359,10 +364,10 @@ ALL_HEROES = [
         "crit_rate": 0.15,
         "passive": "Iron Will (-35% DMG), 0% Tox Prayer",
         "skills": [
-            {"label": "DEFENSE STANCE", "desc": "-> Guard blocks 75% dmg & restores +15 HP"},
-            {"label": "HEALING PRAYER", "desc": "-> Spend 15 Mind: restore +45 HP with 0% TOXICITY!"},
-            {"label": "HOLY SMITE",     "desc": "-> Holy Smite: 44 DMG (x1.4 vs Armored & Undead)"},
-            {"label": "KNIGHT CHARGE",  "desc": "-> Heavy shield bash: 36 Phys DMG & disrupts foe"}
+            {"label": "DEFENSE STANCE", "desc": "-> 10 Mind | Tower shield: -75% DMG & +15 HP"},
+            {"label": "HEALING PRAYER", "desc": "-> 20 Mind | Restore +45 HP with 0% TOXICITY!"},
+            {"label": "HOLY SMITE",     "desc": "-> 22 Mind | Sanctified cleave: 44 DMG (x1.4 vs Armor/Undead)"},
+            {"label": "KNIGHT CHARGE",  "desc": "-> 12 Mind, -8 HP Recoil | Heavy shield bash: 38 Phys DMG"}
         ],
         "assessment": [
             "Supreme physical durability. Steel plate deflects 35% of blade",
@@ -389,10 +394,10 @@ ALL_HEROES = [
         "crit_rate": 0.20,
         "passive": "Occult Mind (+5 MND/t), Frail Body",
         "skills": [
-            {"label": "BLACK ORB",       "desc": "-> 52 True Magic DMG (x1.5 vs Spectral/Armor, pierces DEF)"},
-            {"label": "RITUAL DAGGER",   "desc": "-> Sacrificial thrust: 24 Phys DMG, siphons +15 Mind"},
-            {"label": "BLOOD SACRIFICE", "desc": "-> Convert 20 HP into +40 Mind points"},
-            {"label": "HEXEN BIND",      "desc": "-> Spend 10 Mind: paralyze foe, guaranteed head hit"}
+            {"label": "BLACK ORB",       "desc": "-> 25 Mind | 52 True Magic DMG (Pierces DEF, x1.5 Spectral)"},
+            {"label": "RITUAL DAGGER",   "desc": "-> 0 Mind | Sacrificial thrust: 20 DMG, siphons +15 Mind"},
+            {"label": "BLOOD SACRIFICE", "desc": "-> -20 HP | Convert flesh into +40 Mind points"},
+            {"label": "HEXEN BIND",      "desc": "-> 15 Mind | Paralyze foe limbs, guaranteed head hit"}
         ],
         "assessment": [
             "Supreme arcane firepower. Black Orb demolishes spectral ghosts",
@@ -419,10 +424,10 @@ ALL_HEROES = [
         "crit_rate": 0.25,
         "passive": "Beast Gut (Tox 150%), Bloodlust +50%",
         "skills": [
-            {"label": "WAR AXE",      "desc": "-> Heavy cleave: 46 brutal Physical DMG"},
-            {"label": "SPIRIT TOTEM", "desc": "-> Ancestral Spirit Magic: 32 Spirit Magic DMG"},
-            {"label": "FERAL ROAR",   "desc": "-> Terrifying war cry: lowers foe ATK by 40%"},
-            {"label": "DEVOUR FLESH", "desc": "-> Consume raw beast meat: restore +35 HP, cleanse bleed"}
+            {"label": "WAR AXE",      "desc": "-> 14 Mind (or -15 HP) | Brutal cleave: 48 Phys DMG"},
+            {"label": "SPIRIT TOTEM", "desc": "-> 16 Mind | Ancestral Spirit Magic: 32 Spirit DMG"},
+            {"label": "FERAL ROAR",   "desc": "-> 14 Mind | Terrifying war cry: lowers foe ATK by 40%"},
+            {"label": "DEVOUR FLESH", "desc": "-> +15% Toxicity | Consume raw meat: +35 HP, -25 Hunger"}
         ],
         "assessment": [
             "Unstoppable juggernaut. Highest HP and physical cleave in game.",
@@ -449,10 +454,10 @@ ALL_HEROES = [
         "crit_rate": 0.35,
         "passive": "Tactician Focus, Ale gives +50% ATK",
         "skills": [
-            {"label": "FENCING THRUST",   "desc": "-> Precision rapier thrust: 38 piercing Phys DMG"},
-            {"label": "LEGION LIGHT",     "desc": "-> Solar Magic: 35 Magic DMG + lowers enemy ACC"},
-            {"label": "TACTICAL FOCUS",   "desc": "-> Focus strike: +50% DMG on next hit & 100% crit"},
-            {"label": "WAR CRY",          "desc": "-> Inspires self: +25 Mind, clears fear/doubt"}
+            {"label": "FENCING THRUST",   "desc": "-> 12 Mind | Precision rapier thrust: 38 piercing Phys DMG"},
+            {"label": "LEGION LIGHT",     "desc": "-> 20 Mind | Solar Magic: 35 Magic DMG + lowers foe ACC"},
+            {"label": "TACTICAL FOCUS",   "desc": "-> 15 Mind | Focus strike: +50% DMG on next strike"},
+            {"label": "WAR CRY",          "desc": "-> 14 Mind | Shatters 35% of enemy DEF, +10 Mind"}
         ],
         "assessment": [
             "Precision tactician. Vintage Ale turns him into a whirlwind of",
@@ -479,10 +484,10 @@ ALL_HEROES = [
         "crit_rate": 0.30,
         "passive": "Feral Gut (0% Herb Tox), 30% Dodge",
         "skills": [
-            {"label": "FERAL BITE",    "desc": "-> Vicious jaw crunch: 40 Phys DMG + Bleeding"},
-            {"label": "MOON HOWL",     "desc": "-> Lunar Magic: 30 Magic DMG + 45% stun/crouch foe"},
-            {"label": "SHADOW POUNCE", "desc": "-> Leap attack: 35 DMG (55 DMG on crouched foe)"},
-            {"label": "SCENT DANGER",  "desc": "-> Warns party: +35% evasion for next 2 turns"}
+            {"label": "FERAL BITE",    "desc": "-> +15 Hunger | Savage jaw crunch: 40 Phys DMG + Bleed"},
+            {"label": "MOON HOWL",     "desc": "-> 15 Mind | Lunar Magic: 30 Magic DMG + 45% crouch foe"},
+            {"label": "SHADOW POUNCE", "desc": "-> 12 Mind | Leap attack: 35 DMG (55 DMG on crouched foe)"},
+            {"label": "SCENT DANGER",  "desc": "-> 10 Mind | Danger scent: +35% evasion for 2 turns"}
         ],
         "assessment": [
             "High-speed predator. 30% natural evasion plus danger scent.",
@@ -509,10 +514,10 @@ ALL_HEROES = [
         "crit_rate": 0.20,
         "passive": "Pure Serenity (-10% Tox/t), Dread-Imm",
         "skills": [
-            {"label": "NIMBLE DODGE",   "desc": "-> Duck into shadows: 100% dodge enemy's next hit"},
-            {"label": "LOVING EMBRACE", "desc": "-> Comfort self: restore +40 Mind & dispel terror"},
-            {"label": "PURE LIGHT",     "desc": "-> Holy Radiance: 32 Magic DMG (x1.6 vs dark/ghosts)"},
-            {"label": "DISTRACT FOE",   "desc": "-> Wave lantern: reduce enemy attack power by 50%"}
+            {"label": "NIMBLE DODGE",   "desc": "-> 12 Mind | Duck into shadows: 100% dodge enemy next hit"},
+            {"label": "LOVING EMBRACE", "desc": "-> 15 Mind | Comfort self: restore +35 HP & dispel terror"},
+            {"label": "PURE LIGHT",     "desc": "-> 20 Mind | Holy Radiance: 32 Magic DMG (x1.6 vs dark/ghosts)"},
+            {"label": "DISTRACT FOE",   "desc": "-> 10 Mind | Wave lantern: enemy attack power halved 50%"}
         ],
         "assessment": [
             "Evasive miracle worker. Highest base dodge (35%) and 100% immune",
@@ -539,10 +544,10 @@ ALL_HEROES = [
         "crit_rate": 0.25,
         "passive": "Undead Relic (0 Hunger, 0% Tox, Fire)",
         "skills": [
-            {"label": "COMBUSTION",      "desc": "-> Gro-goroth flame: 58 Unstoppable Fire Magic DMG"},
-            {"label": "CURSE OF DECAY",  "desc": "-> Hex: 32 Dark Magic DMG + inflicts rotting flesh"},
-            {"label": "HEAD GNAW",       "desc": "-> Flying tooth bite: 26 Phys DMG, siphons +15 HP"},
-            {"label": "MOCK FOE",        "desc": "-> Insults foe: strips 50% enemy DEF"}
+            {"label": "COMBUSTION",      "desc": "-> 25 Mind | Gro-goroth flame: 62 Unstoppable Fire DMG"},
+            {"label": "CURSE OF DECAY",  "desc": "-> 20 Mind | Hex: 32 Dark Magic DMG + rotting flesh DoT"},
+            {"label": "HEAD GNAW",       "desc": "-> 0 Mind | Flying tooth bite: 24 Phys DMG, siphons +15 HP"},
+            {"label": "MOCK FOE",        "desc": "-> 15 Mind | Insults foe: strips 50% enemy DEF"}
         ],
         "assessment": [
             "Incarnation of destruction. Unstoppable fire magic incinerates",
@@ -797,18 +802,31 @@ def render_screen():
     c_mcard = "\033[1;33m" if current_menu == "TARGET_LIMB" else "\033[1;30m"
     m_border = f"{c_mcard}+" + "-" * 52 + f"+{c_mcard}\033[0m"
 
-    if monster.get("debuff_decapitated"):
-        m_sprite = MONSTER_SPRITE_DECAPITATED
-        m_model_sub = "\033[90m[NEUTRALIZED]\033[0m"
-    elif monster.get("debuff_legs"):
-        m_sprite = MONSTER_SPRITE_CRAWLING
-        m_model_sub = "\033[1;33m[CROUCHED]\033[0m"
-    elif monster.get("debuff_arm_r") or monster.get("debuff_arm_l"):
-        m_sprite = MONSTER_SPRITE_DISARMED
-        m_model_sub = "\033[1;33m[DISARMED]\033[0m"
+    mid_str = str(monster.get("id", 8))
+    mon_data = ALL_MONSTER_SPRITES.get(mid_str)
+    if mon_data:
+        if monster.get("debuff_decapitated") or monster.get("hp", 1) <= 0:
+            m_sprite = mon_data.get("dead", mon_data.get("normal", []))
+            m_model_sub = "\033[90m[NEUTRALIZED]\033[0m"
+        elif monster.get("debuff_legs") or monster.get("debuff_arm_r") or monster.get("debuff_arm_l") or monster.get("hp", 100) <= (monster.get("max_hp", 100) * 0.5):
+            m_sprite = mon_data.get("injured", mon_data.get("normal", []))
+            m_model_sub = "\033[1;33m[INJURED / POSTURE COLLAPSE]\033[0m"
+        else:
+            m_sprite = mon_data.get("normal", [])
+            m_model_sub = ""
     else:
-        m_sprite = MONSTER_SPRITE_INTACT
-        m_model_sub = ""
+        if monster.get("debuff_decapitated"):
+            m_sprite = MONSTER_SPRITE_DECAPITATED
+            m_model_sub = "\033[90m[NEUTRALIZED]\033[0m"
+        elif monster.get("debuff_legs"):
+            m_sprite = MONSTER_SPRITE_CRAWLING
+            m_model_sub = "\033[1;33m[CROUCHED]\033[0m"
+        elif monster.get("debuff_arm_r") or monster.get("debuff_arm_l"):
+            m_sprite = MONSTER_SPRITE_DISARMED
+            m_model_sub = "\033[1;33m[DISARMED]\033[0m"
+        else:
+            m_sprite = MONSTER_SPRITE_INTACT
+            m_model_sub = ""
 
     m_pct = int(max(0, monster["hp"]) / float(max(1, monster["max_hp"])) * 100)
     m_hp_bar = make_bar(monster["hp"], monster["max_hp"], 16, "31")
@@ -1174,231 +1192,343 @@ def handle_selection():
 
         # Execute hero-specific skill
         if h["name"] == "CAHARA":
-            if cursor_idx == 0:    # Twin Daggers
-                dmg = 38
-                monster["hp"] = max(0, monster["hp"] - dmg)
-                combat_log = f"TWIN DAGGERS! Cahara strikes with rapid dual thrusts for {dmg} DMG!"
-                enemy_turn()
-            elif cursor_idx == 1:  # Poison Dart
-                dmg = 28
-                monster["hp"] = max(0, monster["hp"] - dmg)
-                combat_log = f"POISON DART! Toxic alchemy pierces defense for {dmg} Chem Magic DMG!"
-                enemy_turn()
-            elif cursor_idx == 2:  # Steal Item
-                stolen_item = "poppy" if random.random() < 0.5 else "bread"
-                cap = h.get("bag_cap", 10)
-                if inventory[stolen_item] < cap:
-                    inventory[stolen_item] += 1
-                combat_log = f"STEAL SUCCESS! Pickpocketed 1x {stolen_item.upper()} from target!"
-                enemy_turn()
-            elif cursor_idx == 3:  # Smoke Bomb
-                combat_log = "SMOKE BOMB! Dense fog blinds opponent. 100% ESCAPE SUCCESSFUL!"
-                combat_outcome = "FLEE"
-
-        elif h["name"] == "D'ARCE":
-            if cursor_idx == 0:    # Defense stance
-                h["is_guarding"] = True
-                h["hp"] = min(h["max_hp"], h["hp"] + 15)
-                h["buff"] = "IRON VOW (-75% DMG)"
-                combat_log = "DEFENSE STANCE! D'arce braces tower shield (+15 HP, -75% incoming DMG)!"
-                enemy_turn()
-            elif cursor_idx == 1:  # Healing prayer (0% toxicity!)
-                if h["mind"] >= 15:
-                    h["mind"] -= 15
-                    h["hp"] = min(h["max_hp"], h["hp"] + 45)
-                    combat_log = "HEALING PRAYER! Sacred divine light restores +45 HP with 0% TOXICITY!"
+            if cursor_idx == 0:    # Twin Daggers (Cost: 12 Mind)
+                if h.get("mind", 0) >= 12:
+                    h["mind"] -= 12
+                    dmg = 38
+                    monster["hp"] = max(0, monster["hp"] - dmg)
+                    combat_log = f"TWIN DAGGERS! (-12 Mind) Cahara strikes with rapid dual thrusts for {dmg} DMG!"
                     enemy_turn()
                 else:
-                    combat_log = "Insufficient Mind points for Healing Prayer!"
-            elif cursor_idx == 2:  # Holy smite
-                dmg = 44
-                if monster.get("archetype") == "ARMORED":
-                    dmg = 56
-                    monster["archetype"] = "NORMAL"
-                    monster["def"] = 14
-                    combat_log = f"ARMOR SHATTERED! Holy Smite fractures heavy steel plate for {dmg} DMG! DEF shattered!"
-                elif monster.get("archetype") == "SPECTRAL":
-                    dmg = 52
-                    combat_log = f"SACRED RADIANCE! Holy Smite incinerates spectral ghost for {dmg} Divine Magic DMG!"
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Twin Daggers requires 12 Mind (Have: {h.get('mind', 0)}). Drink Vintage Ale!\033[0m"
+                    return
+            elif cursor_idx == 1:  # Poison Dart (Cost: 15 Mind)
+                if h.get("mind", 0) >= 15:
+                    h["mind"] -= 15
+                    dmg = 28
+                    monster["hp"] = max(0, monster["hp"] - dmg)
+                    monster["atk"] = max(4, monster.get("atk", 20) - 5)
+                    combat_log = f"POISON DART! (-15 Mind) Toxic alchemy deals {dmg} Chem DMG and weakens foe (-5 ATK)!"
+                    enemy_turn()
                 else:
-                    combat_log = f"HOLY SMITE! Heavy sanctified cleave inflicts {dmg} DMG!"
-                monster["hp"] = max(0, monster["hp"] - dmg)
-                enemy_turn()
-            elif cursor_idx == 3:  # Knight Charge
-                dmg = 36
-                monster["hp"] = max(0, monster["hp"] - dmg)
-                combat_log = f"KNIGHT CHARGE! D'arce slams forward with tower shield for {dmg} Phys DMG!"
-                enemy_turn()
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Poison Dart requires 15 Mind (Have: {h.get('mind', 0)}). Drink Vintage Ale!\033[0m"
+                    return
+            elif cursor_idx == 2:  # Steal Item (Cost: 15 Mind)
+                if h.get("mind", 0) >= 15:
+                    h["mind"] -= 15
+                    stolen_item = "poppy" if random.random() < 0.5 else "bread"
+                    cap = h.get("bag_cap", 10)
+                    if inventory[stolen_item] < cap:
+                        inventory[stolen_item] += 1
+                    combat_log = f"STEAL SUCCESS! (-15 Mind) Pickpocketed 1x {stolen_item.upper()} from target!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Steal requires 15 Mind (Have: {h.get('mind', 0)}). Drink Vintage Ale!\033[0m"
+                    return
+            elif cursor_idx == 3:  # Smoke Bomb (Cost: 20 Mind)
+                if h.get("mind", 0) >= 20:
+                    h["mind"] -= 20
+                    combat_log = "SMOKE BOMB! (-20 Mind) Dense fog blinds opponent. 100% ESCAPE SUCCESSFUL!"
+                    combat_outcome = "FLEE"
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Smoke Bomb requires 20 Mind (Have: {h.get('mind', 0)}). Drink Vintage Ale!\033[0m"
+                    return
+
+        elif h["name"] == "D'ARCE":
+            if cursor_idx == 0:    # Defense stance (Cost: 10 Mind)
+                if h.get("mind", 0) >= 10:
+                    h["mind"] -= 10
+                    h["is_guarding"] = True
+                    h["hp"] = min(h["max_hp"], h["hp"] + 15)
+                    h["buff"] = "IRON VOW (-75% DMG)"
+                    combat_log = "DEFENSE STANCE! (-10 Mind) D'arce braces tower shield (+15 HP, -75% incoming DMG)!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Defense Stance requires 10 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 1:  # Healing prayer (Cost: 20 Mind)
+                if h.get("mind", 0) >= 20:
+                    h["mind"] -= 20
+                    h["hp"] = min(h["max_hp"], h["hp"] + 45)
+                    combat_log = "HEALING PRAYER! (-20 Mind) Sacred divine light restores +45 HP with 0% TOXICITY!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Healing Prayer requires 20 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 2:  # Holy smite (Cost: 22 Mind)
+                if h.get("mind", 0) >= 22:
+                    h["mind"] -= 22
+                    dmg = 44
+                    if monster.get("archetype") == "ARMORED":
+                        dmg = 56
+                        monster["archetype"] = "NORMAL"
+                        monster["def"] = 14
+                        combat_log = f"ARMOR SHATTERED! (-22 Mind) Holy Smite fractures steel plate for {dmg} DMG! DEF shattered!"
+                    elif monster.get("archetype") == "SPECTRAL":
+                        dmg = 52
+                        combat_log = f"SACRED RADIANCE! (-22 Mind) Holy Smite incinerates spectral ghost for {dmg} Divine DMG!"
+                    else:
+                        combat_log = f"HOLY SMITE! (-22 Mind) Heavy sanctified cleave inflicts {dmg} DMG!"
+                    monster["hp"] = max(0, monster["hp"] - dmg)
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Holy Smite requires 22 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 3:  # Knight Charge (Cost: 12 Mind + 8 Recoil HP)
+                if h.get("mind", 0) >= 12:
+                    h["mind"] -= 12
+                    h["hp"] = max(1, h["hp"] - 8)
+                    dmg = 38
+                    monster["hp"] = max(0, monster["hp"] - dmg)
+                    combat_log = f"KNIGHT CHARGE! (-12 Mind, -8 Recoil HP) D'arce slams forward with tower shield for {dmg} DMG!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Knight Charge requires 12 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
 
         elif h["name"] == "ENKI":
-            if cursor_idx == 0:    # Black orb
-                if h["mind"] >= 15:
-                    h["mind"] -= 15
+            if cursor_idx == 0:    # Black orb (Cost: 25 Mind)
+                if h.get("mind", 0) >= 25:
+                    h["mind"] -= 25
                     dmg = 52
                     if monster.get("archetype") in ("SPECTRAL", "ARMORED"):
                         dmg = int(dmg * 1.5)
                     monster["hp"] = max(0, monster["hp"] - dmg)
-                    combat_log = f"BLACK ORB! Dark sphere pierces 100% defense for {dmg} True Magic DMG!"
+                    combat_log = f"BLACK ORB! (-25 Mind) Dark sphere pierces 100% defense for {dmg} True Magic DMG!"
                     enemy_turn()
                 else:
-                    combat_log = "Insufficient Mind points for Black Orb!"
-            elif cursor_idx == 1:  # Ritual Dagger
-                dmg = 24
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Black Orb requires 25 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 1:  # Ritual Dagger (0 Mind Cost, Siphons +15 Mind)
+                dmg = 20
                 monster["hp"] = max(0, monster["hp"] - dmg)
-                h["mind"] = min(h["max_mind"], h["mind"] + 15)
+                h["mind"] = min(h["max_mind"], h.get("mind", 0) + 15)
                 combat_log = f"RITUAL DAGGER! Enki slices foe for {dmg} Phys DMG and siphons +15 Mind!"
                 enemy_turn()
-            elif cursor_idx == 2:  # Blood sacrifice
+            elif cursor_idx == 2:  # Blood sacrifice (-20 HP -> +40 Mind)
                 if h["hp"] > 20:
                     h["hp"] -= 20
-                    h["mind"] = min(h["max_mind"], h["mind"] + 40)
+                    h["mind"] = min(h["max_mind"], h.get("mind", 0) + 40)
                     combat_log = "BLOOD SACRIFICE! Enki cuts own flesh (-20 HP) to harvest +40 Mind!"
-                else:
-                    combat_log = "HP too low for Blood Sacrifice!"
-            elif cursor_idx == 3:  # Hexen bind
-                if h["mind"] >= 10:
-                    h["mind"] -= 10
-                    monster["debuff_legs"] = True
-                    combat_log = "HEXEN BIND! Occult shadows root the foe to floor (100% Head hit rate)!"
                     enemy_turn()
                 else:
-                    combat_log = "Insufficient Mind for Hexen Bind!"
+                    combat_log = "\033[1;31m[HP TOO LOW]: Need >20 HP for Blood Sacrifice!\033[0m"
+                    return
+            elif cursor_idx == 3:  # Hexen bind (Cost: 15 Mind)
+                if h.get("mind", 0) >= 15:
+                    h["mind"] -= 15
+                    monster["debuff_legs"] = True
+                    combat_log = "HEXEN BIND! (-15 Mind) Occult shadows root the foe to floor (100% Head hit rate)!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Hexen Bind requires 15 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
 
         elif h["name"] == "RAGNVALDR":
-            if cursor_idx == 0:    # War Axe
-                dmg = 46
-                if "BLOODLUST" in hero.get("buff", "") or hero["hp"] < (hero["max_hp"] * 0.35):
+            if cursor_idx == 0:    # War Axe (Cost: 14 Mind, or 15 HP Blood Price if Mind < 14)
+                if h.get("mind", 0) >= 14:
+                    h["mind"] -= 14
+                    cost_msg = "(-14 Mind)"
+                else:
+                    h["hp"] = max(1, h["hp"] - 15)
+                    cost_msg = "(-15 HP Blood Price!)"
+                dmg = 48
+                if "BLOODLUST" in h.get("buff", "") or h["hp"] < (h["max_hp"] * 0.35):
                     dmg = int(dmg * 1.5)
                 monster["hp"] = max(0, monster["hp"] - dmg)
-                combat_log = f"WAR AXE! Ragnvaldr buries heavy axe into foe for {dmg} brutal Physical DMG!"
+                combat_log = f"WAR AXE! {cost_msg} Ragnvaldr buries heavy axe into foe for {dmg} brutal Phys DMG!"
                 enemy_turn()
-            elif cursor_idx == 1:  # Spirit Totem (Ancestral Magic)
-                if h["mind"] >= 10:
-                    h["mind"] -= 10
+            elif cursor_idx == 1:  # Spirit Totem (Cost: 16 Mind)
+                if h.get("mind", 0) >= 16:
+                    h["mind"] -= 16
                     dmg = 32
                     monster["hp"] = max(0, monster["hp"] - dmg)
-                    combat_log = f"SPIRIT TOTEM! Northern ancestral spirits crush foe for {dmg} Spirit Magic DMG!"
+                    combat_log = f"SPIRIT TOTEM! (-16 Mind) Northern ancestral spirits crush foe for {dmg} Spirit Magic DMG!"
                     enemy_turn()
                 else:
-                    combat_log = "Insufficient Mind points for Spirit Totem!"
-            elif cursor_idx == 2:  # Feral Roar
-                monster["atk"] = max(6, int(monster["atk"] * 0.6))
-                combat_log = "FERAL ROAR! Barbarian roar intimidates foe (-40% enemy ATK power)!"
-                enemy_turn()
-            elif cursor_idx == 3:  # Devour Flesh
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Spirit Totem requires 16 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 2:  # Feral Roar (Cost: 14 Mind)
+                if h.get("mind", 0) >= 14:
+                    h["mind"] -= 14
+                    monster["atk"] = max(6, int(monster["atk"] * 0.6))
+                    combat_log = "FERAL ROAR! (-14 Mind) Barbarian roar intimidates foe (-40% enemy ATK power)!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Feral Roar requires 14 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 3:  # Devour Flesh (+15% Toxicity, +35 HP, -25 Hunger)
+                max_tox = h.get("max_toxicity", 150)
+                h["toxicity"] = min(max_tox, h.get("toxicity", 0) + 15)
                 h["hp"] = min(h["max_hp"], h["hp"] + 35)
-                h["hunger"] = max(0, h["hunger"] - 25)
-                combat_log = "DEVOUR FLESH! Ragnvaldr consumes raw meat (+35 HP, -25 Hunger)!"
+                h["hunger"] = max(0, h.get("hunger", 0) - 25)
+                combat_log = "DEVOUR FLESH! (+15% Toxicity) Ragnvaldr consumes raw meat (+35 HP, -25 Hunger)!"
                 enemy_turn()
 
         elif h["name"] == "LE'GARDE":
-            if cursor_idx == 0:    # Fencing Thrust
-                dmg = 38
-                if "TACTICAL FOCUS" in hero.get("buff", ""):
-                    dmg = int(dmg * 1.5)
-                    hero["buff"] = ""
-                monster["hp"] = max(0, monster["hp"] - dmg)
-                combat_log = f"FENCING THRUST! Precision rapier thrust deals {dmg} piercing DMG!"
-                enemy_turn()
-            elif cursor_idx == 1:  # Legion Light
-                if h["mind"] >= 15:
-                    h["mind"] -= 15
-                    dmg = 35
+            if cursor_idx == 0:    # Fencing Thrust (Cost: 12 Mind)
+                if h.get("mind", 0) >= 12:
+                    h["mind"] -= 12
+                    dmg = 38
+                    if "TACTICAL FOCUS" in h.get("buff", ""):
+                        dmg = int(dmg * 1.5)
+                        h["buff"] = ""
                     monster["hp"] = max(0, monster["hp"] - dmg)
-                    combat_log = f"LEGION LIGHT! Blinding solar ray burns foe for {dmg} Solar Magic DMG!"
+                    combat_log = f"FENCING THRUST! (-12 Mind) Precision rapier thrust deals {dmg} piercing Phys DMG!"
                     enemy_turn()
                 else:
-                    combat_log = "Insufficient Mind for Legion Light!"
-            elif cursor_idx == 2:  # Tactical Focus
-                h["buff"] = "TACTICAL FOCUS (+50% NEXT ATK)"
-                combat_log = "TACTICAL FOCUS! Le'garde studies weak points (+50% DMG on next strike)!"
-                enemy_turn()
-            elif cursor_idx == 3:  # War Cry
-                h["mind"] = min(h["max_mind"], h["mind"] + 25)
-                combat_log = "WAR CRY! Le'garde rallies his spirit (+25 Mind, dispels terror)!"
-                enemy_turn()
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Fencing Thrust requires 12 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 1:  # Legion Light (Cost: 20 Mind)
+                if h.get("mind", 0) >= 20:
+                    h["mind"] -= 20
+                    dmg = 35
+                    monster["hp"] = max(0, monster["hp"] - dmg)
+                    combat_log = f"LEGION LIGHT! (-20 Mind) Blinding solar ray burns foe for {dmg} Solar Magic DMG!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Legion Light requires 20 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 2:  # Tactical Focus (Cost: 15 Mind)
+                if h.get("mind", 0) >= 15:
+                    h["mind"] -= 15
+                    h["buff"] = "TACTICAL FOCUS (+50% NEXT ATK)"
+                    combat_log = "TACTICAL FOCUS! (-15 Mind) Le'garde studies weak points (+50% DMG on next strike)!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Tactical Focus requires 15 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 3:  # War Cry (Cost: 14 Mind)
+                if h.get("mind", 0) >= 14:
+                    h["mind"] -= 14
+                    monster["def"] = max(0, int(monster.get("def", 14) * 0.65))
+                    combat_log = "WAR CRY! (-14 Mind) Le'garde rallies: enemy armor weakened (-35% DEF)!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: War Cry requires 14 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
 
         elif h["name"] == "MOONLESS":
-            if cursor_idx == 0:    # Feral Bite
+            if cursor_idx == 0:    # Feral Bite (Cost: +15 Hunger)
+                h["hunger"] = min(100, h.get("hunger", 0) + 15)
                 dmg = 40
                 monster["hp"] = max(0, monster["hp"] - dmg)
-                combat_log = f"FERAL BITE! Moonless tears into flesh for {dmg} Phys DMG + Bleeding!"
+                combat_log = f"FERAL BITE! (+15 Hunger) Moonless tears into flesh for {dmg} Phys DMG + Bleeding!"
                 enemy_turn()
-            elif cursor_idx == 1:  # Moon Howl
-                dmg = 30
-                monster["hp"] = max(0, monster["hp"] - dmg)
-                if random.random() < 0.45:
-                    monster["debuff_legs"] = True
-                    combat_log = f"MOON HOWL! Eerie lunar howling deals {dmg} Magic DMG and stuns foe (Crouched)!"
+            elif cursor_idx == 1:  # Moon Howl (Cost: 15 Mind)
+                if h.get("mind", 0) >= 15:
+                    h["mind"] -= 15
+                    dmg = 30
+                    monster["hp"] = max(0, monster["hp"] - dmg)
+                    if random.random() < 0.45:
+                        monster["debuff_legs"] = True
+                        combat_log = f"MOON HOWL! (-15 Mind) Eerie howling deals {dmg} Magic DMG and stuns foe (Crouched)!"
+                    else:
+                        combat_log = f"MOON HOWL! (-15 Mind) Lunar psychic scream echoes for {dmg} Magic DMG!"
+                    enemy_turn()
                 else:
-                    combat_log = f"MOON HOWL! Lunar psychic scream echoes through the dark for {dmg} Magic DMG!"
-                enemy_turn()
-            elif cursor_idx == 2:  # Shadow Pounce
-                dmg = 35
-                if monster["debuff_legs"]:
-                    dmg = 55
-                monster["hp"] = max(0, monster["hp"] - dmg)
-                combat_log = f"SHADOW POUNCE! Moonless pounces from the gloom for {dmg} DMG!"
-                enemy_turn()
-            elif cursor_idx == 3:  # Scent Danger
-                h["buff"] = "DANGER SCENT (+35% DODGE)"
-                combat_log = "SCENT DANGER! Moonless sniffs danger in the air (+35% evasion)!"
-                enemy_turn()
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Moon Howl requires 15 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 2:  # Shadow Pounce (Cost: 12 Mind)
+                if h.get("mind", 0) >= 12:
+                    h["mind"] -= 12
+                    dmg = 35
+                    if monster.get("debuff_legs"):
+                        dmg = 55
+                    monster["hp"] = max(0, monster["hp"] - dmg)
+                    combat_log = f"SHADOW POUNCE! (-12 Mind) Moonless pounces from the gloom for {dmg} DMG!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Shadow Pounce requires 12 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 3:  # Scent Danger (Cost: 10 Mind)
+                if h.get("mind", 0) >= 10:
+                    h["mind"] -= 10
+                    h["buff"] = "DANGER SCENT (+35% DODGE)"
+                    combat_log = "SCENT DANGER! (-10 Mind) Moonless sniffs danger in the air (+35% evasion)!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Scent Danger requires 10 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
 
         elif h["name"] == "THE GIRL":
-            if cursor_idx == 0:    # Nimble dodge
-                h["buff"] = "NIMBLE DODGE (100% EVADE)"
-                combat_log = "NIMBLE DODGE! The Girl slips into shadows, guaranteeing 100% evasion!"
-                enemy_turn()
-            elif cursor_idx == 1:  # Loving embrace
-                h["mind"] = min(h["max_mind"], h["mind"] + 40)
-                combat_log = "LOVING EMBRACE! Serene innocence restores +40 Mind and dispels all terror!"
-                enemy_turn()
-            elif cursor_idx == 2:  # Pure Light
-                if h["mind"] >= 10:
-                    h["mind"] -= 10
+            if cursor_idx == 0:    # Nimble dodge (Cost: 12 Mind)
+                if h.get("mind", 0) >= 12:
+                    h["mind"] -= 12
+                    h["buff"] = "NIMBLE DODGE (100% EVADE)"
+                    combat_log = "NIMBLE DODGE! (-12 Mind) The Girl slips into shadows, guaranteeing 100% evasion!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Nimble Dodge requires 12 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 1:  # Loving embrace (Cost: 15 Mind)
+                if h.get("mind", 0) >= 15:
+                    h["mind"] -= 15
+                    h["hp"] = min(h["max_hp"], h["hp"] + 35)
+                    combat_log = "LOVING EMBRACE! (-15 Mind) Serene innocence restores +35 HP and dispels terror!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Loving Embrace requires 15 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 2:  # Pure Light (Cost: 20 Mind)
+                if h.get("mind", 0) >= 20:
+                    h["mind"] -= 20
                     dmg = 32
                     if monster.get("archetype") in ("SPECTRAL", "TERROR"):
                         dmg = int(dmg * 1.6)
                     monster["hp"] = max(0, monster["hp"] - dmg)
-                    combat_log = f"PURE LIGHT! Holy glow incinerates dark foe for {dmg} Sacred Light DMG!"
+                    combat_log = f"PURE LIGHT! (-20 Mind) Holy glow incinerates dark foe for {dmg} Sacred Light DMG!"
                     enemy_turn()
                 else:
-                    combat_log = "Insufficient Mind for Pure Light!"
-            elif cursor_idx == 3:  # Distract foe
-                monster["temp_debuff"] = "DISTRACTED (-50% ATK)"
-                combat_log = "DISTRACT FOE! The Girl waves lantern: enemy's attack power halved by 50%!"
-                enemy_turn()
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Pure Light requires 20 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 3:  # Distract foe (Cost: 10 Mind)
+                if h.get("mind", 0) >= 10:
+                    h["mind"] -= 10
+                    monster["temp_debuff"] = "DISTRACTED (-50% ATK)"
+                    combat_log = "DISTRACT FOE! (-10 Mind) The Girl waves lantern: enemy's attack power halved 50%!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Distract requires 10 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
 
         elif h["name"] == "NAS'HRAH":
-            if cursor_idx == 0:    # Combustion
-                if h["mind"] >= 20:
-                    h["mind"] -= 20
-                    dmg = 58
+            if cursor_idx == 0:    # Combustion (Cost: 25 Mind)
+                if h.get("mind", 0) >= 25:
+                    h["mind"] -= 25
+                    dmg = 62
                     monster["hp"] = max(0, monster["hp"] - dmg)
-                    combat_log = f"COMBUSTION! Gro-goroth flame erupts for {dmg} Unstoppable Fire Magic DMG!"
+                    combat_log = f"COMBUSTION! (-25 Mind) Gro-goroth flame erupts for {dmg} Unstoppable Fire Magic DMG!"
                     enemy_turn()
                 else:
-                    combat_log = "Insufficient Mind for Combustion!"
-            elif cursor_idx == 1:  # Curse of Decay
-                if h["mind"] >= 15:
-                    h["mind"] -= 15
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Combustion requires 25 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 1:  # Curse of Decay (Cost: 20 Mind)
+                if h.get("mind", 0) >= 20:
+                    h["mind"] -= 20
                     dmg = 32
                     monster["hp"] = max(0, monster["hp"] - dmg)
-                    combat_log = f"CURSE OF DECAY! Ancient hex inflicts {dmg} Dark Magic DMG and rotting flesh!"
+                    combat_log = f"CURSE OF DECAY! (-20 Mind) Ancient hex inflicts {dmg} Dark Magic DMG and rotting flesh!"
                     enemy_turn()
                 else:
-                    combat_log = "Insufficient Mind for Curse of Decay!"
-            elif cursor_idx == 2:  # Head Gnaw
-                dmg = 26
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Curse of Decay requires 20 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
+            elif cursor_idx == 2:  # Head Gnaw (0 Mind Cost, Siphons +15 HP & +10 Mind)
+                dmg = 24
                 monster["hp"] = max(0, monster["hp"] - dmg)
                 h["hp"] = min(h["max_hp"], h["hp"] + 15)
-                combat_log = f"HEAD GNAW! Nas'hrah bites into foe for {dmg} Phys DMG and absorbs +15 HP life!"
+                h["mind"] = min(h["max_mind"], h.get("mind", 0) + 10)
+                combat_log = f"HEAD GNAW! Nas'hrah bites into foe for {dmg} Phys DMG and absorbs +15 HP life & +10 Mind!"
                 enemy_turn()
-            elif cursor_idx == 3:  # Mock Foe
-                monster["def"] = max(0, monster["def"] // 2)
-                combat_log = "MOCK FOE! Nas'hrah insults the foe (-50% enemy DEF, foe enraged)!"
-                enemy_turn()
+            elif cursor_idx == 3:  # Mock Foe (Cost: 15 Mind)
+                if h.get("mind", 0) >= 15:
+                    h["mind"] -= 15
+                    monster["def"] = max(0, monster.get("def", 14) // 2)
+                    combat_log = "MOCK FOE! (-15 Mind) Nas'hrah insults the foe (-50% enemy DEF, foe enraged)!"
+                    enemy_turn()
+                else:
+                    combat_log = f"\033[1;31m[INSUFFICIENT MIND]: Mock Foe requires 15 Mind (Have: {h.get('mind', 0)}).\033[0m"
+                    return
 
         current_menu = "MAIN"
         cursor_idx = 0

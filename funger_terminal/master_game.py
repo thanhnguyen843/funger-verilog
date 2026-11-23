@@ -40,6 +40,7 @@ if os.name == 'nt':
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import demo_interactive_ui as combat_engine
+from monsters_catalog import ALL_MONSTERS_CATALOG, REGULAR_MONSTER_IDS, BOSS_MONSTER_IDS, MIMIC_ID
 
 # =============================================================================
 # CONSTANTS & MAP DEFINITIONS (36 x 20)
@@ -438,6 +439,25 @@ def run_master_game():
     milestones_reached = set()
     recent_log = f"[*] {solo_hero['name']} [{solo_hero['role']}] steps into the pitch-black catacombs."
 
+    # Dynamic unique monster assignment per run (100% NO DUPLICATES!)
+    chosen_reg_ids = random.sample(REGULAR_MONSTER_IDS, 8)
+    chosen_boss_ids = random.sample(BOSS_MONSTER_IDS, 2)
+    reg_coords = [
+        (14, 2), (10, 6), (20, 7), (28, 4),
+        (14, 11), (24, 11), (8, 15), (20, 15)
+    ]
+    boss_coords = [(34, 6), (34, 14)]
+    run_monsters = {}
+    for coord, mid in zip(reg_coords, chosen_reg_ids):
+        m_data = copy.deepcopy(ALL_MONSTERS_CATALOG[mid])
+        m_data["drops_key"] = False
+        run_monsters[coord] = m_data
+    for coord, mid in zip(boss_coords, chosen_boss_ids):
+        m_data = copy.deepcopy(ALL_MONSTERS_CATALOG[mid])
+        m_data["drops_key"] = True
+        run_monsters[coord] = m_data
+    encountered_monsters_this_run = set()
+
     def reveal_around(px, py, radius=4):
         new_revealed = 0
         r_sq = radius * radius
@@ -609,16 +629,54 @@ def run_master_game():
                     key_count = min(3, key_count + 1)
                     recent_log = f"[TRAP TRIGGERED]: Spring needle grazed {solo_hero['name']} (-20 HP)! Retrieved Runic Key ({key_count}/3)!"
             else:
-                inventory["poppy"] += 1
-                inventory["bread"] += 1
-                recent_log = f"[CHEST]: Looted supplies at ({nx}, {ny}) (+1 Poppy Flower, +1 Moldy Bread)!"
+                # Regular supply chest: 25% chance of Chest Mimic encounter!
+                is_mimic = (random.random() < 0.25) and (MIMIC_ID not in encountered_monsters_this_run)
+                if is_mimic:
+                    encountered_monsters_this_run.add(MIMIC_ID)
+                    mimic_data = copy.deepcopy(ALL_MONSTERS_CATALOG[MIMIC_ID])
+                    recent_log = f"[AMBUSH!]: The chest sprouts razor fangs! CHEST MIMIC springs forward!"
+                    clear_screen()
+                    outcome, updated_hero, updated_inv = combat_engine.run_solo_combat(
+                        solo_hero,
+                        monster_id=mimic_data["id"],
+                        monster_name=mimic_data["name"],
+                        monster_archetype=mimic_data["archetype"],
+                        monster_hp=mimic_data["hp"],
+                        monster_atk=mimic_data["atk"],
+                        monster_def=mimic_data["def"],
+                        inv=inventory
+                    )
+                    clear_screen()
+                    solo_hero["hp"] = updated_hero["hp"]
+                    solo_hero["mind"] = updated_hero.get("mind", solo_hero["mind"])
+                    solo_hero["toxicity"] = updated_hero.get("toxicity", solo_hero["toxicity"])
+                    inventory.update(updated_inv)
+                    if outcome == "VICTORY":
+                        monsters_defeated += 1
+                        inventory["poppy"] += 2
+                        inventory["ale"] += 1
+                        recent_log = f"[MIMIC SLAIN!]: {solo_hero['name']} smashed the Mimic! Looted +2 White Poppy, +1 Vintage Ale!"
+                    elif outcome == "FLEE":
+                        recent_log = f"[TACTICAL RETREAT]: Slipped away from the Mimic's snapping fangs back to corridor!"
+                        return
+                    elif outcome == "DEFEAT":
+                        show_game_over_screen(solo_hero, mimic_data["name"])
+                        return "GAME_OVER"
+                    elif outcome == "QUIT":
+                        return "QUIT"
+                else:
+                    inventory["poppy"] += 1
+                    inventory["bread"] += 1
+                    recent_log = f"[CHEST]: Looted supplies at ({nx}, {ny}) (+1 Poppy Flower, +1 Moldy Bread)!"
 
         # Roaming Monster Encounter -> Launch Turn-based Combat Arena!
         elif base_tile == TILE_MONSTER and (nx, ny) not in cleared_tiles:
-            m_data = MONSTER_ENCOUNTERS.get((nx, ny), {
-                "id": 8, "name": "SHADOW SWORDSMAN", "archetype": "ARMORED",
-                "hp": 95, "atk": 24, "def": 99, "drops_key": False
-            })
+            m_data = run_monsters.get((nx, ny))
+            if not m_data:
+                m_data = copy.deepcopy(ALL_MONSTERS_CATALOG[8])
+                m_data["drops_key"] = False
+
+            encountered_monsters_this_run.add(m_data["id"])
 
             # Enter real Pokémon-style combat arena
             clear_screen()
