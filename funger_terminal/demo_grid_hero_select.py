@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-PARALLEL EXPERIMENTAL HERO SELECTOR: 2D GRID & PANORAMA ARCHITECTURE
+EXPANDED HIGH-FIDELITY HERO SELECTOR (FULL RESOLUTION 3-COLUMN PANORAMA & GRID)
 Fear & Hunger: Terminal Labyrinth - Solo Explorer Architecture
 ================================================================================
 Key Innovations:
-  1. 4x2 Grid Matrix Mode (Dàn hàng ngang 4-4):
-     - Displays all 8 heroes simultaneously in a 2x4 matrix (4 top, 4 bottom).
-     - Selection buttons / badges placed directly beneath each hero sprite.
-     - 2D Navigation (W/A/S/D or Arrows) moves cursor seamlessly across rows and cols.
-     - Real-time live dossier updates instantly with full stats, traits, and skills.
-  2. 3-Column Panorama Mode (Dàn hàng 3-3):
-     - 3 wide columns side-by-side with full uncropped 29-column sprites.
-     - Direct pagination / carousel view.
-  3. Seamless Mode Toggle:
-     - Press [TAB] to toggle between 4x2 Grid and 3-Column Panorama anytime.
+  1. Wide 3-Column Panorama Mode (Default):
+     - Displays 3 large, spacious cards across the 100-column screen (32 cols each).
+     - Models are 100% UNCROPPED at native resolution: ALL 29 columns wide, ALL 12 rows tall!
+     - Zero distortion, zero missing limbs or cut-off weapons.
+     - Selector buttons, HP/ATK/DEF/DODGE stats, and Traits directly underneath each model.
+     - Smooth carousel / page pagination across all 8 heroes ([A/D] or [Left/Right]).
+     - Direct jump keys [1-8].
+  2. 4x2 Grid Matrix Mode (Toggle via [TAB]):
+     - Displays all 8 heroes at once for users who want simultaneous overview.
+  3. Live Explorer Dossier & Solo Survival Assessment at bottom.
 ================================================================================
 """
 
@@ -55,6 +55,106 @@ def fit_exact(s, width):
             idx += 1
         return clean + "\033[0m" + " " * (width - w)
     return s + " " * (width - cur)
+
+def render_wide_3card_screen(sel_idx):
+    """Renders 3-Column Spacious Panorama Screen with 100% full-resolution uncropped models (28 rows, 100 cols)."""
+    heroes = dui.ALL_HEROES
+    active_h = heroes[sel_idx]
+
+    page_idx = sel_idx // 3
+    start_hero = page_idx * 3
+    page_heroes = [heroes[start_hero + i] if start_hero + i < len(heroes) else None for i in range(3)]
+
+    lines = []
+    lines.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
+    t_str = "FEAR & HUNGER: SOLO SURVIVOR EXPEDITION - WIDE EXPLORER SELECTOR"
+    sub_t = f"[TRANG {page_idx+1}/3  |  TAB: ĐỔI MA TRẬN 4x2]"
+    hdr_line = f" \033[1;37m{t_str:<62}\033[1;33m{sub_t:>33} "
+    lines.append(f"\033[1;30m|{fit_exact(hdr_line, 98)}\033[1;30m|\033[0m")
+
+    # 3 Column Divider: 32 + 32 + 32 = 96 + 4 borders = 100
+    div_3 = "\033[1;30m+" + "-" * 32 + "+" + "-" * 32 + "+" + "-" * 32 + "+\033[0m"
+    lines.append(div_3)
+
+    # 3 Selection Badges directly at top of card
+    h_tags = []
+    for c in range(3):
+        h = page_heroes[c]
+        if h:
+            h_real_idx = heroes.index(h)
+            is_cur = (h_real_idx == sel_idx)
+            tag = f"[{h['id']}] {h['name']} ({h['role'].split()[0]})"
+            txt = f"\033[1;32m▶ {tag:<28}\033[0m" if is_cur else f"\033[90m  {tag:<28}\033[0m"
+        else:
+            txt = "  \033[90m-- Ô TRỐNG --\033[0m"
+        h_tags.append(fit_exact(txt, 32))
+    lines.append(f"\033[1;30m|{h_tags[0]}|{h_tags[1]}|{h_tags[2]}|\033[0m")
+    lines.append(div_3)
+
+    # 12 SPRITE ROWS - 100% NATIVE UNCROPPED RESOLUTION (29 columns wide, all 12 rows!)
+    for r in range(12):
+        cells = []
+        for c in range(3):
+            h = page_heroes[c]
+            if h:
+                spr = HERO_TRI_STATES[h["name"]]["normal"]
+                sp_row = spr[r] if r < len(spr) else " " * 29
+                # 1 space padding + 29 chars uncropped sprite + 2 spaces padding = 32 columns
+                row_fmt = " " + sp_row + "  "
+            else:
+                row_fmt = " " * 32
+            cells.append(fit_exact(row_fmt, 32))
+        lines.append(f"\033[1;30m|{cells[0]}|{cells[1]}|{cells[2]}|\033[0m")
+
+    lines.append(div_3)
+
+    # Combat Stats Under Each Model
+    stat_cells = []
+    for c in range(3):
+        h = page_heroes[c]
+        if h:
+            s_str = f" \033[1;32mHP:{h['hp']:3d}\033[0m | \033[1;31mATK:{h['atk']:2d}\033[0m | \033[1;36mDEF:{h['def']:2d}\033[0m | \033[1;35mDOD:{int(h['dodge_rate']*100)}%\033[0m"
+        else:
+            s_str = ""
+        stat_cells.append(fit_exact(s_str, 32))
+    lines.append(f"\033[1;30m|{stat_cells[0]}|{stat_cells[1]}|{stat_cells[2]}|\033[0m")
+
+    # Traits Under Each Model
+    trait_cells = []
+    for c in range(3):
+        h = page_heroes[c]
+        if h:
+            t_str = f" \033[1;33mTRAIT:\033[0m {h['trait'][:24]}"
+        else:
+            t_str = ""
+        trait_cells.append(fit_exact(t_str, 32))
+    lines.append(f"\033[1;30m|{trait_cells[0]}|{trait_cells[1]}|{trait_cells[2]}|\033[0m")
+
+    div_wide = "\033[1;30m+" + "=" * 98 + "+\033[0m"
+    lines.append(div_wide)
+
+    # LIVE EXPLORER DOSSIER & EVALUATION (5 rows)
+    s_h = active_h
+    d1 = f" \033[1;33mEXPLORER:\033[1;37m {s_h['name']:<12} \033[1;30m[{s_h['role']}]\033[0m  |  \033[1;32mHP: {s_h['hp']:3d}/{s_h['max_hp']:3d}\033[0m  |  \033[1;31mATK: {s_h['atk']:2d}\033[0m  |  \033[1;36mDEF: {s_h['def']:2d}\033[0m  |  \033[1;35mDODGE: {int(s_h['dodge_rate']*100)}%\033[0m"
+    lines.append(f"\033[1;30m|{fit_exact(d1, 98)}\033[1;30m|\033[0m")
+
+    d2 = f" \033[1;37mTRAIT   :\033[0m {s_h['trait']:<26}  |  \033[1;32mBUFF: {s_h['item_buff_str']:<22}\033[0m  |  \033[1;36mRESIST: {s_h['phys_resist_str'][:18]}\033[0m"
+    lines.append(f"\033[1;30m|{fit_exact(d2, 98)}\033[1;30m|\033[0m")
+
+    d3 = f" \033[1;36mSKILLS  :\033[0m \033[1;37m[1] {s_h['skills'][0]['label']:<26}\033[0m  \033[1;37m[2] {s_h['skills'][1]['label']:<26}\033[0m"
+    lines.append(f"\033[1;30m|{fit_exact(d3, 98)}\033[1;30m|\033[0m")
+
+    assess = " ".join(s_h["assessment"][:2])
+    d4 = f" \033[1;33mASSESS  :\033[0;37m {assess[:88]}"
+    lines.append(f"\033[1;30m|{fit_exact(d4, 98)}\033[1;30m|\033[0m")
+
+    # Controls footer (3 rows)
+    lines.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
+    p_info = f"Trang {page_idx+1}/3"
+    ctrls = f" \033[90m[ĐIỀU KHIỂN]:\033[0m \033[1;37m[A/D / Mũi tên Trái/Phải]\033[0m Đổi Hero ({p_info})  |  \033[1;33m[1-8]\033[0m Nhảy số  |  \033[1;32m[Enter]\033[0m Chọn  |  \033[1;31m[Q]\033[0m Thoát"
+    lines.append(f"\033[1;30m|{fit_exact(ctrls, 98)}\033[1;30m|\033[0m")
+    lines.append(div_wide)
+    return lines
 
 def parse_line(line, target_width=29):
     cells = []
@@ -124,7 +224,7 @@ def crop_center_sprite(sprite_rows, target_w=23, row_start=1, row_end=10):
     return out
 
 def render_grid_4x2_screen(sel_idx):
-    """Renders the 4x2 Grid Character Selection frame (exactly 32 rows, 100 cols)."""
+    """Renders 4x2 Grid Screen overview (32 rows, 100 cols)."""
     heroes = dui.ALL_HEROES
     active_h = heroes[sel_idx]
     widths = [23, 24, 24, 24]
@@ -139,13 +239,11 @@ def render_grid_4x2_screen(sel_idx):
     div_grid = "\033[1;30m+" + "-" * 23 + "+" + "-" * 24 + "+" + "-" * 24 + "+" + "-" * 24 + "+\033[0m"
     lines.append(div_grid)
 
-    # ROW 1 OF HEROES (idx 0..3)
     r1_sprites = [crop_center_sprite(HERO_TRI_STATES[heroes[i]["name"]]["normal"], widths[i], 1, 10) for i in range(4)]
     for r in range(9):
         cells = [fit_exact(r1_sprites[c][r], widths[c]) for c in range(4)]
         lines.append(f"\033[1;30m|{cells[0]}|{cells[1]}|{cells[2]}|{cells[3]}|\033[0m")
 
-    # ROW 1 BADGES (selector button under each model)
     b_cells = []
     for c in range(4):
         is_cur = (c == sel_idx)
@@ -156,13 +254,11 @@ def render_grid_4x2_screen(sel_idx):
     lines.append(f"\033[1;30m|{b_cells[0]}|{b_cells[1]}|{b_cells[2]}|{b_cells[3]}|\033[0m")
     lines.append(div_grid)
 
-    # ROW 2 OF HEROES (idx 4..7)
     r2_sprites = [crop_center_sprite(HERO_TRI_STATES[heroes[4+i]["name"]]["normal"], widths[i], 1, 10) for i in range(4)]
     for r in range(9):
         cells = [fit_exact(r2_sprites[c][r], widths[c]) for c in range(4)]
         lines.append(f"\033[1;30m|{cells[0]}|{cells[1]}|{cells[2]}|{cells[3]}|\033[0m")
 
-    # ROW 2 BADGES
     b2_cells = []
     for c in range(4):
         is_cur = (4 + c == sel_idx)
@@ -172,11 +268,9 @@ def render_grid_4x2_screen(sel_idx):
         b2_cells.append(fit_exact(txt, widths[c]))
     lines.append(f"\033[1;30m|{b2_cells[0]}|{b2_cells[1]}|{b2_cells[2]}|{b2_cells[3]}|\033[0m")
 
-    # Dossier divider
     div_wide = "\033[1;30m+" + "=" * 98 + "+\033[0m"
     lines.append(div_wide)
 
-    # DOSSIER & STATS OF ACTIVE HIGHLIGHTED HERO (5 rows)
     s_h = active_h
     d_row1 = f" \033[1;33mEXPLORER:\033[1;37m {s_h['name']:<12} \033[1;30m[{s_h['role']}]\033[0m  |  \033[1;32mHP: {s_h['hp']:3d}/{s_h['max_hp']:3d}\033[0m  |  \033[1;31mATK: {s_h['atk']:2d}\033[0m  |  \033[1;36mDEF: {s_h['def']:2d}\033[0m  |  \033[1;35mDODGE: {int(s_h['dodge_rate']*100)}%\033[0m"
     lines.append(f"\033[1;30m|{fit_exact(d_row1, 98)}\033[1;30m|\033[0m")
@@ -197,102 +291,21 @@ def render_grid_4x2_screen(sel_idx):
     lines.append(div_wide)
     return lines
 
-def render_panorama_3x1_screen(sel_idx):
-    """Renders the 3-Column Panorama Selection frame (exactly 27 rows, 100 cols)."""
-    heroes = dui.ALL_HEROES
-    active_h = heroes[sel_idx]
-
-    page_idx = sel_idx // 3
-    start_hero = page_idx * 3
-    page_heroes = [heroes[start_hero + i] if start_hero + i < len(heroes) else None for i in range(3)]
-
-    lines = []
-    lines.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
-    t_str = "FEAR & HUNGER: SOLO SURVIVOR EXPEDITION - 3-COLUMN PANORAMA"
-    sub_t = f"[TRANG {page_idx+1}/3 | TAB: ĐỔI DÀN HÀNG 4x2]"
-    hdr_line = f" \033[1;37m{t_str:<62}\033[1;33m{sub_t:>33} "
-    lines.append(f"\033[1;30m|{fit_exact(hdr_line, 98)}\033[1;30m|\033[0m")
-
-    div_3 = "\033[1;30m+" + "-" * 32 + "+" + "-" * 32 + "+" + "-" * 32 + "+\033[0m"
-    lines.append(div_3)
-
-    h_tags = []
-    for c in range(3):
-        h = page_heroes[c]
-        if h:
-            is_cur = (heroes.index(h) == sel_idx)
-            tag = f"[{h['id']}] {h['name']} ({h['role'].split()[0]})"
-            txt = f"\033[1;32m▶ {tag:<28}\033[0m" if is_cur else f"\033[90m  {tag:<28}\033[0m"
-        else:
-            txt = "  [KHÔNG CÓ NHÂN VẬT]"
-        h_tags.append(fit_exact(txt, 32))
-    lines.append(f"\033[1;30m|{h_tags[0]}|{h_tags[1]}|{h_tags[2]}|\033[0m")
-    lines.append(div_3)
-
-    for r in range(12):
-        cells = []
-        for c in range(3):
-            h = page_heroes[c]
-            if h:
-                spr = HERO_TRI_STATES[h["name"]]["normal"]
-                r_txt = " " + spr[r] + "  " if r < len(spr) else " " * 32
-            else:
-                r_txt = " " * 32
-            cells.append(fit_exact(r_txt, 32))
-        lines.append(f"\033[1;30m|{cells[0]}|{cells[1]}|{cells[2]}|\033[0m")
-
-    lines.append(div_3)
-
-    stat_cells = []
-    for c in range(3):
-        h = page_heroes[c]
-        if h:
-            txt = f" HP:{h['hp']:3d}  ATK:{h['atk']:2d}  DEF:{h['def']:2d}"
-        else:
-            txt = ""
-        stat_cells.append(fit_exact(txt, 32))
-    lines.append(f"\033[1;30m|{stat_cells[0]}|{stat_cells[1]}|{stat_cells[2]}|\033[0m")
-
-    div_wide = "\033[1;30m+" + "=" * 98 + "+\033[0m"
-    lines.append(div_wide)
-
-    s_h = active_h
-    d_row1 = f" \033[1;33mEXPLORER:\033[1;37m {s_h['name']:<12} \033[1;30m[{s_h['role']}]\033[0m  |  \033[1;32mHP: {s_h['hp']:3d}/{s_h['max_hp']:3d}\033[0m  |  \033[1;31mATK: {s_h['atk']:2d}\033[0m  |  \033[1;36mDEF: {s_h['def']:2d}\033[0m  |  \033[1;35mDODGE: {int(s_h['dodge_rate']*100)}%\033[0m"
-    lines.append(f"\033[1;30m|{fit_exact(d_row1, 98)}\033[1;30m|\033[0m")
-
-    d_row2 = f" \033[1;37mTRAIT  :\033[0m {s_h['trait']:<26}  |  \033[1;32mBUFF: {s_h['item_buff_str']:<22}\033[0m  |  \033[1;36mRESIST: {s_h['phys_resist_str'][:16]}\033[0m"
-    lines.append(f"\033[1;30m|{fit_exact(d_row2, 98)}\033[1;30m|\033[0m")
-
-    d_row3 = f" \033[1;36mSKILLS :\033[0m \033[1;37m[1] {s_h['skills'][0]['label']:<24}\033[0m  \033[1;37m[2] {s_h['skills'][1]['label']:<24}\033[0m"
-    lines.append(f"\033[1;30m|{fit_exact(d_row3, 98)}\033[1;30m|\033[0m")
-
-    assess_text = " ".join(s_h["assessment"][:2])
-    d_row4 = f" \033[1;33mASSESS :\033[0;37m {assess_text[:88]}"
-    lines.append(f"\033[1;30m|{fit_exact(d_row4, 98)}\033[1;30m|\033[0m")
-
-    lines.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
-    ctrls = " \033[90m[ĐIỀU KHIỂN]:\033[0m \033[1;37m[A/D / Mũi tên Trái/Phải]\033[0m Đổi Hero  |  \033[1;33m[TAB]\033[0m Đổi Dàn 4x2  |  \033[1;32m[Enter]\033[0m Bắt đầu  |  \033[1;31m[Q]\033[0m Thoát"
-    lines.append(f"\033[1;30m|{fit_exact(ctrls, 98)}\033[1;30m|\033[0m")
-    lines.append(div_wide)
-    return lines
-
 def run_grid_select_interactive(initial_sel=0):
-    """Interactive loop for 2D Grid / 3-Column Character Selection."""
     dui.clear_screen()
     sel_idx = initial_sel
-    mode = "grid" # "grid" or "panorama"
+    mode = "wide_3card" # Default to WIDE 3-CARD PANORAMA to ensure 100% full uncropped sprites
     num_heroes = len(dui.ALL_HEROES)
 
     while True:
-        if mode == "grid":
-            frame = render_grid_4x2_screen(sel_idx)
+        if mode == "wide_3card":
+            frame = render_wide_3card_screen(sel_idx)
         else:
-            frame = render_panorama_3x1_screen(sel_idx)
+            frame = render_grid_4x2_screen(sel_idx)
 
         dui.atomic_blit(frame)
 
         if not (os.name == 'nt' and sys.stdin.isatty()):
-            # Non-interactive / headless test mode
             return dui.ALL_HEROES[sel_idx], sel_idx
 
         ch = msvcrt.getch()
@@ -301,32 +314,36 @@ def run_grid_select_interactive(initial_sel=0):
 
         if ch in (b'\x00', b'\xe0'):
             ext = msvcrt.getch()
-            if mode == "grid":
+            if mode == "wide_3card":
+                if ext in (b'K', b'H'): # Left or Up
+                    sel_idx = (sel_idx - 1) % num_heroes
+                elif ext in (b'M', b'P'): # Right or Down
+                    sel_idx = (sel_idx + 1) % num_heroes
+            else:
                 cur_r = sel_idx // 4
                 cur_c = sel_idx % 4
-                if ext == b'H': # Up
-                    cur_r = (cur_r - 1) % 2
-                elif ext == b'P': # Down
-                    cur_r = (cur_r + 1) % 2
-                elif ext == b'K': # Left
-                    cur_c = (cur_c - 1) % 4
-                elif ext == b'M': # Right
-                    cur_c = (cur_c + 1) % 4
+                if ext == b'H': cur_r = (cur_r - 1) % 2
+                elif ext == b'P': cur_r = (cur_r + 1) % 2
+                elif ext == b'K': cur_c = (cur_c - 1) % 4
+                elif ext == b'M': cur_c = (cur_c + 1) % 4
                 sel_idx = cur_r * 4 + cur_c
-            else:
-                if ext == b'K': # Left
-                    sel_idx = (sel_idx - 1) % num_heroes
-                elif ext == b'M': # Right
-                    sel_idx = (sel_idx + 1) % num_heroes
-                elif ext == b'H': # Up
-                    sel_idx = (sel_idx - 1) % num_heroes
-                elif ext == b'P': # Down
-                    sel_idx = (sel_idx + 1) % num_heroes
 
         elif ch in (b'\t',):
-            mode = "panorama" if mode == "grid" else "grid"
+            mode = "grid" if mode == "wide_3card" else "wide_3card"
 
-        elif mode == "grid":
+        elif mode == "wide_3card":
+            if ch in (b'a', b'A', b'w', b'W'):
+                sel_idx = (sel_idx - 1) % num_heroes
+            elif ch in (b'd', b'D', b's', b'S'):
+                sel_idx = (sel_idx + 1) % num_heroes
+            elif ch in (b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8'):
+                sel_idx = int(ch.decode('ascii')) - 1
+            elif ch in (b'\r', b'\n', b' '):
+                return dui.ALL_HEROES[sel_idx], sel_idx
+            elif ch in (b'q', b'Q', b'\x1b'):
+                return None, None
+
+        else: # grid
             cur_r = sel_idx // 4
             cur_c = sel_idx % 4
             if ch in (b'w', b'W'):
@@ -341,18 +358,6 @@ def run_grid_select_interactive(initial_sel=0):
             elif ch in (b'd', b'D'):
                 cur_c = (cur_c + 1) % 4
                 sel_idx = cur_r * 4 + cur_c
-            elif ch in (b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8'):
-                sel_idx = int(ch.decode('ascii')) - 1
-            elif ch in (b'\r', b'\n', b' '):
-                return dui.ALL_HEROES[sel_idx], sel_idx
-            elif ch in (b'q', b'Q', b'\x1b'):
-                return None, None
-
-        else: # panorama
-            if ch in (b'a', b'A', b'w', b'W'):
-                sel_idx = (sel_idx - 1) % num_heroes
-            elif ch in (b'd', b'D', b's', b'S'):
-                sel_idx = (sel_idx + 1) % num_heroes
             elif ch in (b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8'):
                 sel_idx = int(ch.decode('ascii')) - 1
             elif ch in (b'\r', b'\n', b' '):
@@ -385,11 +390,7 @@ def main():
     if os.name == 'nt' and sys.stdin.isatty():
         choice = input("\nLựa chọn của bạn [1/2/Q]: ").strip().lower()
         if choice == '1':
-            import master_game
-            # Run master game with this preselected hero
-            # Check if master_game supports passing hero
             dui.clear_screen()
-            # Launch game loop
             os.system(f"python funger_terminal/master_game.py")
         elif choice == '2':
             main()
