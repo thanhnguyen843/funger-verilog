@@ -9,7 +9,7 @@ Unified Hardware-Accurate Adventure:
   3. Persistent Fog of War Labyrinth Exploration (36x20) with Dynamic Torchlight
   4. Universal Map Obstacle Resolution (Barricades, Seals, Crawlspaces, Chests)
   5. Seamless Transition into Pokémon-style Limb-Targeting Combat Arena
-  6. Real-time Inventory Pouch & Quick Healing
+  6. Real-time Inventory Pouch & Survival Management
   7. Grand Runic Gate Escape Victory & Gothic Game Over Demise
   8. Double-Buffered Atomic Blit Engine (Zero Screen Flicker & Zero Drift)
 ================================================================================
@@ -373,7 +373,6 @@ def run_guide_modal():
     rows.append(make_left_box_row("\033[1;37m[EXPEDITION CONTROLS & NAVIGATION]\033[0m", border_color="\033[1;37m"))
     rows.append(make_left_box_row("  [W/A/S/D] or Arrows : Navigate catacombs (expands torchlight).", border_color="\033[1;37m"))
     rows.append(make_left_box_row("  [I] Pouch           : Open vertical survival pouch ([W/S] Navigate, [Enter] Use).", border_color="\033[1;37m"))
-    rows.append(make_left_box_row("  [H] Quick Heal      : Heal immediately with best available herb from pouch.", border_color="\033[1;37m"))
     rows.append(make_left_box_row("  [Q] Surrender       : Surrender current expedition and quit back to surface.", border_color="\033[1;37m"))
     rows.append(make_border_line("-", border_color="\033[1;37m"))
     rows.append("")
@@ -585,7 +584,7 @@ def run_master_game():
         rows.append(f"  \033[1;33m[EXPEDITION LOG]:\033[0m \033[1;37m{fit_ansi(recent_log, 78)}\033[0m")
         rows.append("")
         rows.append("\033[1;30m+====================================================================================================+\033[0m")
-        rows.append("  \033[1;37m[CONTROLS]: [W/A/S/D] Move  |  [I] Pouch  |  [H] Quick Heal  |  [G] Guide  |  [Q] Quit\033[0m")
+        rows.append("  \033[1;37m[CONTROLS]: [W/A/S/D] Di chuyển  |  [I] Túi đồ  |  \033[1;33m★ [G] HƯỚNG DẪN (GUIDE)\033[0m  \033[1;37m|  [Q] Thoát\033[0m")
         rows.append("\033[1;30m====================================================================================================\033[0m")
         atomic_blit(rows)
 
@@ -827,32 +826,6 @@ def run_master_game():
             elif ch in (b'g', b'G'):
                 run_guide_modal()
                 continue
-            elif ch in (b'h', b'H'):
-                # Quick heal with herb, meat or bread
-                if inventory.get("poppy", 0) > 0:
-                    inventory["poppy"] -= 1
-                    heal = 65 if solo_hero["name"] == "CAHARA" else (30 if is_hardcore else 50)
-                    solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
-                    if "bleeding" in solo_hero.get("debuffs", []):
-                        solo_hero["debuffs"].remove("bleeding")
-                    recent_log = f"[QUICK HEAL]: Consumed Poppy Flower (+{heal} HP). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
-                elif inventory.get("weed", 0) > 0:
-                    inventory["weed"] -= 1
-                    heal = 75 if is_hardcore else 120
-                    solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
-                    recent_log = f"[QUICK HEAL]: Consumed Marijuana Herb (+{heal} HP). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
-                elif inventory.get("meat", 0) > 0:
-                    inventory["meat"] -= 1
-                    solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + 20)
-                    solo_hero["hunger"] = max(0, solo_hero.get("hunger", 0) - 60)
-                    recent_log = f"[QUICK HEAL]: Ate Dried Meat (+20 HP, -60 Hunger). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
-                elif inventory.get("bread", 0) > 0:
-                    inventory["bread"] -= 1
-                    solo_hero["hunger"] = max(0, solo_hero.get("hunger", 0) - 40)
-                    recent_log = f"[QUICK NOURISH]: Ate Moldy Bread (-40 Hunger). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
-                else:
-                    recent_log = "[QUICK HEAL]: No provisions in pouch!"
-                continue
             elif ch in (b'q', b'Q', b'\x03'):
                 clear_screen()
                 sys.stdout.write("\033[?25h\n[OK] Labyrinth Expedition suspended.\n")
@@ -885,29 +858,6 @@ def run_master_game():
                 continue
             elif line in ('g', 'guide'):
                 run_guide_modal()
-                continue
-            elif line in ('h', 'heal'):
-                if inventory.get("poppy", 0) > 0:
-                    inventory["poppy"] -= 1
-                    heal = 65 if solo_hero["name"] == "CAHARA" else (30 if is_hardcore else 50)
-                    solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
-                    if "bleeding" in solo_hero.get("debuffs", []):
-                        solo_hero["debuffs"].remove("bleeding")
-                    recent_log = f"[QUICK HEAL]: Consumed Poppy Flower (+{heal} HP). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
-                elif inventory.get("weed", 0) > 0:
-                    inventory["weed"] -= 1
-                    heal = 75 if is_hardcore else 120
-                    solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
-                    recent_log = f"[QUICK HEAL]: Consumed Marijuana Herb (+{heal} HP). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
-                elif inventory.get("meat", 0) > 0:
-                    inventory["meat"] -= 1
-                    solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + 20)
-                    solo_hero["hunger"] = max(0, solo_hero.get("hunger", 0) - 60)
-                    recent_log = f"[QUICK HEAL]: Ate Dried Meat (+20 HP, -60 Hunger). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
-                elif inventory.get("bread", 0) > 0:
-                    inventory["bread"] -= 1
-                    solo_hero["hunger"] = max(0, solo_hero.get("hunger", 0) - 40)
-                    recent_log = f"[QUICK NOURISH]: Ate Moldy Bread (-40 Hunger). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
                 continue
             elif line == 'q':
                 break

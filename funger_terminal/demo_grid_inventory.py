@@ -55,56 +55,56 @@ ITEM_CATALOG = [
         "name": "TOTEM OF UNDYING",
         "tag": "[CỔ VẬT]",
         "qty": 1,
-        "desc": "Tự động phục sinh khi tử nạn | Nối lại toàn bộ tứ chi & hồi 100% HP"
+        "desc": "Hồi sinh khi chết, đầy HP & mọc lại tứ chi"
     },
     {
         "id": "poppy",
         "name": "POPPY FLOWER",
         "tag": "[DƯỢC LIỆU]",
         "qty": 3,
-        "desc": "Hồi phục +50 HP (+65 với Cahara) & cầm máu xuất huyết hoàn toàn"
+        "desc": "Hồi +50 HP & cầm máu"
     },
     {
         "id": "weed",
-        "name": "MARIJUANA HERB",
+        "name": "MEDICINAL HERB",
         "tag": "[THẢO DƯỢC]",
         "qty": 2,
-        "desc": "Hồi phục +120 HP (Hardcore: +75 HP), gây tê xoa dịu đau đớn"
+        "desc": "Hồi +120 HP, giảm đau nhức"
     },
     {
         "id": "bread",
         "name": "MOLDY BREAD",
         "tag": "[LƯƠNG KHÔ]",
         "qty": 4,
-        "desc": "Giảm -40 Cơn đói khát (Ngăn chặn chuột rút và kiệt sức do đói)"
+        "desc": "Giảm -40 Đói (chống kiệt sức)"
     },
     {
         "id": "meat",
         "name": "DRIED MEAT",
         "tag": "[LƯƠNG KHÔ]",
         "qty": 2,
-        "desc": "Giảm -60 Cơn đói khát và hồi phục thêm +20 HP sinh lực"
+        "desc": "Giảm -60 Đói & hồi +20 HP"
     },
     {
         "id": "vial",
         "name": "ALCHEMICAL VIAL",
         "tag": "[CỒN THUỐC]",
         "qty": 2,
-        "desc": "Tẩy trừ hoại tử, nhiễm trùng, giải độc và hồi phục +25 Mind"
+        "desc": "Hồi +35 Mind, tẩy độc & hoại tử"
     },
     {
         "id": "key",
         "name": "RUNIC KEY",
         "tag": "[CHÌA KHÓA]",
         "qty": 0,
-        "desc": "Chìa khóa cổ ngữ để mở Cổng Thoát Hiểm Phía Đông (Cần đủ 3 chìa)"
+        "desc": "Chìa khóa Cổng Đông (cần 3 chìa)"
     },
     {
         "id": "close",
         "name": "[ ĐÓNG TÚI ĐỒ ]",
         "tag": "[QUAY LẠI]",
         "qty": 0,
-        "desc": "Đóng túi đồ và tiếp tục hành trình thám hiểm mê cung"
+        "desc": "Quay lại"
     }
 ]
 
@@ -147,10 +147,10 @@ def render_pouch_screen(items, sel_idx, status_msg="", hero=None):
         desc_str = it.get("desc", "")
 
         if it["id"] == "close":
-            qty_str = "   "
+            qty_str = "      "
             avail = True
         else:
-            qty_str = f"x {it.get('qty', 0):<2}"
+            qty_str = f"[x {it.get('qty', 0)}]"
             avail = (it.get("qty", 0) > 0)
 
         # Định dạng màu sắc
@@ -164,7 +164,7 @@ def render_pouch_screen(items, sel_idx, status_msg="", hero=None):
             color = "\033[90m"    # Xám khi hết hàng
             cur_color = "\033[90m"
 
-        line = f"  {cur_color}{cur_icon}\033[0m {color}{num_str:<4} {name_str:<18} {qty_str:<5} {tag_str:<13} {desc_str}\033[0m"
+        line = f"  {cur_color}{cur_icon}\033[0m {color}{num_str:<4} {name_str:<18} {qty_str:<7} {tag_str:<13} {desc_str}\033[0m"
         rows.append("\033[1;30m|\033[0m" + fit_exact(line, 98) + "\033[1;30m|\033[0m")
 
     rows.append("\033[1;30m|" + (" " * 98) + "|\033[0m")
