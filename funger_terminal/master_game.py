@@ -421,6 +421,7 @@ def run_master_game():
     solo_hero["is_guarding"] = False
     solo_hero["buff"] = ""
     solo_hero["debuffs"] = []
+    solo_hero["severed_limbs"] = {"head": 100, "torso": 100, "arm_r": 100, "arm_l": 100, "leg_r": 100, "leg_l": 100}
 
     # Inventory setup with Totem and authentic survival items
     if solo_hero["name"] == "CAHARA":
@@ -494,7 +495,7 @@ def run_master_game():
     # Initial reveal around start (2, 2)
     reveal_around(player_x, player_y, radius=4)
 
-    def render_map_view(pouch_open=False, pouch_cur=0):
+    def render_map_view():
         rows = []
         diff_tag = "\033[1;31m[TERROR & STARVATION]\033[0m" if is_hardcore else "\033[1;32m[FEAR & HUNGER]\033[0m"
         h_info = f"{solo_hero['name']} [{solo_hero['role']}] - HP:{solo_hero['hp']:3d}/{solo_hero['max_hp']:3d}"
@@ -581,29 +582,11 @@ def run_master_game():
             rows.append(f"{border_left_pad}{row_str}")
 
         rows.append("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
-
-        if pouch_open:
-            rows.append("  \033[1;33m[SURVIVAL POUCH - SELECT ITEM TO ADMINISTER]:\033[0m")
-            pouch_options = [
-                (f"Poppy Flower    x{inventory['poppy']:<2}  (+50 HP)    - Staunches bleeding & heals flesh", inventory['poppy'] > 0),
-                (f"Marijuana Herb  x{inventory['weed']:<2}  (+120 HP)   - Potent ancient medicinal cure", inventory['weed'] > 0),
-                (f"Moldy Bread     x{inventory['bread']:<2}  (-40 Hngr)  - Relieves gnawing starvation", inventory['bread'] > 0),
-                (f"Vintage Ale     x{inventory['ale']:<2}  (+35 Mind)  - Restores shattered sanity", inventory['ale'] > 0),
-                (f"Close Pouch     (Return to Map Exploration)", True)
-            ]
-            for p_idx, (p_text, p_avail) in enumerate(pouch_options):
-                is_cur = (p_idx == pouch_cur)
-                prefix = "▶" if is_cur else " "
-                c_code = "\033[1;33m" if is_cur else ("\033[1;37m" if p_avail else "\033[90m")
-                rows.append(f"  {c_code}{prefix} [{p_idx+1}] {p_text}\033[0m")
-            rows.append("\033[1;30m+====================================================================================================+\033[0m")
-            rows.append("  \033[1;37m[CONTROLS]: [W/S] Navigate  |  [Enter] Administer Item  |  [I/Esc] Close Pouch\033[0m")
-        else:
-            rows.append(f"  \033[1;33m[EXPEDITION LOG]:\033[0m \033[1;37m{fit_ansi(recent_log, 78)}\033[0m")
-            rows.append("")
-            rows.append("\033[1;30m+====================================================================================================+\033[0m")
-            rows.append("  \033[1;37m[CONTROLS]: [W/A/S/D] Move  |  [I] Pouch  |  [H] Quick Heal  |  [G] Guide  |  [Q] Quit\033[0m")
-            rows.append("\033[1;30m====================================================================================================\033[0m")
+        rows.append(f"  \033[1;33m[EXPEDITION LOG]:\033[0m \033[1;37m{fit_ansi(recent_log, 78)}\033[0m")
+        rows.append("")
+        rows.append("\033[1;30m+====================================================================================================+\033[0m")
+        rows.append("  \033[1;37m[CONTROLS]: [W/A/S/D] Move  |  [I] Pouch  |  [H] Quick Heal  |  [G] Guide  |  [Q] Quit\033[0m")
+        rows.append("\033[1;30m====================================================================================================\033[0m")
         atomic_blit(rows)
 
     def handle_map_move(dx, dy):
@@ -690,13 +673,20 @@ def run_master_game():
                     clear_screen()
                     solo_hero["hp"] = updated_hero["hp"]
                     solo_hero["mind"] = updated_hero.get("mind", solo_hero["mind"])
+                    solo_hero["hunger"] = updated_hero.get("hunger", solo_hero.get("hunger", 0))
                     solo_hero["toxicity"] = updated_hero.get("toxicity", solo_hero["toxicity"])
+                    solo_hero["debuffs"] = list(updated_hero.get("debuffs", []))
+                    solo_hero["severed_limbs"] = dict(updated_hero.get("severed_limbs", solo_hero.get("severed_limbs", {})))
+                    solo_hero["buff"] = updated_hero.get("buff", "")
                     inventory.update(updated_inv)
+                    if "vial" in inventory:
+                        inventory["ale"] = inventory["vial"]
                     if outcome == "VICTORY":
                         monsters_defeated += 1
                         inventory["poppy"] += 2
-                        inventory["ale"] += 1
-                        recent_log = f"[MIMIC SLAIN!]: {solo_hero['name']} smashed the Mimic! Looted +2 White Poppy, +1 Vintage Ale!"
+                        inventory["vial"] += 1
+                        inventory["ale"] = inventory["vial"]
+                        recent_log = f"[MIMIC SLAIN!]: {solo_hero['name']} smashed the Mimic! Looted +2 White Poppy, +1 Alchemical Vial!"
                     elif outcome == "FLEE":
                         recent_log = f"[TACTICAL RETREAT]: Slipped away from the Mimic's snapping fangs back to corridor!"
                         return
@@ -736,8 +726,14 @@ def run_master_game():
             # Sync updated state back
             solo_hero["hp"] = updated_hero["hp"]
             solo_hero["mind"] = updated_hero.get("mind", solo_hero["mind"])
+            solo_hero["hunger"] = updated_hero.get("hunger", solo_hero.get("hunger", 0))
             solo_hero["toxicity"] = updated_hero.get("toxicity", solo_hero["toxicity"])
+            solo_hero["debuffs"] = list(updated_hero.get("debuffs", []))
+            solo_hero["severed_limbs"] = dict(updated_hero.get("severed_limbs", solo_hero.get("severed_limbs", {})))
+            solo_hero["buff"] = updated_hero.get("buff", "")
             inventory.update(updated_inv)
+            if "vial" in inventory:
+                inventory["ale"] = inventory["vial"]
 
             if outcome == "VICTORY":
                 cleared_tiles.add((nx, ny))
@@ -794,69 +790,13 @@ def run_master_game():
                     recent_log = f"[STARVATION]: Severe stomach cramps drain -10 HP! Eat bread in pouch [I]."
 
     # Exploration Game Loop
-    in_pouch = False
-    pouch_cur = 0
     while True:
-        render_map_view(pouch_open=in_pouch, pouch_cur=pouch_cur)
+        render_map_view()
 
         if os.name == 'nt' and sys.stdin.isatty():
             ch = msvcrt.getch()
             while msvcrt.kbhit():
                 msvcrt.getch()
-
-            if in_pouch:
-                if ch in (b'\x00', b'\xe0'):
-                    ext = msvcrt.getch()
-                    if ext == b'H':    # Up Arrow
-                        pouch_cur = (pouch_cur - 1) % 5
-                    elif ext == b'P':  # Down Arrow
-                        pouch_cur = (pouch_cur + 1) % 5
-                elif ch in (b'w', b'W'):
-                    pouch_cur = (pouch_cur - 1) % 5
-                elif ch in (b's', b'S'):
-                    pouch_cur = (pouch_cur + 1) % 5
-                elif ch in (b'1', b'2', b'3', b'4', b'5'):
-                    pouch_cur = int(ch.decode('ascii')) - 1
-                elif ch in (b'\r', b'\n', b' '):
-                    if pouch_cur == 0:
-                        if inventory["poppy"] > 0:
-                            inventory["poppy"] -= 1
-                            heal = 65 if solo_hero["name"] == "CAHARA" else (30 if is_hardcore else 50)
-                            solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
-                            recent_log = f"[POUCH]: Applied Poppy Flower (+{heal} HP). Current HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
-                            in_pouch = False
-                        else:
-                            recent_log = "[POUCH]: You have no Poppy Flowers remaining!"
-                    elif pouch_cur == 1:
-                        if inventory["weed"] > 0:
-                            inventory["weed"] -= 1
-                            heal = 75 if is_hardcore else 120
-                            solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
-                            recent_log = f"[POUCH]: Smoked Marijuana Herb (+{heal} HP). Current HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
-                            in_pouch = False
-                        else:
-                            recent_log = "[POUCH]: You have no Marijuana Herbs remaining!"
-                    elif pouch_cur == 2:
-                        if inventory["bread"] > 0:
-                            inventory["bread"] -= 1
-                            solo_hero["hunger"] = max(0, solo_hero.get("hunger", 0) - 40)
-                            recent_log = f"[POUCH]: Ate Moldy Bread. Hunger relieved (-40 Hunger)."
-                            in_pouch = False
-                        else:
-                            recent_log = "[POUCH]: You have no Bread remaining!"
-                    elif pouch_cur == 3:
-                        if inventory["ale"] > 0:
-                            inventory["ale"] -= 1
-                            solo_hero["mind"] = min(solo_hero.get("max_mind", 100), solo_hero.get("mind", 100) + 35)
-                            recent_log = f"[POUCH]: Drank Vintage Ale (+35 Mind). Terror cleansed!"
-                            in_pouch = False
-                        else:
-                            recent_log = "[POUCH]: You have no Vintage Ale remaining!"
-                    elif pouch_cur == 4:
-                        in_pouch = False
-                elif ch in (b'c', b'C', b'i', b'I', b'\x1b', b'b', b'B'):
-                    in_pouch = False
-                continue
 
             if ch in (b'\x00', b'\xe0'):
                 ext = msvcrt.getch()
@@ -880,6 +820,8 @@ def run_master_game():
                 inventory["key"] = key_count
                 run_pouch_interactive(hero=solo_hero, inv_dict=inventory, is_hardcore=is_hardcore)
                 key_count = inventory.get("key", key_count)
+                if "vial" in inventory:
+                    inventory["ale"] = inventory["vial"]
                 recent_log = "[SURVIVAL POUCH]: Returned to labyrinth exploration."
                 continue
             elif ch in (b'g', b'G'):
@@ -924,37 +866,6 @@ def run_master_game():
                 break
             line = raw.strip().lower()
             res = None
-            if in_pouch:
-                if line in ('w', 'up'):
-                    pouch_cur = (pouch_cur - 1) % 5
-                elif line in ('s', 'down'):
-                    pouch_cur = (pouch_cur + 1) % 5
-                elif line in ('1', '2', '3', '4', '5'):
-                    pouch_cur = int(line) - 1
-                elif line in ('', 'enter', 'use'):
-                    if pouch_cur == 0 and inventory["poppy"] > 0:
-                        inventory["poppy"] -= 1
-                        heal = 65 if solo_hero["name"] == "CAHARA" else (30 if is_hardcore else 50)
-                        solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
-                        in_pouch = False
-                    elif pouch_cur == 1 and inventory["weed"] > 0:
-                        inventory["weed"] -= 1
-                        heal = 75 if is_hardcore else 120
-                        solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
-                        in_pouch = False
-                    elif pouch_cur == 2 and inventory["bread"] > 0:
-                        inventory["bread"] -= 1
-                        solo_hero["hunger"] = max(0, solo_hero.get("hunger", 0) - 40)
-                        in_pouch = False
-                    elif pouch_cur == 3 and inventory["ale"] > 0:
-                        inventory["ale"] -= 1
-                        solo_hero["mind"] = min(solo_hero.get("max_mind", 100), solo_hero.get("mind", 100) + 35)
-                        in_pouch = False
-                    elif pouch_cur == 4:
-                        in_pouch = False
-                elif line in ('i', 'c', 'close', 'esc'):
-                    in_pouch = False
-                continue
 
             if line == 'w':
                 res = handle_map_move(0, -1)
@@ -968,20 +879,35 @@ def run_master_game():
                 inventory["key"] = key_count
                 run_pouch_interactive(hero=solo_hero, inv_dict=inventory, is_hardcore=is_hardcore)
                 key_count = inventory.get("key", key_count)
+                if "vial" in inventory:
+                    inventory["ale"] = inventory["vial"]
                 recent_log = "[SURVIVAL POUCH]: Returned to labyrinth exploration."
                 continue
             elif line in ('g', 'guide'):
                 run_guide_modal()
                 continue
             elif line in ('h', 'heal'):
-                if inventory["poppy"] > 0:
+                if inventory.get("poppy", 0) > 0:
                     inventory["poppy"] -= 1
                     heal = 65 if solo_hero["name"] == "CAHARA" else (30 if is_hardcore else 50)
                     solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
-                elif inventory["weed"] > 0:
+                    if "bleeding" in solo_hero.get("debuffs", []):
+                        solo_hero["debuffs"].remove("bleeding")
+                    recent_log = f"[QUICK HEAL]: Consumed Poppy Flower (+{heal} HP). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
+                elif inventory.get("weed", 0) > 0:
                     inventory["weed"] -= 1
                     heal = 75 if is_hardcore else 120
                     solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
+                    recent_log = f"[QUICK HEAL]: Consumed Marijuana Herb (+{heal} HP). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
+                elif inventory.get("meat", 0) > 0:
+                    inventory["meat"] -= 1
+                    solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + 20)
+                    solo_hero["hunger"] = max(0, solo_hero.get("hunger", 0) - 60)
+                    recent_log = f"[QUICK HEAL]: Ate Dried Meat (+20 HP, -60 Hunger). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
+                elif inventory.get("bread", 0) > 0:
+                    inventory["bread"] -= 1
+                    solo_hero["hunger"] = max(0, solo_hero.get("hunger", 0) - 40)
+                    recent_log = f"[QUICK NOURISH]: Ate Moldy Bread (-40 Hunger). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
                 continue
             elif line == 'q':
                 break
