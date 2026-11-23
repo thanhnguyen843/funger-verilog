@@ -156,7 +156,7 @@ module tb_show_monster_states;
             $display("\033[1;33m>>> FOE #%02d: %s \033[90m(Dimensions: %0dx%0d pixels)\033[0m", mid, m_name, max_w, max_h);
             $display("\033[90m+---------------------------+    +---------------------------+    +---------------------------+\033[0m");
             $display("\033[1;37m|    [STATE 0: NORMAL]      |    \033[1;33m|    [STATE 1: INJURED]     |    \033[90m|     [STATE 2: DEAD]       |\033[0m");
-            $display("\033[90m| Phosphor White (Standing) |    | Amber Warning (Crouched)  |    | Ash Gray (Neutralized)    |\033[0m");
+            $display("\033[90m| Phosphor White (Standing) |    | White Body + Amber Joints |    | Ash Gray (Neutralized)    |\033[0m");
             $display("\033[90m+---------------------------+    +---------------------------+    +---------------------------+\033[0m");
 
             // Render each monster side-by-side (2 rows of pixels per character row)

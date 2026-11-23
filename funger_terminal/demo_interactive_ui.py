@@ -175,18 +175,34 @@ else:
         "                             "
     ]
 
-# Postural Crawling Sprite (Technical Amber, Disarmed, Shifted down to floor)
+# Standing Disarmed Sprite (Severed Sword Arm -> Amber Socket, Disarmed)
+MONSTER_SPRITE_DISARMED = [
+    "      \033[1;37m▄▀▀▀▄▄▀▀▀▄\033[0m             ",
+    "     \033[1;37m▀▀ ▄ ▀▀ ▄ ▀\033[0m             ",
+    "     \033[1;37m▀▀▄▄▄▀▀▄▄▄▀\033[0m             ",
+    "      \033[1;37m▄▀▀▀▄▄▀▀\033[0m\033[1;33m▄▀\033[0m  (DISARMED) ",
+    "      \033[1;37m▀ ▀▀▀▀▀▀ ▀\033[0m             ",
+    "      \033[1;37m▀  ▀▄ ▀▄ ▀\033[0m             ",
+    "      \033[1;37m▀▀  ▀  ▀ ▀\033[0m             ",
+    "                             ",
+    "                             ",
+    "                             ",
+    "                             ",
+    "                             "
+]
+
+# Postural Crawling Sprite (White Body with Amber Severance Joints)
 MONSTER_SPRITE_CRAWLING = [
     "                             ",
     "                             ",
     "                             ",
     "                             ",
-    "      \033[1;33m▄▀▀▀▄▄▀▀▀▄\033[0m             ",
-    "     \033[1;33m▀▀ ▄ ▀▀ ▄ ▀\033[0m             ",
-    "     \033[1;33m▀▀▄▄▄▀▀▄▄▄▀\033[0m             ",
-    "      \033[1;33m▄▀▀▀▄▄▀▀▀▄\033[0m             ",
-    "   \033[1;33m▄▀▀▀▀▀▀▀▀▀▀▀▀▀▄\033[0m           ",
-    "   \033[1;33m▀▀▀▀   ▀▀  ▀▀▀▀\033[0m           ",
+    "      \033[1;37m▄▀▀▀▄▄▀▀▀▄\033[0m             ",
+    "     \033[1;37m▀▀ ▄ ▀▀ ▄ ▀\033[0m             ",
+    "     \033[1;37m▀▀▄▄▄▀▀▄▄▄▀\033[0m             ",
+    "      \033[1;37m▄▀▀▀▄▄▀▀\033[0m\033[1;33m▄▀\033[0m  (DISARMED) ",
+    "   \033[1;37m▄▀▀▀▀▀▀▀▀▀▀\033[0m\033[1;33m▀▀▀▄\033[0m (CROUCHED)",
+    "   \033[1;37m▀▀▀▀\033[0m   \033[1;33m▀▀\033[0m  \033[1;37m▀▀▀▀\033[0m           ",
     "    \033[1;33m[DISARMED & CROUCHED]\033[0m    ",
     "                             "
 ]
@@ -347,6 +363,9 @@ def render_screen():
     elif monster["debuff_legs"]:
         m_sprite = MONSTER_SPRITE_CRAWLING
         m_model_sub = "\033[1;33m[CROUCHED]\033[0m"
+    elif monster["debuff_arm_r"] or monster["debuff_arm_l"]:
+        m_sprite = MONSTER_SPRITE_DISARMED
+        m_model_sub = "\033[1;33m[DISARMED]\033[0m"
     else:
         m_sprite = MONSTER_SPRITE_INTACT
         m_model_sub = ""

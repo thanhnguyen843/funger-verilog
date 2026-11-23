@@ -121,7 +121,7 @@ module monster_state_model (
             end
 
             // ================================================================
-            // STATE 1: INJURED (Technical Amber, Disarmed, Crouched/Crawling)
+            // STATE 1: INJURED (Phosphor White Body with Amber Fracture Joints)
             // ================================================================
             2'b01: begin
                 if (query_row == 5'd31) begin
@@ -139,12 +139,22 @@ module monster_state_model (
                     pixel_val = 1'b0;
                     r = 8'd0; g = 8'd0; b = 8'd0;
                 end
-                // Phần thân còn lại: Hiển thị nguyên vẹn với sắc Vàng Hổ Phách Cảnh Báo
+                // Thân thể quái vật: Phần lớn là màu trắng, chỉ phần khớp nối tứ chi gãy là màu hổ phách
                 else if (raw_px) begin
                     pixel_val = 1'b1;
-                    r         = 8'd255;
-                    g         = 8'd180;
-                    b         = 8'd40;  // Technical Warning Amber (#FFAA28)
+                    // Kiểm tra đoạn nối gãy (Fracture Joint / Severance Socket):
+                    // 1) Khớp vai/cánh tay bị đứt: Đoạn nối 2 pixel (raw_w-6 .. raw_w-5) tại hàng vai (5..8)
+                    // 2) Khớp gãy chân/hông: Đoạn nối tại hàng tiếp giáp chân bị gãy (raw_h - 4)
+                    if ((col >= (raw_w - 5'd6) && query_row >= 5'd5 && query_row <= 5'd8) ||
+                        (query_row == (raw_h - 5'd4))) begin
+                        r = 8'd255;
+                        g = 8'd170;
+                        b = 8'd40;  // Technical Amber (#FFAA28) tại khớp nối gãy
+                    end else begin
+                        r = 8'd255;
+                        g = 8'd255;
+                        b = 8'd255; // Phần lớn thân thể giữ màu Trắng Sáng (#FFFFFF)
+                    end
                 end else begin
                     pixel_val = 1'b0;
                     r = 8'd0; g = 8'd0; b = 8'd0;

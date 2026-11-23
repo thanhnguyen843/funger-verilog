@@ -63,18 +63,18 @@ def get_sprite_lines(mid, state):
                 "                             ",
                 "                             "
             ]
-        elif state == 1: # Injured (Technical Amber - Disarmed & Crouched 4 rows down)
+        elif state == 1: # Injured (Phosphor White body with Technical Amber fracture joints)
             return [
                 "                             ",
                 "                             ",
                 "                             ",
                 "                             ",
-                "      \033[1;33m▄▀▀▀▄▄▀▀▀▄\033[0m  (DISARMED) ",
-                "     \033[1;33m▀▀ ▄ ▀▀ ▄ ▀\033[0m             ",
-                "     \033[1;33m▀▀▄▄▄▀▀▄▄▄▀\033[0m             ",
-                "      \033[1;33m▄▀▀▀▄▄▀▀▀▄\033[0m             ",
-                "   \033[1;33m▄▀▀▀▀▀▀▀▀▀▀▀▀▀▄\033[0m (CROUCHED)",
-                "   \033[1;33m▀▀▀▀   ▀▀  ▀▀▀▀\033[0m           ",
+                "      \033[1;37m▄▀▀▀▄▄▀▀▀▄\033[0m             ",
+                "     \033[1;37m▀▀ ▄ ▀▀ ▄ ▀\033[0m             ",
+                "     \033[1;37m▀▀▄▄▄▀▀▄▄▄▀\033[0m             ",
+                "      \033[1;37m▄▀▀▀▄▄▀▀\033[0m\033[1;33m▄▀\033[0m  (DISARMED) ",
+                "   \033[1;37m▄▀▀▀▀▀▀▀▀▀▀\033[0m\033[1;33m▀▀▀▄\033[0m (CROUCHED)",
+                "   \033[1;37m▀▀▀▀\033[0m   \033[1;33m▀▀\033[0m  \033[1;37m▀▀▀▀\033[0m           ",
                 "                             ",
                 "                             "
             ]
@@ -110,19 +110,19 @@ def get_sprite_lines(mid, state):
                 "    \033[90m[UPRIGHT STANCE]\033[0m         ",
                 "                             "
             ]
-        elif state == 1: # Injured (Amber, Disarmed, Shifted down 4 rows)
+        elif state == 1: # Injured (White body, Amber fracture joints, Shifted down 4 rows)
             return [
                 "                             ",
                 "                             ",
                 "                             ",
                 "                             ",
-                "       \033[1;33m▄▀▀▀▀▀▀▀▄\033[0m              ",
-                "      \033[1;33m▀▀ ▄  ▄ ▀▀\033[0m             ",
-                "      \033[1;33m▀▀▀▀▀▀▀▀▀▀\033[0m             ",
-                "       \033[1;33m▄▀▀▀▀▀▄\033[0m   (DISARMED)   ",
-                "      \033[1;33m▀▀▀▀▀▀▀▀\033[0m               ",
-                "    \033[1;33m▄▀▀▀▀▀▀▀▀▀▀▀▄\033[0m (CROUCHED)  ",
-                "   \033[1;33m▀▀▀▀▀▀▀▀▀▀▀▀▀▀\033[0m            ",
+                "       \033[1;37m▄▀▀▀▀▀▀▀▄\033[0m              ",
+                "      \033[1;37m▀▀ ▄  ▄ ▀▀\033[0m             ",
+                "      \033[1;37m▀▀▀▀▀▀▀▀▀▀\033[0m             ",
+                "       \033[1;37m▄▀▀▀▀\033[0m\033[1;33m▀▄\033[0m   (DISARMED)   ",
+                "      \033[1;37m▀▀▀▀▀▀▀▀\033[0m               ",
+                "    \033[1;37m▄▀▀▀▀▀▀▀\033[0m\033[1;33m▀▀▀▄\033[0m (CROUCHED)  ",
+                "   \033[1;37m▀▀▀▀▀▀\033[0m\033[1;33m▀▀\033[0m\033[1;37m▀▀▀▀▀▀\033[0m            ",
                 "                             "
             ]
         else: # Dead (Ash Gray, Head removed, collapsed)
@@ -148,7 +148,7 @@ def render_interactive():
 
     state_labels = [
         "NORMAL (2'b00) - Phosphor White",
-        "INJURED (2'b01) - Technical Amber",
+        "INJURED (2'b01) - White + Amber Joints",
         "DEAD (2'b10) - Deactivated Ash"
     ]
     state_colors = ["\033[1;37m", "\033[1;33m", "\033[90m"]
@@ -184,7 +184,7 @@ def render_interactive():
             "|  * Weapon Arm: \033[1;33mSEVERED (Disarmed - Column Off)\033[0m   |",
             "|  * Lower Body: \033[1;33mBROKEN (Crouched - Row Shift -4)\033[0m  |",
             "|  * Mobility  : \033[1;33mCRAWLING (100% Flee Success)\033[0m      |",
-            "|  * Aesthetics: \033[1;33mTechnical Warning Amber (#FFAA28)\033[0m |",
+            "|  * Aesthetics: \033[1;37mWhite Body\033[0m + \033[1;33mAmber Fracture Joints\033[0m  |",
             "|                                                  |",
             "|  \033[1;33m[MECHANIC]: Foe cannot chase; weapon lost!\033[0m      |",
         ]
@@ -207,7 +207,7 @@ def render_interactive():
 
     print()
     print("\033[1;30m====================================================================================================\033[0m")
-    print("  \033[90m[SELECT STATE]:\033[0m \033[1;37m[1]\033[0m Normal (White)   |  \033[1;33m[2]\033[0m Injured (Amber)   |  \033[90m[3]\033[0m Dead (Ash)   |  \033[1;37m[Space]\033[0m Cycle")
+    print("  \033[90m[SELECT STATE]:\033[0m \033[1;37m[1]\033[0m Normal (White)   |  \033[1;33m[2]\033[0m Injured (White+Amber)   |  \033[90m[3]\033[0m Dead (Ash)   |  \033[1;37m[Space]\033[0m Cycle")
     print("  \033[90m[SELECT FOE]:  \033[0m \033[1;37m[A / Left]\033[0m Prev Foe  |  \033[1;37m[D / Right]\033[0m Next Foe   |  \033[1;31m[Q]\033[0m Quit Viewer")
     print("\033[1;30m====================================================================================================\033[0m")
     sys.stdout.flush()
