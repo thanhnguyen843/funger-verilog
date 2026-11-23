@@ -42,14 +42,26 @@ MAP_WIDTH = 36
 MAP_HEIGHT = 20
 TOTAL_TILES = MAP_WIDTH * MAP_HEIGHT # 720
 
-TILE_WALL    = 0
-TILE_PATH    = 1
-TILE_MONSTER = 2
-TILE_CHEST   = 3
-TILE_GATE    = 4
+TILE_WALL       = 0
+TILE_PATH       = 1
+TILE_MONSTER    = 2
+TILE_CHEST      = 3
+TILE_GATE       = 4
+TILE_BARRICADE  = 5
+TILE_SEAL       = 6
+TILE_CRAWLSPACE = 7
+
+# Squad Roster with 4 Distinct Roles
+squad = [
+    {"name": "CAHARA",   "role": "Mercenary", "hp": 115, "max_hp": 115, "spec": "Trap Disarm (Mimics)"},
+    {"name": "D'ARCE",   "role": "Paladin",   "hp": 150, "max_hp": 150, "spec": "Iron Shatter (Barricades)"},
+    {"name": "ENKI",     "role": "Occultist", "hp": 85,  "max_hp": 85,  "spec": "Hexen Dispeller (Arcane Seals)"},
+    {"name": "THE GIRL", "role": "Ward",      "hp": 95,  "max_hp": 95,  "spec": "Crevice Crawl (Crawlspaces)"}
+]
+active_hero_idx = 0
 
 def get_base_tile(x, y):
-    """Replicates map_rom.v hardware logic exactly."""
+    """Replicates map_rom.v hardware logic exactly with role-locked obstacles."""
     # 1. Gates embedded on rightmost wall (x = 35)
     if (x == MAP_WIDTH - 1 and y == 6) or (x == MAP_WIDTH - 1 and y == 14):
         return TILE_GATE
@@ -65,21 +77,28 @@ def get_base_tile(x, y):
     # 5. Starting sanctuary around (2, 2)
     if 1 <= x <= 4 and 1 <= y <= 3:
         return TILE_PATH
-    # 6. Treasure chests
+    # 6. Role-Locked Exploration Obstacles
+    if (x, y) in [(16, 6), (22, 14)]:
+        return TILE_BARRICADE
+    if (x, y) in [(22, 7), (30, 9)]:
+        return TILE_SEAL
+    if (x, y) == (7, 2):
+        return TILE_CRAWLSPACE
+    # 7. Treasure chests
     if (x, y) in [(8,2), (22,3), (6,11), (18,11), (28,10), (12,17), (26,17)]:
         return TILE_CHEST
-    # 7. Dungeon roaming monsters
+    # 8. Dungeon roaming monsters
     if (x, y) in [(14,2), (10,6), (20,7), (28,4), (14,11), (24,11), (8,15), (20,15)]:
         return TILE_MONSTER
-    # 8. Internal maze wall dividers
+    # 9. Internal maze wall dividers
     if ((x == 6 and 4 <= y <= 9) or
         (x == 12 and 3 <= y <= 8) or
         (x == 16 and 1 <= y <= 5) or
         (x == 16 and 8 <= y <= 13) or
-        (x == 22 and 5 <= y <= 9) or
+        (x == 22 and 5 <= y <= 6) or (x == 22 and 8 <= y <= 9) or
         (x == 26 and 2 <= y <= 7) or
         (x == 30 and 1 <= y <= 4) or
-        (x == 30 and 8 <= y <= 12) or
+        (x == 30 and 8 <= y <= 8) or (x == 30 and 10 <= y <= 12) or
         (y == 4 and 7 <= x <= 10) or
         (y == 9 and 1 <= x <= 4) or
         (y == 13 and 7 <= x <= 14) or
@@ -87,10 +106,10 @@ def get_base_tile(x, y):
         (y == 15 and 10 <= x <= 16) or
         (x == 4 and 14 <= y <= 17) or
         (x == 10 and 16 <= y <= 18) or
-        (x == 22 and 14 <= y <= 17) or
+        (x == 22 and 15 <= y <= 17) or
         (x == 30 and 16 <= y <= 18)):
         return TILE_WALL
-    # 9. Open pathway
+    # 10. Open pathway
     return TILE_PATH
 
 # Game State
@@ -147,11 +166,14 @@ def render_screen():
     bar_fill = int(pct / 5.0)
     bar_str = "█" * bar_fill + "░" * (20 - bar_fill)
 
+    v_hero = squad[active_hero_idx]
+    h_info = f"{v_hero['name']} [{v_hero['role']}] - HP:{v_hero['hp']:3d}/{v_hero['max_hp']:3d}"
+
     print("\033[1;30m+====================================================================================================+\033[0m")
-    print("\033[1;30m| \033[1;37m     FEAR & HUNGER: TERMINAL LABYRINTH - PERSISTENT FOG OF WAR & MAP DISCOVERY DEMO            \033[1;30m|\033[0m")
+    print("\033[1;30m| \033[1;37m     FEAR & HUNGER: TERMINAL LABYRINTH - PERSISTENT FOG OF WAR & 4-HERO ROLE DISCOVERY DEMO       \033[1;30m|\033[0m")
     print("\033[1;30m+====================================================================================================+\033[0m")
-    print(f"  \033[1;33m[POSITION]:\033[0m X={player_x:2d}, Y={player_y:2d}   \033[1;36m[STEPS]:\033[0m {step_count:<4d}   \033[1;35m[RUNIC KEYS]:\033[0m {key_count}/3   \033[1;32m[MODE]:\033[0m {'ALL ILLUMINATED (CHEAT)' if full_vision_cheat else 'DYNAMIC FOG OF WAR'}")
-    print(f"  \033[1;33m[DISCOVERY]:\033[0m [\033[1;32m{bar_str}\033[0m] \033[1;37m{pct:5.1f}%\033[0m ({exp_count:3d}/{TOTAL_TILES:3d} Tiles Illuminated)")
+    print(f"  \033[1;33m[POSITION]:\033[0m X={player_x:2d}, Y={player_y:2d}   \033[1;36m[KEYS]:\033[0m {key_count}/3   \033[1;32m[VANGUARD]:\033[0m \033[1;37m{h_info:<27}\033[0m  \033[1;35m[SPEC]:\033[0m \033[1;33m{v_hero['spec'][:22]}\033[0m")
+    print(f"  \033[1;33m[DISCOVERY]:\033[0m [\033[1;32m{bar_str}\033[0m] \033[1;37m{pct:5.1f}%\033[0m ({exp_count:3d}/{TOTAL_TILES:3d}) | \033[90mROSTER:\033[0m [1] CAHARA  [2] D'ARCE  [3] ENKI  [4] THE GIRL")
     print("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
 
     # Render Map Area (36 columns x 2 characters = 72 columns width)
@@ -175,7 +197,7 @@ def render_screen():
             else:
                 # Discovered Tile
                 tile = get_base_tile(x, y)
-                if (x, y) in cleared_tiles and tile in (TILE_MONSTER, TILE_CHEST):
+                if (x, y) in cleared_tiles and tile in (TILE_MONSTER, TILE_CHEST, TILE_BARRICADE, TILE_SEAL):
                     tile = TILE_PATH
 
                 if is_active_torch:
@@ -190,6 +212,12 @@ def render_screen():
                         row_str += "\033[48;2;139;69;19;1;37m C\033[0m"
                     elif tile == TILE_GATE:
                         row_str += "\033[46;1;30m G\033[0m"
+                    elif tile == TILE_BARRICADE:
+                        row_str += "\033[41;1;37m #\033[0m"
+                    elif tile == TILE_SEAL:
+                        row_str += "\033[45;1;37m §\033[0m"
+                    elif tile == TILE_CRAWLSPACE:
+                        row_str += "\033[43;1;30m =\033[0m"
                 else:
                     # Explored Memory: Softly illuminated memory
                     if tile == TILE_WALL:
@@ -202,19 +230,25 @@ def render_screen():
                         row_str += "\033[48;2;90;45;15;1;37m C\033[0m"
                     elif tile == TILE_GATE:
                         row_str += "\033[48;2;20;85;85;1;30m G\033[0m"
+                    elif tile == TILE_BARRICADE:
+                        row_str += "\033[48;2;100;20;20;1;37m #\033[0m"
+                    elif tile == TILE_SEAL:
+                        row_str += "\033[48;2;70;20;70;1;37m §\033[0m"
+                    elif tile == TILE_CRAWLSPACE:
+                        row_str += "\033[48;2;90;70;10;1;30m =\033[0m"
 
         print(f"{border_left_pad}{row_str}")
 
     print("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
     print(f"  \033[1;36m[LOG]:\033[0m \033[1;37m{recent_log:<90}\033[0m")
     print("\033[1;30m+====================================================================================================+\033[0m")
-    print("  \033[90mLEGEND:\033[0m \033[42m  \033[0m Wall  |  \033[90m .\033[0m Path  |  \033[1;33m O\033[0m Player  |  \033[45;1;37m M\033[0m Foe  |  \033[48;2;139;69;19;1;37m C\033[0m Chest  |  \033[46;1;30m G\033[0m Exit Gate")
-    print("  \033[90mCONTROLS:\033[0m \033[1;37m[W/A/S/D]\033[0m or \033[1;37m[Arrows]\033[0m Move  |  \033[1;33m[F]\033[0m Toggle Flashlight  |  \033[1;31m[R]\033[0m Reset Fog  |  \033[1;31m[Q]\033[0m Quit")
+    print("  \033[90mLEGEND:\033[0m \033[42m  \033[0m Wall  \033[90m .\033[0m Path  \033[1;33m O\033[0m Lead  \033[41;1;37m #\033[0m Barricade  \033[45;1;37m §\033[0m Seal  \033[43;1;30m =\033[0m Crawl  \033[48;2;139;69;19;1;37m C\033[0m Chest  \033[46;1;30m G\033[0m Gate")
+    print("  \033[90mCONTROLS:\033[0m \033[1;37m[W/A/S/D]\033[0m Move  |  \033[1;33m[1-4]\033[0m Deploy Vanguard (1:Cahara 2:D'arce 3:Enki 4:Girl)  |  \033[1;31m[Q]\033[0m Quit")
     print("\033[1;30m====================================================================================================\033[0m")
     sys.stdout.flush()
 
 def handle_move(dx, dy):
-    global player_x, player_y, step_count, key_count, recent_log
+    global player_x, player_y, step_count, key_count, recent_log, active_hero_idx
     nx = player_x + dx
     ny = player_y + dy
 
@@ -230,15 +264,55 @@ def handle_move(dx, dy):
         recent_log = f"[!] Solid bedrock wall at ({nx}, {ny}) blocks your passage."
         return
 
+    hero = squad[active_hero_idx]
+
+    # Barricade collision (Requires D'arce)
+    if tile == TILE_BARRICADE and (nx, ny) not in cleared_tiles:
+        if hero["name"] == "D'ARCE":
+            cleared_tiles.add((nx, ny))
+            recent_log = f"[D'ARCE]: Heavy warhammer & tower shield shatter the rusted iron barricade! Passage opened!"
+        else:
+            recent_log = f"[BLOCKED]: Heavy rusted iron barricade at ({nx}, {ny})! Too heavy! Switch to D'ARCE [2] to shatter!"
+            return
+
+    # Hexen Seal collision (Requires Enki)
+    elif tile == TILE_SEAL and (nx, ny) not in cleared_tiles:
+        if hero["name"] == "ENKI":
+            cleared_tiles.add((nx, ny))
+            recent_log = f"[ENKI]: Chants counter-curse in eldritch tongue, dissolving the Hexen Seal into ash! Pathway open!"
+        else:
+            hero["hp"] = max(1, hero["hp"] - 10)
+            recent_log = f"[BLOCKED]: Arcane purple runes shock {hero['name']} (-10 HP)! Switch to ENKI [3] to dispel!"
+            return
+
+    # Crawlspace collision (Requires The Girl)
+    elif tile == TILE_CRAWLSPACE:
+        if hero["name"] == "THE GIRL":
+            recent_log = f"[THE GIRL]: Squeezes easily through the narrow 1-foot rock crevice!"
+        else:
+            recent_log = f"[BLOCKED]: Rock crevice at ({nx}, {ny}) is too tight for an adult warrior! Switch to THE GIRL [4] to crawl!"
+            return
+
     # Interact with chest
-    if tile == TILE_CHEST and (nx, ny) not in cleared_tiles:
+    elif tile == TILE_CHEST and (nx, ny) not in cleared_tiles:
         cleared_tiles.add((nx, ny))
-        key_count = min(3, key_count + 1)
-        recent_log = f"[CHEST]: Opened ancient chest at ({nx}, {ny})! Obtained Runic Key ({key_count}/3)!"
+        if (nx, ny) in [(6, 11), (12, 17)]:
+            if hero["name"] == "CAHARA":
+                key_count = min(3, key_count + 1)
+                recent_log = f"[CAHARA]: Fast hands detects spring needle trap and disarms it safely! Obtained Runic Key ({key_count}/3)!"
+            else:
+                hero["hp"] = max(1, hero["hp"] - 30)
+                key_count = min(3, key_count + 1)
+                recent_log = f"[TRAP TRIGGERED]: Mimic jaws snap shut! {hero['name']} takes -30 HP! Got Key ({key_count}/3). Need CAHARA [1] to disarm safely!"
+        else:
+            key_count = min(3, key_count + 1)
+            recent_log = f"[CHEST]: Opened ancient chest at ({nx}, {ny})! Obtained Runic Key ({key_count}/3)!"
+
     # Interact with monster
     elif tile == TILE_MONSTER and (nx, ny) not in cleared_tiles:
         cleared_tiles.add((nx, ny))
-        recent_log = f"[COMBAT]: Roaming horror engaged at ({nx}, {ny})! Target defeated and neutralized."
+        recent_log = f"[COMBAT]: {hero['name']} engages roaming horror at ({nx}, {ny})! Target defeated and neutralized."
+
     # Reach gate
     elif tile == TILE_GATE:
         if key_count >= 3:
@@ -255,7 +329,7 @@ def handle_move(dx, dy):
         recent_log = f"[*] Advanced into corridor. +{new_tiles} tiles permanently illuminated."
 
 def main():
-    global full_vision_cheat, recent_log, player_x, player_y, step_count, key_count, cleared_tiles, explored_mask, milestones_reached
+    global full_vision_cheat, recent_log, player_x, player_y, step_count, key_count, cleared_tiles, explored_mask, milestones_reached, active_hero_idx
     # Initial reveal around start (2, 2)
     reveal_around(player_x, player_y, radius=4)
 
@@ -281,6 +355,10 @@ def main():
                 handle_move(-1, 0)
             elif ch in (b'd', b'D'):
                 handle_move(1, 0)
+            elif ch in (b'1', b'2', b'3', b'4'):
+                active_hero_idx = int(ch.decode('ascii')) - 1
+                h = squad[active_hero_idx]
+                recent_log = f"[VANGUARD DEPLOYED]: {h['name']} [{h['role']}] takes point! Specialty: {h['spec']}"
             elif ch in (b'f', b'F'):
                 full_vision_cheat = not full_vision_cheat
                 recent_log = f"[CHEAT]: Flashlight mode {'ENABLED (100% visible)' if full_vision_cheat else 'DISABLED (Fog restored)'}."
@@ -302,6 +380,10 @@ def main():
             line = sys.stdin.readline().strip().lower()
             if line == 'q':
                 break
+            elif line in ('1', '2', '3', '4'):
+                active_hero_idx = int(line) - 1
+                h = squad[active_hero_idx]
+                recent_log = f"[VANGUARD DEPLOYED]: {h['name']} [{h['role']}] takes point! Specialty: {h['spec']}"
             elif line == 'w': handle_move(0, -1)
             elif line == 's': handle_move(0, 1)
             elif line == 'a': handle_move(-1, 0)

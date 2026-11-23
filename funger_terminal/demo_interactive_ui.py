@@ -227,15 +227,17 @@ def format_model_row(sp_line):
     return " " * 6 + sp_line + " " * 7
 
 # =============================================================================
-# GAME DATA: MONSTER & BALANCED HERO ROSTER
+# =============================================================================
+# GAME DATA: MONSTER & BALANCED HERO ROSTER (4-PILLAR ARCHETYPE & TOXICITY SYSTEM)
 # =============================================================================
 monster = {
     "name": "SHADOW SWORDSMAN",
     "id": 8,
+    "archetype": "ARMORED",     # NORMAL, SPECTRAL, ARMORED, AMBUSHER, TERROR
     "hp": 95,
     "max_hp": 95,
     "atk": 24,
-    "def": 14,
+    "def": 99,                 # High DEF for Armored archetype
     "debuff_arm_r": False,     # Disarmed
     "debuff_arm_l": False,     # Guard Broken
     "debuff_legs": False,      # Crouched / Crawling
@@ -254,10 +256,12 @@ squad = [
         "max_hunger": 100,
         "atk": 32,
         "def": 18,
+        "toxicity": 0,
+        "max_toxicity": 100,
         "buff": "",
         "is_guarding": False,
         "dodge_rate": 0.20,
-        "passive": "Fast Hands (+20% Dodge, 100% Flee)",
+        "passive": "Fast Hands (+20% Dodge, Flee, Trap Disarm)",
         "debuffs": []
     },
     {
@@ -271,10 +275,12 @@ squad = [
         "max_hunger": 100,
         "atk": 28,
         "def": 32,
+        "toxicity": 0,
+        "max_toxicity": 100,
         "buff": "",
         "is_guarding": False,
         "dodge_rate": 0.05,
-        "passive": "Iron Will (-25% DMG taken, Holy Heal)",
+        "passive": "Iron Will (-25% DMG, Holy Smite Armor Break)",
         "debuffs": []
     },
     {
@@ -288,10 +294,12 @@ squad = [
         "max_hunger": 100,
         "atk": 48,
         "def": 16,
+        "toxicity": 0,
+        "max_toxicity": 100,
         "buff": "",
         "is_guarding": False,
         "dodge_rate": 0.10,
-        "passive": "Enlightenment (+5 MND/turn, Armor Pierce)",
+        "passive": "Enlightenment (+5 MND/turn, True Magic)",
         "debuffs": []
     },
     {
@@ -305,10 +313,12 @@ squad = [
         "max_hunger": 100,
         "atk": 24,
         "def": 36,
+        "toxicity": 0,
+        "max_toxicity": 100,
         "buff": "",
         "is_guarding": False,
         "dodge_rate": 0.30,
-        "passive": "Innocent Aura (Foe ATK -30%, High Dodge)",
+        "passive": "Innocent Aura (Enemy ATK -30%, Dread Immune)",
         "debuffs": []
     }
 ]
@@ -398,16 +408,28 @@ def render_screen():
         if monster["debuff_arm_l"]:
             m_inj_2 = "\033[1;36m  [L-ARM] Severed (Guard Broken)\033[0m"
 
+    arch = monster.get("archetype", "NORMAL")
+    if arch == "SPECTRAL":
+        trait_desc = "\033[1;35m  TRAIT : SPECTRAL (Immune to blades, Magic weak)\033[0m"
+    elif arch == "ARMORED":
+        trait_desc = "\033[1;36m  TRAIT : ARMORED (Deflects blades, Smite weak)\033[0m"
+    elif arch == "AMBUSHER":
+        trait_desc = "\033[1;31m  TRAIT : AMBUSHER (Lethal strike, Dodge weak)\033[0m"
+    elif arch == "TERROR":
+        trait_desc = "\033[1;35m  TRAIT : DREAD AURA (-25 Mind/turn, Ward calm)\033[0m"
+    else:
+        trait_desc = "\033[90m  TRAIT : STANDARD COMBATANT\033[0m"
+
     # 14 Rows of Monster Card (54 cols each) - Uniform Spacing
     m_card_rows = [
         m_border,
-        make_card_row(f"\033[1;31m  FOE   : #{monster['id']:02d} {monster['name']:<18}\033[90m[Opponent]\033[0m", c_mcard),
+        make_card_row(f"\033[1;31m  FOE   : #{monster['id']:02d} {monster['name']:<17} \033[1;33m[{arch}]\033[0m", c_mcard),
         make_card_row("", c_mcard),
         make_card_row(f"  HP    : {m_hp_bar} \033[1;31m{monster['hp']:3d}/{monster['max_hp']:3d} ({m_pct:3d}%)\033[0m", c_mcard),
         make_card_row("", c_mcard),
+        make_card_row(trait_desc, c_mcard),
         make_card_row("", c_mcard),
         make_card_row(m_inj_header, c_mcard),
-        make_card_row("", c_mcard),
         make_card_row(m_inj_1, c_mcard),
         make_card_row(m_inj_2, c_mcard),
         make_card_row(m_inj_3, c_mcard),
@@ -448,13 +470,17 @@ def render_screen():
     h_mnd_bar = make_bar(hero["mind"], hero["max_mind"], 12, "36")
     h_hng_bar = make_bar(hero["hunger"], hero["max_hunger"], 12, "33")
 
-    h_buff_row = ""
-    if hero.get("buff"):
-        h_buff_row = f"\033[1;32m  BUFF  : {hero['buff']}\033[0m"
+    h_tox = hero.get("toxicity", 0)
+    h_tox_bar = make_bar(h_tox, 100, 12, "31" if h_tox >= 80 else ("33" if h_tox >= 50 else "32"))
+    tox_badge = "\033[1;31m[INTOXICATED]\033[0m" if h_tox >= 100 else ("\033[1;33m[HIGH]\033[0m" if h_tox >= 80 else "\033[90m[SAFE]\033[0m")
 
-    h_injury_row = ""
+    status_line = ""
     if hero.get("debuffs"):
-        h_injury_row = f"\033[1;31m  INJURY: {', '.join(hero['debuffs'])}\033[0m"
+        status_line = f"\033[1;31m  STATUS: {', '.join(hero['debuffs'])}\033[0m"
+    elif hero.get("buff"):
+        status_line = f"\033[1;32m  STATUS: {hero['buff']}\033[0m"
+    else:
+        status_line = f"\033[90m  STATUS: Battle Ready\033[0m"
 
     h_model_rows = [
         pad_str("          \033[1;32m[HERO]\033[0m", 42)
@@ -475,10 +501,10 @@ def render_screen():
         make_card_row("", c_hcard),
         make_card_row(f"  HUNGER: {h_hng_bar} \033[1;33m{hero['hunger']:3d}/{hero['max_hunger']:3d}\033[0m", c_hcard),
         make_card_row("", c_hcard),
-        make_card_row(h_buff_row, c_hcard),
+        make_card_row(f"  TOXIC : {h_tox_bar} \033[1;{'31' if h_tox >= 80 else '32'}m{h_tox:3d}%\033[0m {tox_badge}", c_hcard),
         make_card_row("", c_hcard),
-        make_card_row(h_injury_row, c_hcard),
-        make_card_row("", c_hcard),
+        make_card_row(f"\033[1;33m  PASSIV: {hero['passive'][:38]}\033[0m", c_hcard),
+        make_card_row(status_line, c_hcard),
         h_border
     ]
 
@@ -570,9 +596,16 @@ def get_current_menu_data():
             is_active = (idx == active_hero_idx)
             tag = " \033[1;32m[ACTIVE]\033[0m" if is_active else " \033[90m[RESERVE]\033[0m"
             status_tag = "" if comp["hp"] > 0 else " \033[1;31m[DOWN]\033[0m"
+            tox_val = comp.get("toxicity", 0)
+            if tox_val >= 100:
+                tox_str = "\033[1;31mTOX:MAX!\033[0m"
+            elif tox_val >= 50:
+                tox_str = f"\033[1;33mTOX:{tox_val:2d}%\033[0m"
+            else:
+                tox_str = f"\033[90mTOX:{tox_val:2d}%\033[0m"
             opts.append({
                 "label": f"{comp['name']:<9} [{comp['role']:<9}]",
-                "desc": f"HP:{comp['hp']:3d}/{comp['max_hp']:3d} MND:{comp['mind']:3d} | {comp['passive'][:26]}{status_tag}{tag}"
+                "desc": f"HP:{comp['hp']:3d}/{comp['max_hp']:3d} MND:{comp['mind']:3d} {tox_str} | {comp['passive'][:20]}{status_tag}{tag}"
             })
         opts.append({"label": "BACK", "desc": "-> Keep current vanguard, return to action menu"})
         return {
@@ -726,7 +759,20 @@ def handle_selection():
             cursor_idx = 2
 
     elif current_menu == "TARGET_LIMB":
-        if cursor_idx == 0:    # Head
+        arch = monster.get("archetype", "NORMAL")
+        if arch == "SPECTRAL" and cursor_idx != 5:
+            combat_log = f"PHANTOM IMMUNITY! {hero['name']}'s blade passes harmlessly through spectral form! (0 DMG - Only Enki Occult Magic works!)"
+            enemy_turn()
+            current_menu = "MAIN"
+            cursor_idx = 0
+        elif arch == "ARMORED" and cursor_idx != 5:
+            dmg = 2
+            monster["hp"] = max(0, monster["hp"] - dmg)
+            combat_log = f"ARMOR DEFLECTION! {hero['name']}'s blade clangs off steel armor for only {dmg} DMG! (Need D'ARCE Smite or ENKI Magic!)"
+            enemy_turn()
+            current_menu = "MAIN"
+            cursor_idx = 0
+        elif cursor_idx == 0:    # Head
             if monster["debuff_legs"]:
                 dmg = monster["hp"]
                 monster["hp"] = 0
@@ -819,8 +865,13 @@ def handle_selection():
                     combat_log = "Insufficient Mind points for Healing Prayer!"
             elif cursor_idx == 2:  # Holy smite
                 dmg = 42
+                if monster.get("archetype") == "ARMORED":
+                    monster["archetype"] = "NORMAL"
+                    monster["def"] = 14
+                    combat_log = f"ARMOR SHATTERED! D'arce's Holy Smite fractures heavy steel plate for {dmg} DMG! Foe DEF shattered!"
+                else:
+                    combat_log = f"HOLY SMITE! Heavy sanctified downward cleave inflicts {dmg} DMG!"
                 monster["hp"] = max(0, monster["hp"] - dmg)
-                combat_log = f"HOLY SMITE! Heavy sanctified downward cleave inflicts {dmg} DMG!"
                 enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
@@ -831,7 +882,12 @@ def handle_selection():
                     h["mind"] -= 15
                     dmg = 50
                     monster["hp"] = max(0, monster["hp"] - dmg)
-                    combat_log = f"BLACK ORB! Dark sphere pierces 100% defense for {dmg} unblockable DMG!"
+                    if monster.get("archetype") == "SPECTRAL":
+                        combat_log = f"OCCULT PURGE! Black Orb tears apart phantom spirit for {dmg} True Magic DMG! (SPECTRAL WEAKNESS)!"
+                    elif monster.get("archetype") == "ARMORED":
+                        combat_log = f"DEFENSE BYPASS! Black Orb bypasses steel plate for {dmg} True Magic DMG!"
+                    else:
+                        combat_log = f"BLACK ORB! Dark sphere pierces 100% defense for {dmg} unblockable DMG!"
                     enemy_turn()
                 else:
                     combat_log = "Insufficient Mind points for Black Orb!"
@@ -859,8 +915,9 @@ def handle_selection():
                 combat_log = "NIMBLE DODGE! The Girl slips into shadows, guaranteeing 100% evasion!"
                 enemy_turn()
             elif cursor_idx == 1:  # Loving embrace
-                h["mind"] = min(h["max_mind"], h["mind"] + 35)
-                combat_log = "LOVING EMBRACE! Heartwarming comfort restores +35 Mind and dispels panic!"
+                for m in squad:
+                    m["mind"] = min(m["max_mind"], m["mind"] + 35)
+                combat_log = "LOVING EMBRACE! Heartwarming comfort restores +35 Mind to ENTIRE SQUAD and dispels terror!"
                 enemy_turn()
             elif cursor_idx == 2:  # Distract foe
                 monster["temp_debuff"] = "DISTRACTED (-50% ATK)"
@@ -870,23 +927,39 @@ def handle_selection():
             cursor_idx = 0
 
     elif current_menu == "POUCH":
-        if cursor_idx == 0:    # Poppy
+        if cursor_idx == 0:    # Poppy (+50 HP, +35 Toxicity)
             if inventory["poppy"] > 0:
                 inventory["poppy"] -= 1
-                hero["hp"] = min(hero["max_hp"], hero["hp"] + 50)
-                if "Bleeding (-4 HP/turn)" in hero["debuffs"]:
-                    hero["debuffs"].remove("Bleeding (-4 HP/turn)")
-                combat_log = f"{hero['name']} consumes White Poppy (+50 HP, bleeding stopped)."
+                if hero.get("toxicity", 0) >= 100:
+                    hero["hp"] = max(1, hero["hp"] - 5)
+                    combat_log = f"INTOXICATED! {hero['name']}'s stomach rejects Poppy! Vomited (0 HP healed, -5 toxic DMG)!"
+                else:
+                    hero["hp"] = min(hero["max_hp"], hero["hp"] + 50)
+                    hero["toxicity"] = min(100, hero.get("toxicity", 0) + 35)
+                    if "Bleeding (-4 HP/turn)" in hero["debuffs"]:
+                        hero["debuffs"].remove("Bleeding (-4 HP/turn)")
+                    if hero["toxicity"] >= 100:
+                        combat_log = f"{hero['name']} consumes Poppy (+50 HP). TOXICITY AT 100%! Hero is now INTOXICATED!"
+                    else:
+                        combat_log = f"{hero['name']} consumes Poppy (+50 HP, +35% Toxicity [{hero['toxicity']}%])."
                 enemy_turn()
             else:
                 combat_log = "Out of White Poppy!"
             current_menu = "MAIN"
             cursor_idx = 0
-        elif cursor_idx == 1:  # Weed
+        elif cursor_idx == 1:  # Weed (+120 HP, +50 Toxicity)
             if inventory["weed"] > 0:
                 inventory["weed"] -= 1
-                hero["hp"] = min(hero["max_hp"], hero["hp"] + 120)
-                combat_log = f"{hero['name']} uses Herbal Weed (+120 HP)."
+                if hero.get("toxicity", 0) >= 100:
+                    hero["hp"] = max(1, hero["hp"] - 5)
+                    combat_log = f"INTOXICATED! {hero['name']} overdoses on Weed! Vomited (0 HP healed, -5 toxic DMG)!"
+                else:
+                    hero["hp"] = min(hero["max_hp"], hero["hp"] + 120)
+                    hero["toxicity"] = min(100, hero.get("toxicity", 0) + 50)
+                    if hero["toxicity"] >= 100:
+                        combat_log = f"{hero['name']} uses Herbal Weed (+120 HP). TOXICITY AT 100%! Hero is now INTOXICATED!"
+                    else:
+                        combat_log = f"{hero['name']} uses Herbal Weed (+120 HP, +50% Toxicity [{hero['toxicity']}%])."
                 enemy_turn()
             else:
                 combat_log = "Out of Herbal Weed!"
@@ -946,6 +1019,29 @@ def enemy_turn():
         combat_log += " | Foe neutralized! VICTORY!"
         return
 
+    # 1. Bench detoxification: reserve heroes purge -25% toxicity per turn!
+    purged_names = []
+    for idx, comp in enumerate(squad):
+        if idx != active_hero_idx and comp.get("toxicity", 0) > 0:
+            comp["toxicity"] = max(0, comp["toxicity"] - 25)
+            if comp["toxicity"] == 0:
+                purged_names.append(comp["name"])
+    if purged_names:
+        combat_log += f" | Bench rest: {', '.join(purged_names)} detoxified (-25%)!"
+
+    # 2. Active hero toxic nausea check
+    if hero.get("toxicity", 0) >= 100:
+        hero["hp"] = max(1, hero["hp"] - 5)
+        combat_log += f" | {hero['name']} suffers intoxicated nausea (-5 HP)!"
+
+    # 3. Terror Archetype Dread Aura check
+    if monster.get("archetype") == "TERROR":
+        if hero["name"] == "THE GIRL":
+            combat_log += " | INNOCENT AURA! The Girl's serene calm repels Dread Aura (0 Mind lost)!"
+        else:
+            hero["mind"] = max(0, hero["mind"] - 25)
+            combat_log += f" | DREAD AURA! Eldritch horror drains -25 Mind from {hero['name']}!"
+
     # Bleed effect
     if "Bleeding (-4 HP/turn)" in hero["debuffs"]:
         hero["hp"] = max(0, hero["hp"] - 4)
@@ -969,6 +1065,9 @@ def enemy_turn():
 
     # Incoming Damage calculation with passives
     base_atk = monster["atk"]
+    if monster.get("archetype") == "AMBUSHER" and not hero["is_guarding"]:
+        base_atk = int(base_atk * 1.5)
+
     if hero["name"] == "THE GIRL":
         base_atk = int(base_atk * 0.70)
     if "DISTRACTED (-50% ATK)" in monster.get("temp_debuff", ""):
@@ -987,7 +1086,8 @@ def enemy_turn():
 
     dmg = max(3, dmg)
     hero["hp"] = max(0, hero["hp"] - dmg)
-    combat_log += f" | Foe strikes! {hero['name']} takes {dmg} DMG."
+    ambush_tag = " [LETHAL AMBUSH]" if (monster.get("archetype") == "AMBUSHER" and not hero["is_guarding"]) else ""
+    combat_log += f" | Foe strikes{ambush_tag}! {hero['name']} takes {dmg} DMG."
 
     # Chance foe inflicts bleeding scratch
     if random.random() < 0.35 and "Bleeding (-4 HP/turn)" not in hero["debuffs"]:
@@ -1055,14 +1155,14 @@ def run_interactive_loop():
 # SHOWCASE AUTO TRACE
 # =============================================================================
 def run_showcase_trace():
-    print("\n>>> STARTING POKÉMON-STYLE COMBAT ARENA SHOWCASE <<<\n")
+    print("\n>>> STARTING 4-HERO ROLE-LOCKED COMBAT ARENA SHOWCASE <<<\n")
     states = [
-        ("MAIN", 0, "STEP 1: POKÉMON-STYLE COMBAT ARENA - Balanced Hero Roster & Clean Uniform Spacing"),
-        ("ACTION", 0, "STEP 2: Select 'Action' -> Prepare to target limbs"),
-        ("TARGET_LIMB", 2, "STEP 3: Sever 'Right Arm' -> Foe drops sword, DISARMED (ATK reduced to 10)"),
-        ("TARGET_LIMB", 4, "STEP 4: Break 'Legs' -> Foe collapses to CROUCH (100% Flee & 100% Decapitate)"),
-        ("SWITCH_HERO", 1, "STEP 5: Squad Roster -> Switch D'ARCE (Holy Tank) to Vanguard"),
-        ("TARGET_LIMB", 0, "STEP 6: D'ARCE decapitates crouched foe -> 100% CRITICAL FINISH! VICTORY!")
+        ("MAIN", 0, "PILLAR 1 [AMBUSHER]: Cahara at Vanguard -> Fast Hands passive guarantees evasion vs lethal ambush!"),
+        ("TARGET_LIMB", 1, "PILLAR 1 [SPECTRAL]: Ghost manifests -> Cahara physical attack deals 0 DMG (Blades pass harmlessly)!"),
+        ("SKILL", 0, "PILLAR 1 & 3 [ENKI COUNTER]: Switch to ENKI -> Black Orb casts 50 True Magic DMG, tearing ghost apart!"),
+        ("SKILL", 2, "PILLAR 1 & 3 [D'ARCE COUNTER]: Armored Titan (DEF 99) emerges -> Switch to D'ARCE -> Holy Smite shatters armor!"),
+        ("SKILL", 1, "PILLAR 1 & 3 [THE GIRL COUNTER]: Terror Horror emits Dread Aura (-25 MND) -> Switch to THE GIRL -> Loving Embrace calms party!"),
+        ("SWITCH_HERO", 0, "PILLAR 2 [TOXICITY & BENCH]: D'arce herb toxicity hits 100% (INTOXICATED) -> Swapped to Bench to detoxify (-25%/turn)!")
     ]
 
     global current_menu, cursor_idx, active_hero_idx, combat_log
@@ -1070,22 +1170,41 @@ def run_showcase_trace():
         current_menu = m_state
         cursor_idx = c_idx
 
-        if idx == 2: # Step 3: cut right arm
-            monster["debuff_arm_r"] = True
-            monster["atk"] = 10
-            monster["hp"] = 75
-            combat_log = "DISARMED! Weapon arm severed (-20 HP). Foe drops dark blade, ATK reduced to 10!"
-        elif idx == 3: # Step 4: break legs
-            monster["debuff_legs"] = True
-            monster["hp"] = 53
-            combat_log = "LEGS BROKEN! -22 HP. Foe collapses to floor -> 100% FLEE & 100% HEAD HIT!"
-        elif idx == 4: # Step 5: switch to D'arce
+        if idx == 0:
+            active_hero_idx = 0
+            monster["name"] = "SHADOW LURKER"
+            monster["archetype"] = "AMBUSHER"
+            monster["hp"] = 90
+            combat_log = "AMBUSHER DETECTED! Foe leaps from dark shadows! Cahara's Fast Hands deftly dodges (+0 DMG)!"
+        elif idx == 1:
+            monster["name"] = "MAGE GHOST"
+            monster["archetype"] = "SPECTRAL"
+            monster["hp"] = 85
+            combat_log = "PHANTOM IMMUNITY! Cahara's steel blade passes through ghostly mist! 0 DMG dealt! Need ENKI Occult Magic!"
+        elif idx == 2:
+            active_hero_idx = 2
+            monster["hp"] = 35
+            combat_log = "VANGUARD DEPLOYED! Enki casts BLACK ORB! 50 True Magic DMG tears the phantom spirit apart!"
+        elif idx == 3:
             active_hero_idx = 1
-            combat_log = "VANGUARD DEPLOYED! D'ARCE [Paladin Tank] takes point (-25% incoming DMG)!"
-        elif idx == 5: # Step 6: decapitate head
-            monster["debuff_decapitated"] = True
-            monster["hp"] = 0
-            combat_log = "CRITICAL FINISH! Foe is crouched; D'ARCE cleanly severs head! VICTORY!"
+            monster["name"] = "DARK CONSTRUCT"
+            monster["archetype"] = "ARMORED"
+            monster["hp"] = 55
+            monster["def"] = 14
+            combat_log = "VANGUARD DEPLOYED! D'arce casts HOLY SMITE! 42 DMG fractures heavy steel plate! Armor shattered!"
+        elif idx == 4:
+            active_hero_idx = 3
+            monster["name"] = "ABYSSAL HORROR"
+            monster["archetype"] = "TERROR"
+            for m in squad:
+                m["mind"] = min(m["max_mind"], m["mind"] + 35)
+            combat_log = "VANGUARD DEPLOYED! The Girl's Innocent Aura repels dread! Loving Embrace restores +35 Mind to all!"
+        elif idx == 5:
+            squad[1]["toxicity"] = 100
+            squad[1]["hp"] = 80
+            squad[0]["toxicity"] = 25
+            active_hero_idx = 0
+            combat_log = "TOXICITY ACTIVE! D'arce at 100% (INTOXICATED) moved to bench. Resting purges -25% toxicity/turn!"
 
         render_screen()
         print(f"\n  \033[1;32m>>> [SHOWCASE]: {step_desc} <<<\033[0m")

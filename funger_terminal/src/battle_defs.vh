@@ -103,6 +103,19 @@
 `define STANCE_IRON_GUARD   2'd2   // +50% DEF, -12.5% ATK, HP regen per turn
 `define STANCE_AGILE        2'd3   // +25% Evasion, +25% Flee probability
 
+// Monster Archetypes (2-bit) - 4 Pillar System
+`define ARCHETYPE_NORMAL    2'd0   // Standard physical combatant
+`define ARCHETYPE_SPECTRAL  2'd1   // Ghost/Spirit: 100% immune to physical blades; weak to Occult Magic
+`define ARCHETYPE_ARMORED   2'd2   // Stone/Iron Titan: Deflects blades (DEF 99); weak to Holy Smite & Magic
+`define ARCHETYPE_TERROR    2'd3   // Eldritch Horror: Aura drains Mind; weak to Innocent Aura / Empathy
+
+// Role-Locked Exploration Obstacles (3-bit)
+`define OBSTACLE_NONE       3'd0
+`define OBSTACLE_MIMIC      3'd1   // Mimic Chest: Cahara disarms safely; others take -30 HP bite
+`define OBSTACLE_BARRICADE  3'd2   // Iron Barricade: D'arce shatters; others blocked
+`define OBSTACLE_SEAL       3'd3   // Hexen Magic Seal: Enki dispels; others blocked & burned
+`define OBSTACLE_CRAWLSPACE 3'd4   // Narrow Crevice: The Girl squeezes through; others cannot fit
+
 // Squad Size
 `define SQUAD_SIZE          4
 

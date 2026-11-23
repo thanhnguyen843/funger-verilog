@@ -17,7 +17,8 @@ module monster_rom (
     output reg  [7:0]  base_atk,
     output reg  [7:0]  base_def,
     output reg  [7:0]  spawn_weight,
-    output reg         is_default_elite
+    output reg         is_default_elite,
+    output reg  [1:0]  archetype
 );
 
     reg [7:0] raw_hp;
@@ -26,6 +27,13 @@ module monster_rom (
 
     always @(*) begin
         is_default_elite = 1'b0;
+        case (monster_id)
+            6'd1, 6'd2, 6'd26:  archetype = `ARCHETYPE_SPECTRAL;
+            6'd4, 6'd19, 6'd22: archetype = `ARCHETYPE_ARMORED;
+            6'd7, 6'd20, 6'd28: archetype = `ARCHETYPE_TERROR;
+            default:            archetype = `ARCHETYPE_NORMAL;
+        endcase
+
         case (monster_id)
             // --- Part 1: Retro Monsters (1 to 20) ---
             6'd1:  begin raw_hp = 8'd85;  raw_atk = 8'd21; raw_def = 8'd12; spawn_weight = 8'd8; end // Mage Ghost
