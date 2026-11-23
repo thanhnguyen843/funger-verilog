@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 chcp 65001 >nul
 mode con: cols=100 lines=36
 reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1 /f >nul 2>&1
-title Fear & Hunger: Hero Tri-State Models Showcase (Normal, Injured, Dead)
+title Fear ^& Hunger: Hero Tri-State Models Showcase (Normal, Injured, Dead)
 cd /d "%~dp0"
 
 cls
