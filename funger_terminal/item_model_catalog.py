@@ -6,13 +6,13 @@ ITEM MODEL CATALOG (BỘ MÔ HÌNH PIXEL ART VẬT PHẨM TỦ ĐỒ)
 Fear & Hunger: Terminal Labyrinth - Solo Explorer Architecture
 ================================================================================
 Tất cả 7 mô hình được xây dựng chuẩn xác theo yêu cầu người dùng:
-  1. TOTEM OF UNDYING : Thần tượng Minecraft mắt ngọc lục bảo, thân vàng (Bản chuẩn gốc).
-  2. POPPY FLOWER     : Hoa anh túc đỏ thẫm 8 cánh, nhụy vàng, đài hoa & thân cây.
-  3. MARIJUANA HERB   : Lá thảo dược răng cưa 5 cánh cân đối, màu xanh ngọc lục tươi.
-  4. MOLDY BREAD      : Ổ Baguette nướng giòn thanh thoát với 3 khía vát xiên vàng ươm.
-  5. DRIED MEAT       : Đùi thịt cầm tay rút xương đỏ hồng, đầu xương trắng ngà.
-  6. ALCHEMICAL VIAL  : Bình thuốc cổ nút bần nhãn chú ấn Hexen thanh tẩy.
-  7. RUNIC KEY        : Chìa khóa sắt cổ ngữ Hexen đúc ren ma thuật mở cổng Labyrinth.
+  1. TOTEM OF UNDYING : Thần tượng Minecraft mắt ngọc lục bảo, thân vàng (Đã duyệt).
+  2. POPPY FLOWER     : Hoa anh túc đỏ thẫm 8 cánh, đài hoa chalice & nhụy vàng (Làm lại chuẩn).
+  3. MARIJUANA HERB   : Lá thảo dược răng cưa 5 nhánh sắc sảo, màu xanh ngọc tươi sáng (Làm lại chuẩn).
+  4. MOLDY BREAD      : Ổ Baguette nướng giòn thanh thoát 3 khía vát xiên vàng ươm (Đã duyệt).
+  5. DRIED MEAT       : Đùi thịt cầm tay rút xương đỏ hồng, đầu xương trắng ngà (Đã duyệt).
+  6. ALCHEMICAL VIAL  : Bình thuốc cổ nút bần nhãn chú ấn Hexen thanh tẩy (Làm lại chuẩn).
+  7. RUNIC KEY        : Chìa khóa sắt cổ ngữ Hexen đúc ren ma thuật mở cổng Labyrinth (Đã duyệt).
 
 Quy chuẩn hiển thị:
   - Mỗi mô hình đúng 12 dòng, chiều rộng đúng 29 ký tự (pad cân đối).
@@ -26,6 +26,14 @@ ANSI_RE = re.compile(r'\x1b\[[0-9;]*m')
 
 def vis_len(s):
     return len(ANSI_RE.sub('', s))
+
+def pad_center(s, width=29):
+    w = vis_len(s)
+    if w < width:
+        l = (width - w) // 2
+        r = width - w - l
+        return ' ' * l + s + ' ' * r
+    return s
 
 def fit_exact_29(s):
     w = vis_len(s)
@@ -42,7 +50,7 @@ def fit_exact_29(s):
 C_RST = "\033[0m"
 
 # -----------------------------------------------------------------------------
-# 1. TOTEM OF UNDYING (Minecraft) - BẢN GỐC CHUẨN ĐẸP NGƯỜI DÙNG YÊU CẦU
+# 1. TOTEM OF UNDYING (Minecraft) - ĐÃ DUYỆT
 # -----------------------------------------------------------------------------
 C_OUT = "\033[38;2;160;70;15m"    # Viền nâu đậm
 C_ARM = "\033[38;2;182;90;23m"    # Cánh tay nâu
@@ -67,55 +75,55 @@ totem_sprite = [
 ]
 
 # -----------------------------------------------------------------------------
-# 2. POPPY FLOWER (Hoa anh túc)
+# 2. POPPY FLOWER (Hoa anh túc) - LÀM LẠI CHUẨN XÁC THEO ẢNH GỐC
 # -----------------------------------------------------------------------------
-C_RED1 = "\033[38;2;235;45;45m"
-C_RED2 = "\033[38;2;180;25;25m"
-C_CORE = "\033[38;2;70;20;20m"
-C_PLN  = "\033[38;2;250;210;50m"
-C_GRN1 = "\033[38;2;55;185;65m"
-C_GRN2 = "\033[38;2;30;125;40m"
+C_RED  = "\033[38;2;235;45;60m"   # Đỏ cánh hoa anh túc tươi
+C_DRD  = "\033[38;2;170;25;38m"   # Đỏ ruby viền cánh
+C_GLD  = "\033[38;2;255;215;60m"  # Nhụy vàng kim rực rỡ
+C_CORE = "\033[38;2;85;20;25m"    # Lõi nhụy thẫm
+C_GRN  = "\033[38;2;45;185;85m"   # Lá đài xanh tươi
+C_DGR  = "\033[38;2;20;120;50m"   # Thân cành xanh thẫm
 
 poppy_sprite = [
-    fit_exact_29(f"          {C_RED1}▄▄▄████▄▄▄{C_RST}"),
-    fit_exact_29(f"       {C_RED1}▄██████████████▄{C_RST}"),
-    fit_exact_29(f"      {C_RED1}████{C_RED2}██████████{C_RED1}████{C_RST}"),
-    fit_exact_29(f"      {C_RED1}████{C_CORE}██{C_PLN}████{C_CORE}██{C_RED1}████{C_RST}"),
-    fit_exact_29(f"      {C_RED1}████{C_PLN}██{C_CORE}████{C_PLN}██{C_RED1}████{C_RST}"),
-    fit_exact_29(f"      {C_RED2}████{C_CORE}██{C_PLN}████{C_CORE}██{C_RED2}████{C_RST}"),
-    fit_exact_29(f"       {C_RED2}▀██████████████▀{C_RST}"),
-    fit_exact_29(f"          {C_RED2}▀▀▀████▀▀▀{C_RST}"),
-    fit_exact_29(f"   {C_GRN1}▄▄▄▄{C_RST}       {C_GRN2}██{C_RST}       {C_GRN1}▄▄▄▄{C_RST}"),
-    fit_exact_29(f"  {C_GRN1}██████▄▄{C_RST}    {C_GRN2}██{C_RST}    {C_GRN1}▄▄██████{C_RST}"),
-    fit_exact_29(f"   {C_GRN1}▀███████▄{C_RST}  {C_GRN2}██{C_RST}  {C_GRN1}▄███████▀{C_RST}"),
-    fit_exact_29(f"      {C_GRN1}▀▀███{C_RST}   {C_GRN2}██{C_RST}   {C_GRN1}███▀▀{C_RST}")
+    pad_center(f"{C_RED}▄▄████▄▄{C_RST}"),
+    pad_center(f"{C_DRD}▄██{C_RED}████████{C_DRD}██▄{C_RST}"),
+    pad_center(f"{C_RED}▄████{C_RST}  {C_GLD}██████{C_RST}  {C_RED}████▄{C_RST}"),
+    pad_center(f"{C_RED}██████{C_RST}  {C_GLD}██{C_CORE}██{C_GLD}██{C_RST}  {C_RED}██████{C_RST}"),
+    pad_center(f"{C_RED}▀████{C_RST}  {C_GLD}██████{C_RST}  {C_RED}████▀{C_RST}"),
+    pad_center(f"{C_DRD}▀██{C_RED}████████{C_DRD}██▀{C_RST}"),
+    pad_center(f"{C_RED}▀▀████▀▀{C_RST}"),
+    pad_center(f"{C_DGR}██{C_RST}"),
+    pad_center(f"{C_GRN}▄█{C_RST}          {C_DGR}██{C_RST}          {C_GRN}█▄{C_RST}"),
+    pad_center(f"{C_GRN}▄████▄{C_RST}      {C_DGR}██{C_RST}      {C_GRN}▄████▄{C_RST}"),
+    pad_center(f"{C_DGR}▀██████▄▄{C_RST}  {C_DGR}██{C_RST}  {C_DGR}▄▄██████▀{C_RST}"),
+    pad_center(f"{C_DGR}▀▀██████████████▀▀{C_RST}")
 ]
 
 # -----------------------------------------------------------------------------
-# 3. MARIJUANA HERB (Sửa lại: Cấu trúc 5 cánh răng cưa cân đối, màu xanh ngọc tươi sáng)
+# 3. MARIJUANA HERB (Thảo dược an thần) - LÀM LẠI: 5 CÁNH RĂNG CƯA SẮC NÉT
 # -----------------------------------------------------------------------------
-C_TOP  = "\033[38;2;88;225;135m"  # Xanh ngọc lục bảo tươi sáng ở đầu cánh
-C_MID  = "\033[38;2;40;190;80m"   # Xanh thảo dược tươi tự nhiên
-C_DEEP = "\033[38;2;25;140;55m"   # Xanh lục đậm thân lá
-C_CORE = "\033[38;2;15;95;35m"    # Cuống & gân lá sẫm
+C_L1 = "\033[38;2;85;240;115m"   # Xanh ngọc lục bảo tươi sáng rực rỡ
+C_L2 = "\033[38;2;45;195;80m"    # Xanh thảo dược tươi tự nhiên
+C_L3 = "\033[38;2;25;140;55m"    # Xanh lục đậm thân lá
+C_L4 = "\033[38;2;12;85;30m"     # Gân & cuống lá sẫm
 
 weed_sprite = [
-    fit_exact_29(f"             {C_TOP}▄█▄{C_RST}"),
-    fit_exact_29(f"            {C_MID}▄███▄{C_RST}"),
-    fit_exact_29(f"   {C_TOP}▄█▄{C_RST}      {C_MID}█████{C_RST}      {C_TOP}▄█▄{C_RST}"),
-    fit_exact_29(f"  {C_TOP}▄███▄{C_RST}    {C_DEEP}███████{C_RST}    {C_TOP}▄███▄{C_RST}"),
-    fit_exact_29(f"   {C_MID}▀████▄  {C_DEEP}███████{C_RST}  {C_MID}▄████▀{C_RST}"),
-    fit_exact_29(f" {C_TOP}▄▄{C_MID}██████▄{C_CORE}█████████{C_MID}▄██████{C_TOP}▄▄{C_RST}"),
-    fit_exact_29(f"  {C_MID}▀███████{C_CORE}█████████{C_MID}███████▀{C_RST}"),
-    fit_exact_29(f"    {C_DEEP}▀▀████{C_CORE}█████████{C_DEEP}████▀▀{C_RST}"),
-    fit_exact_29(f"        {C_DEEP}▀▀{C_CORE}█████████{C_DEEP}▀▀{C_RST}"),
-    fit_exact_29(f"          {C_CORE}▀█████▀{C_RST}"),
-    fit_exact_29(f"            {C_CORE}███{C_RST}"),
-    fit_exact_29(f"            {C_CORE}█▀{C_RST}")
+    pad_center(f"{C_L1}▄█▄{C_RST}"),
+    pad_center(f"{C_L1}███{C_RST}"),
+    pad_center(f"{C_L1}▄█▄{C_RST}      {C_L2}███{C_RST}      {C_L1}▄█▄{C_RST}"),
+    pad_center(f"{C_L1}████▄{C_RST}    {C_L2}███{C_RST}    {C_L1}▄████{C_RST}"),
+    pad_center(f"{C_L2}▀████▄  {C_L2}█████{C_RST}  {C_L2}▄████▀{C_RST}"),
+    pad_center(f"{C_L1}▄▄{C_L2}████▄{C_RST}  {C_L3}█████{C_RST}  {C_L2}▄████{C_L1}▄▄{C_RST}"),
+    pad_center(f"{C_L2}▀▀█████▄{C_L3}███████{C_L2}▄█████▀▀{C_RST}"),
+    pad_center(f"{C_L1}▄▄{C_L2}█████{C_RST}  {C_L3}███████{C_RST}  {C_L2}█████{C_L1}▄▄{C_RST}"),
+    pad_center(f" {C_L2}▀▀████▄{C_L4}█████████{C_L2}▄████▀▀{C_RST} "),
+    pad_center(f"{C_L3}▀███████▀{C_RST}"),
+    pad_center(f"{C_L4}███{C_RST}"),
+    pad_center(f"{C_L4}██{C_RST}")
 ]
 
 # -----------------------------------------------------------------------------
-# 4. MOLDY BREAD (Sửa lại: Bánh mì Baguette thanh thoát, 3 khía vát xiên vàng ươm)
+# 4. MOLDY BREAD (Ổ Baguette nướng giòn) - ĐÃ DUYỆT
 # -----------------------------------------------------------------------------
 C_BR1 = "\033[38;2;235;165;60m"   # Vỏ bánh nướng vàng ruộm
 C_BR2 = "\033[38;2;185;110;35m"   # Vỏ nâu caramen
@@ -138,7 +146,7 @@ bread_sprite = [
 ]
 
 # -----------------------------------------------------------------------------
-# 5. DRIED MEAT (Đùi thịt cầm tay rút xương, loại bỏ chấm hạt nhòe)
+# 5. DRIED MEAT (Đùi thịt cầm tay rút xương) - ĐÃ DUYỆT
 # -----------------------------------------------------------------------------
 C_BONE = "\033[38;2;245;245;235m" # Đầu xương trắng ngà
 C_BSHD = "\033[38;2;190;190;180m" # Khớp xương bóng đổ
@@ -162,31 +170,33 @@ meat_sprite = [
 ]
 
 # -----------------------------------------------------------------------------
-# 6. ALCHEMICAL VIAL (Bình thuốc cổ nút bần)
+# 6. ALCHEMICAL VIAL (Bình thuốc cổ nút bần) - LÀM LẠI CHUẨN XÁC THEO ẢNH GỐC
 # -----------------------------------------------------------------------------
-C_CORK = "\033[38;2;195;125;50m"
-C_GLS1 = "\033[38;2;140;210;250m"
-C_GLS2 = "\033[38;2;85;175;230m"
-C_LBL  = "\033[38;2;250;245;235m"
-C_ELX  = "\033[38;2;215;45;130m"
+C_CRK  = "\033[38;2;195;130;50m"  # Nút bần gỗ nâu vàng
+C_GLS  = "\033[38;2;115;200;240m" # Cổ & miệng chai thủy tinh sáng
+C_GLSD = "\033[38;2;55;140;195m"  # Viền thủy tinh xanh pha lê
+C_LBL  = "\033[38;2;255;250;235m" # Giấy nhãn da cừu cổ
+C_GLY  = "\033[38;2;75;35;95m"    # Chú ấn ma thuật cổ ngữ Hexen
+C_POT  = "\033[38;2;225;40;135m"  # Tiên dược ma thuật hồng ngọc sáng
+C_POTD = "\033[38;2;165;20;95m"   # Đáy dung dịch huyền bí
 
 bottle_sprite = [
-    fit_exact_29(f"           {C_CORK}▄▄▄▄▄▄▄▄{C_RST}"),
-    fit_exact_29(f"           {C_CORK}████████{C_RST}"),
-    fit_exact_29(f"             {C_GLS1}████{C_RST}"),
-    fit_exact_29(f"           {C_GLS1}▄▄████▄▄{C_RST}"),
-    fit_exact_29(f"   {C_GLS2}▄▄██████████████████▄▄{C_RST}"),
-    fit_exact_29(f"  {C_GLS2}█{C_LBL}██████████{C_ELX}█████████████{C_RST}"),
-    fit_exact_29(f"  {C_GLS2}█{C_LBL}██[HEX]████{C_ELX}█████████████{C_RST}"),
-    fit_exact_29(f"  {C_GLS2}█{C_LBL}██ RUNE███{C_ELX}█████████████{C_RST}"),
-    fit_exact_29(f"  {C_GLS2}█{C_LBL}██████████{C_ELX}█████████████{C_RST}"),
-    fit_exact_29(f"  {C_GLS2}████████████████████████{C_RST}"),
-    fit_exact_29(f"  {C_GLS2}▀██████████████████████▀{C_RST}"),
-    fit_exact_29(f"     {C_GLS2}▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀{C_RST}")
+    pad_center(f"{C_CRK}▄▄████▄▄{C_RST}"),
+    pad_center(f"{C_CRK}████████{C_RST}"),
+    pad_center(f"{C_GLS}████████████{C_RST}"),
+    pad_center(f"{C_GLS}████{C_RST}"),
+    pad_center(f"{C_GLSD}▄▄██████{C_GLS}████{C_GLSD}██████▄▄{C_RST}"),
+    pad_center(f"{C_GLSD}█{C_GLS}█{C_POT}██████████████████{C_GLSD}█{C_GLS}█{C_RST}"),
+    pad_center(f"{C_GLSD}█{C_POT}███{C_LBL}████████{C_POT}█████████{C_GLSD}█{C_RST}"),
+    pad_center(f"{C_GLSD}█{C_POT}███{C_LBL}██{C_GLY}████{C_LBL}██{C_POT}█████████{C_GLSD}█{C_RST}"),
+    pad_center(f"{C_GLSD}█{C_POT}███{C_LBL}████████{C_POT}█████████{C_GLSD}█{C_RST}"),
+    pad_center(f"{C_GLSD}█{C_POTD}████████████████████{C_GLSD}█{C_RST}"),
+    pad_center(f"{C_GLSD}▀████████████████████▀{C_RST}"),
+    pad_center(f"{C_GLSD}▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀{C_RST}")
 ]
 
 # -----------------------------------------------------------------------------
-# 7. RUNIC KEY (Chìa khóa cổ ngữ)
+# 7. RUNIC KEY (Chìa khóa cổ ngữ) - ĐÃ DUYỆT
 # -----------------------------------------------------------------------------
 C_KEY1 = "\033[38;2;245;195;50m"
 C_KEY2 = "\033[38;2;195;135;25m"
