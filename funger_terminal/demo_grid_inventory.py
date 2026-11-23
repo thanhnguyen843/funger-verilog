@@ -2,22 +2,19 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-MULTI-SLOT GRID INVENTORY (TÚI ĐỒ Ô LƯỚI CHIẾN THUẬT) WITH TOTEM OF RESTORATION
+CANONICAL SURVIVAL POUCH & ITEM STASH (TỦ ĐỒ CHUẨN 100 CỘT ĐỒNG NHẤT VỚI CHỌN HERO)
 Fear & Hunger: Terminal Labyrinth - Solo Explorer Architecture
 ================================================================================
-Key Innovations:
-  1. Multi-Slot 3x2 Grid Layout:
-     - 6 dedicated slot boxes with pixel icons, item tags, and quantity counters.
-     - 2D Navigation (W/A/S/D / Arrow keys) with direct jump keys [1-6].
-  2. The Unique Mythic Item: TOTEM OF FLESH RESTORATION (Totem Cổ Thần):
-     - Rarity: 1 unique totem granted per expedition (cannot be looted elsewhere).
-     - Effect: Shatters into golden amber ash to reattach all amputated limbs,
-       mend bone fractures, and purge bleeding & gangrene back to 100% pristine form!
-  3. Survival Trauma Cures:
-     - Bleeding (Poppy Flower)
-     - Agony & Terror (Marijuana / Vintage Ale)
-     - Fractures (Wood Splint)
-     - Starvation (Moldy Bread)
+Quy hoạch giao diện và cơ chế điều khiển giống y hệt 100% với Bộ Chọn Hero:
+  - Chiều ngang: Đúng 100 cột chuẩn (cols=100).
+  - Chiều cao: Đúng 23 dòng (<= 35 dòng, chống trôi màn hình 100%).
+  - Khung bên trái (34 cột): Danh sách vật phẩm có con trỏ sáng ▶, số lượng (xN),
+    phím tắt [W/S] điều hướng, [Enter] sử dụng, [Q] đóng túi.
+  - Khung bên phải (64 cột):
+    * Bên trái: Mô hình Pixel Art kích thước lớn (29 cột x 12 dòng) chọn lọc
+      từ các bảng sprite 1-bit (Bánh mì, Thịt khô, Hoa anh túc, Rượu, Cổ vật...).
+    * Bên phải: Bảng thông số chi tiết (Loại, Hiệu ứng, Khắc phục chấn thương, Độ hiếm).
+    * Phía dưới: Khung Giám Định Cổ Vật & Cốt Truyện 3 dòng sắc nét.
 ================================================================================
 """
 
@@ -29,6 +26,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import demo_interactive_ui as dui
+from item_model_catalog import ITEM_CATALOG
 
 if os.name == 'nt':
     import msvcrt
@@ -57,296 +55,262 @@ def fit_exact(s, width):
         return clean + "\033[0m" + " " * (width - w)
     return s + " " * (width - cur)
 
-INITIAL_INVENTORY = [
-    {
-        "id": "totem",
-        "name": "TOTEM OF FLESH",
-        "type": "CỔ THẦN BẢO VẬT (ARTIFACT)",
-        "qty": 1,
-        "max_qty": 1,
-        "color": "\033[38;2;255;170;40m",
-        "icon": [
-            "      ▄▄▄▀(O)▀▄▄▄       ",
-            "     ██ ▀█▀█▀ █▄        ",
-            "     ▀▄▄ ▀█▀ ▄▄▀        ",
-            "       ▀▀▀█▀▀▀          "
-        ],
-        "summary": "Tái sinh toàn bộ tứ chi bị đứt",
-        "cure": "Gãy xương, Đứt chi, Xuất huyết, Hoại tử",
-        "lore": "Bảo vật cổ xưa chứa tinh thể Hổ Phách của Sylvian. Khi kích hoạt, nó vỡ vụn thành bụi vàng tái tạo lại da thịt, gắn liền xương tủy và nối lại toàn bộ tứ chi đã mất!"
-    },
-    {
-        "id": "poppy",
-        "name": "POPPY FLOWER",
-        "type": "DƯỢC LIỆU CẦM MÁU (HERB)",
-        "qty": 2,
-        "max_qty": 5,
-        "color": "\033[38;2;230;40;40m",
-        "icon": [
-            "        ▄▄▄▄▄▄          ",
-            "       ████████         ",
-            "        ▀████▀          ",
-            "          ││            "
-        ],
-        "summary": "Hồi +50 HP & Cầm máu xuất huyết",
-        "cure": "Chảy máu (Bleeding), Vết chém hở",
-        "lore": "Loài hoa đỏ thẫm sinh trưởng từ máu những kẻ tử nạn trong ngục tối. Nhựa hoa làm đông máu vết thương hở trong tích tắc và xoa dịu cơn đau thể xác."
-    },
-    {
-        "id": "weed",
-        "name": "MARIJUANA HERB",
-        "type": "DƯỢC THẢO GIẢM ĐAU (HERB)",
-        "qty": 1,
-        "max_qty": 5,
-        "color": "\033[38;2;40;200;60m",
-        "icon": [
-            "         ▄▀█▀▄          ",
-            "       ▄▀ █ █ ▀▄        ",
-            "      ▀▄▄█████▄▄▀       ",
-            "          ││            "
-        ],
-        "summary": "Hồi +120 HP & Giảm đau cực mạnh",
-        "cure": "Cơn đau thấu xương, Giảm tụt Mind",
-        "lore": "Lá thảo dược xanh thẫm mang dược tính gây tê liệt hệ thần kinh. Đốt lên hít khói giúp hồi phục 120 HP và làm dịu cơn co thắt do chấn thương nặng."
-    },
-    {
-        "id": "bread",
-        "name": "MOLDY BREAD",
-        "type": "LƯƠNG KHÔ KHẨN CẤP (FOOD)",
-        "qty": 3,
-        "max_qty": 5,
-        "color": "\033[38;2;180;130;70m",
-        "icon": [
-            "       ▄▄▄▄▄▄▄▄▄        ",
-            "      ███████████       ",
-            "      ██▓▓██▓▓███       ",
-            "       ▀▀▀▀▀▀▀▀▀        "
-        ],
-        "summary": "Giảm 40 Đói (Hunger Relief)",
-        "cure": "Đói lả, Suy nhược cơ bắp",
-        "lore": "Mẩu bánh mì thô cứng mọc đầy nấm mốc xanh. Dù mùi vị chua chát kinh tởm nhưng chứa đủ calo để giữ cho đôi chân người sống sót không ngã quỵ."
-    },
-    {
-        "id": "ale",
-        "name": "VINTAGE ALE",
-        "type": "RƯỢU CỔ KHỬ TRÙNG (DRINK)",
-        "qty": 1,
-        "max_qty": 3,
-        "color": "\033[38;2;220;170;50m",
-        "icon": [
-            "          ▄▄▄           ",
-            "         │   │          ",
-            "        █▀▀▀▀▀█         ",
-            "        ▀▄▄▄▄▄▀         "
-        ],
-        "summary": "Hồi +35 Mind & Khử trùng vết thương",
-        "cure": "Hoảng loạn (Panic), Nhiễm trùng (Gangrene)",
-        "lore": "Bình rượu mạnh cổ xưa được ủ trong hầm mộ. Một hớp rượu cay nồng dập tắt nỗi sợ hãi điên loạn (Mind +35), dùng rửa vết thương hở để ngăn hoại tử."
-    },
-    {
-        "id": "splint",
-        "name": "WOOD SPLINT",
-        "type": "Y TẾ DÃ CHIẾN (SURGERY)",
-        "qty": 1,
-        "max_qty": 2,
-        "color": "\033[38;2;160;110;60m",
-        "icon": [
-            "        ││   ││         ",
-            "        ├───┼──┤        ",
-            "        ││   ││         ",
-            "        ├───┼──┤        "
-        ],
-        "summary": "Cố định & Chữa lành xương rạn nứt",
-        "cure": "Rạn nứt tay chân (Fractured Limb)",
-        "lore": "Hai thanh gỗ sồi buộc chặt bằng dây gai thô. Dùng nẹp cố định cánh tay hoặc cẳng chân bị rạn nứt, khôi phục lại 100% sức mạnh tấn công và tốc độ né đòn."
-    }
-]
+def render_pouch_screen(items, sel_idx, status_msg="", hero=None):
+    """
+    Kết xuất giao diện Tủ Đồ / Túi đồ sinh tồn chuẩn 100 cột,
+    cấu trúc và tỷ lệ giống y hệt render_solo_select_screen.
+    """
+    cur_it = items[sel_idx]
+    it_sprite = cur_it["sprite"]
 
-def render_grid_inventory_screen(items, cur_slot, status_msg=""):
-    lines = []
-    lines.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
-    title_str = "FEAR & HUNGER: SURVIVAL POUCH - MULTI-SLOT GRID INVENTORY"
-    sub_title = "[TÚI ĐỒ Ô LƯỚI CHIẾN THUẬT]"
-    hdr = f" \033[1;37m{title_str:<68}\033[1;33m{sub_title:>27} "
-    lines.append(f"\033[1;30m|{fit_exact(hdr, 98)}\033[1;30m|\033[0m")
+    b1_top = "\033[1;30m+" + "-" * 32 + "+\033[0m"
+    b2_top = "\033[1;30m+" + "-" * 62 + "+\033[0m"
 
-    # Divider: 3 columns: 32 + 32 + 32 = 96 + 4 borders = 100
-    div_slots = "\033[1;30m+" + "-" * 32 + "+" + "-" * 32 + "+" + "-" * 32 + "+\033[0m"
-    lines.append(div_slots)
+    header_rows = [
+        "\033[1;30m+" + "=" * 98 + "+\033[0m",
+        f"\033[1;30m| \033[1;37m{fit_exact('FEAR & HUNGER: SURVIVAL POUCH & ITEM STASH - SELECT ITEM TO USE', 96)}\033[1;30m |\033[0m",
+        "\033[1;30m+" + "=" * 98 + "+\033[0m",
+        f"{b1_top}  {b2_top}"
+    ]
 
-    # ROW 1 OF SLOTS (Slots 0, 1, 2)
-    row1_tags = []
-    for c in range(3):
-        item = items[c]
-        is_cur = (c == cur_slot)
-        tag = f"[{c+1}] {item['name']}"
-        qty_str = f"x{item['qty']}"
-        inner = f"{tag:<22}{qty_str:>6}"
+    # Khung trái (30 ký tự nội dung)
+    b1_lines = [
+        "\033[1;33mSURVIVAL POUCH (W/S):\033[0m",
+        ""
+    ]
+    for idx, it in enumerate(items):
+        is_cur = (idx == sel_idx)
+        num_str = f"{idx+1}" if idx < 9 else "0"
+        qty_str = f"x{it['qty']}" if it['qty'] > 0 else "\033[1;31mHẾT\033[0m"
+        tag = f"[{num_str}] {it['name'][:13]:<13} ({qty_str})"
         if is_cur:
-            txt = f"\033[1;32m▶ {inner}\033[0m"
+            b1_lines.append(f"\033[1;32m▶ {tag}\033[0m")
         else:
-            txt = f"\033[90m  {inner}\033[0m"
-        row1_tags.append(fit_exact(txt, 32))
-    lines.append(f"\033[1;30m|{row1_tags[0]}|{row1_tags[1]}|{row1_tags[2]}|\033[0m")
+            b1_lines.append(f"\033[90m  {tag}\033[0m")
 
-    for r in range(4):
-        cells = []
-        for c in range(3):
-            item = items[c]
-            is_cur = (c == cur_slot)
-            icon_line = item["icon"][r]
-            colored_icon = f"   {item['color']}{icon_line}\033[0m  "
-            cells.append(fit_exact(colored_icon, 32))
-        lines.append(f"\033[1;30m|{cells[0]}|{cells[1]}|{cells[2]}|\033[0m")
+    b1_lines.extend([
+        "",
+        "\033[1;33m[CONTROLS]:\033[0m",
+        "\033[1;37m[W/S]\033[0m   : Navigate Items",
+        "\033[1;32m[Enter]\033[0m : Administer / Use",
+        "\033[1;31m[Q]\033[0m     : Close Pouch",
+        ""
+    ])
 
-    row1_effs = []
-    for c in range(3):
-        item = items[c]
-        eff_str = f" \033[0;37m{item['summary'][:30]}\033[0m"
-        row1_effs.append(fit_exact(eff_str, 32))
-    lines.append(f"\033[1;30m|{row1_effs[0]}|{row1_effs[1]}|{row1_effs[2]}|\033[0m")
-    lines.append(div_slots)
+    # Dòng thông tin hero nếu có
+    hero_line1 = ""
+    hero_line2 = ""
+    if hero:
+        h_name = hero.get('name', 'HERO')[:6]
+        h_hp = hero.get('hp', 100)
+        h_mhp = hero.get('max_hp', 100)
+        hero_line1 = f"\033[1;36mHERO   : {h_name} HP:{h_hp}/{h_mhp}\033[0m"
+        h_mind = hero.get('mind', 100)
+        h_hngr = hero.get('hunger', 0)
+        deb_cnt = len(hero.get('debuffs', []))
+        deb_str = f"{deb_cnt} debuff" if deb_cnt > 0 else "Lành lặn"
+        hero_line2 = f"\033[1;35mMIND   : {h_mind} | ĐÓI:{h_hngr} ({deb_str})\033[0m"
 
-    # ROW 2 OF SLOTS (Slots 3, 4, 5)
-    row2_tags = []
-    for c in range(3):
-        item = items[3 + c]
-        is_cur = (3 + c == cur_slot)
-        tag = f"[{4+c}] {item['name']}"
-        qty_str = f"x{item['qty']}"
-        inner = f"{tag:<22}{qty_str:>6}"
-        if is_cur:
-            txt = f"\033[1;32m▶ {inner}\033[0m"
-        else:
-            txt = f"\033[90m  {inner}\033[0m"
-        row2_tags.append(fit_exact(txt, 32))
-    lines.append(f"\033[1;30m|{row2_tags[0]}|{row2_tags[1]}|{row2_tags[2]}|\033[0m")
+    # Khung phải: 12 dòng Mô hình Sprite (29 cột) + 2 khoảng cách + Thông số (29 cột) = 60 cột
+    stats_data = [
+        f"\033[1;33mNAME   : \033[1;37m{cur_it['name']}\033[0m",
+        f"\033[1;33mTYPE   : \033[1;37m{cur_it['type']}\033[0m",
+        f"\033[1;32mQTY    : {cur_it['qty']} in Pouch (Max: {cur_it['max_qty']})\033[0m",
+        f"\033[1;31mEFFECT : {cur_it['effect'][:20]}\033[0m",
+        f"\033[1;36mCURES  : {cur_it['cure'][:20]}\033[0m",
+        f"\033[1;37mTARGET : {cur_it['target'][:20]}\033[0m",
+        f"\033[1;35mUSAGE  : {cur_it['usage'][:20]}\033[0m",
+        f"\033[1;33mRARITY : {cur_it['rarity'][:20]}\033[0m",
+        "",
+        f"\033[1;32mSTATUS : Sẵn sàng sử dụng\033[0m" if cur_it['qty'] > 0 else "\033[1;31mSTATUS : Đã dùng hết vật phẩm!\033[0m",
+        hero_line1,
+        hero_line2
+    ]
 
-    for r in range(4):
-        cells = []
-        for c in range(3):
-            item = items[3 + c]
-            icon_line = item["icon"][r]
-            colored_icon = f"   {item['color']}{icon_line}\033[0m  "
-            cells.append(fit_exact(colored_icon, 32))
-        lines.append(f"\033[1;30m|{cells[0]}|{cells[1]}|{cells[2]}|\033[0m")
+    b2_lines = []
+    for r in range(12):
+        sp_line = it_sprite[r] if r < len(it_sprite) else " " * 29
+        stat_line = stats_data[r] if r < len(stats_data) else ""
+        b2_lines.append(f"{fit_exact(sp_line, 29)}  {fit_exact(stat_line, 29)}")
 
-    row2_effs = []
-    for c in range(3):
-        item = items[3 + c]
-        eff_str = f" \033[0;37m{item['summary'][:30]}\033[0m"
-        row2_effs.append(fit_exact(eff_str, 32))
-    lines.append(f"\033[1;30m|{row2_effs[0]}|{row2_effs[1]}|{row2_effs[2]}|\033[0m")
+    # Đường phân cách bên trong khung phải
+    b2_lines.append("\033[1;30m" + "-" * 60 + "\033[0m")
+    b2_lines.append("\033[1;33m[ITEM LORE & EXPEDITION UTILITY]:\033[0m")
+    for l_line in cur_it["lore"][:3]:
+        b2_lines.append(f"\033[1;37m{l_line}\033[0m")
 
-    div_wide = "\033[1;30m+" + "=" * 98 + "+\033[0m"
-    lines.append(div_wide)
+    # Lắp ghép các dòng (17 dòng nội dung)
+    all_rows = list(header_rows)
+    for i in range(17):
+        l1 = b1_lines[i] if i < len(b1_lines) else ""
+        l2 = b2_lines[i] if i < len(b2_lines) else ""
+        comb = f"\033[1;30m| \033[0m{fit_exact(l1, 30)}\033[1;30m |  | \033[0m{fit_exact(l2, 60)}\033[1;30m |\033[0m"
+        all_rows.append(comb)
 
-    # INSPECTION PANE OF ACTIVE HIGHLIGHTED ITEM (5 rows)
-    act = items[cur_slot]
-    p1 = f" \033[1;33mVẬT PHẨM:\033[1;37m {act['name']} \033[1;30m[{act['type']}]\033[0m  |  \033[1;32mSỐ LƯỢNG: {act['qty']}/{act['max_qty']}\033[0m  |  \033[1;36mHIỆU QUẢ: {act['summary']}\033[0m"
-    lines.append(f"\033[1;30m|{fit_exact(p1, 98)}\033[1;30m|\033[0m")
-
-    p2 = f" \033[1;31mĐIỀU TRỊ CHẤN THƯƠNG:\033[0;37m {act['cure']}"
-    lines.append(f"\033[1;30m|{fit_exact(p2, 98)}\033[1;30m|\033[0m")
-
-    lines.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
-    p3 = f" \033[1;33mCỐT TRUYỆN:\033[0;37m {act['lore']}"
-    lines.append(f"\033[1;30m|{fit_exact(p3, 98)}\033[1;30m|\033[0m")
-
-    # Status / Feedback log if any
+    all_rows.append(f"{b1_top}  {b2_top}")
+    
     if status_msg:
-        lines.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
-        lines.append(f"\033[1;30m| \033[1;33m{fit_exact(status_msg, 96)}\033[1;30m |\033[0m")
+        all_rows.append(f"\033[1;30m| \033[1;33m{fit_exact(status_msg, 96)}\033[1;30m |\033[0m")
+    else:
+        all_rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
 
-    # Controls footer (2 rows)
-    lines.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
-    ctrls = " \033[90m[ĐIỀU KHIỂN]:\033[0m \033[1;37m[W/A/S/D / Mũi tên]\033[0m Di chuyển ô  |  \033[1;33m[1-6]\033[0m Chọn nhanh  |  \033[1;32m[Enter]\033[0m Sử dụng  |  \033[1;31m[Q/Esc]\033[0m Đóng"
-    lines.append(f"\033[1;30m|{fit_exact(ctrls, 98)}\033[1;30m|\033[0m")
-    lines.append(div_wide)
-    return lines
+    return all_rows
 
-def run_grid_inventory_interactive():
-    items = copy.deepcopy(INITIAL_INVENTORY)
-    cur_slot = 0
-    status_msg = "[THÔNG BÁO]: Túi đồ đã mở. Hãy chọn một vật phẩm để kiểm tra hoặc sử dụng."
+def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardcore=False):
+    """
+    Vòng lặp tương tác túi đồ chuẩn 100 cột với điều khiển W/S, số, Enter, Q.
+    Đồng bộ trực tiếp với hero và inv_dict nếu được truyền vào.
+    """
+    items = copy.deepcopy(initial_items if initial_items is not None else ITEM_CATALOG)
+    if inv_dict is not None:
+        for it in items:
+            if it["id"] in inv_dict:
+                it["qty"] = inv_dict[it["id"]]
+
+    sel_idx = 0
+    num_items = len(items)
+    status_msg = ""
+    last_used = None
 
     dui.clear_screen()
+    print("\033[?25l", end="", flush=True)
 
-    while True:
-        frame = render_grid_inventory_screen(items, cur_slot, status_msg)
-        dui.atomic_blit(frame)
+    try:
+        while True:
+            frame = render_pouch_screen(items, sel_idx, status_msg, hero=hero)
+            dui.atomic_blit(frame)
 
-        if not (os.name == 'nt' and sys.stdin.isatty()):
-            break
+            if not (os.name == 'nt' and sys.stdin.isatty()):
+                return items, items[sel_idx]
 
-        ch = msvcrt.getch()
-        while msvcrt.kbhit():
-            msvcrt.getch()
+            ch = msvcrt.getch()
+            while msvcrt.kbhit():
+                msvcrt.getch()
 
-        if ch in (b'\x00', b'\xe0'):
-            ext = msvcrt.getch()
-            r = cur_slot // 3
-            c = cur_slot % 3
-            if ext == b'H': r = (r - 1) % 2
-            elif ext == b'P': r = (r + 1) % 2
-            elif ext == b'K': c = (c - 1) % 3
-            elif ext == b'M': c = (c + 1) % 3
-            cur_slot = r * 3 + c
             status_msg = ""
 
-        elif ch in (b'w', b'W'):
-            r = cur_slot // 3
-            c = cur_slot % 3
-            r = (r - 1) % 2
-            cur_slot = r * 3 + c
-            status_msg = ""
-        elif ch in (b's', b'S'):
-            r = cur_slot // 3
-            c = cur_slot % 3
-            r = (r + 1) % 2
-            cur_slot = r * 3 + c
-            status_msg = ""
-        elif ch in (b'a', b'A'):
-            r = cur_slot // 3
-            c = cur_slot % 3
-            c = (c - 1) % 3
-            cur_slot = r * 3 + c
-            status_msg = ""
-        elif ch in (b'd', b'D'):
-            r = cur_slot // 3
-            c = cur_slot % 3
-            c = (c + 1) % 3
-            cur_slot = r * 3 + c
-            status_msg = ""
-        elif ch in (b'1', b'2', b'3', b'4', b'5', b'6'):
-            cur_slot = int(ch.decode('ascii')) - 1
-            status_msg = ""
-        elif ch in (b'\r', b'\n', b' '):
-            it = items[cur_slot]
-            if it["qty"] > 0:
-                it["qty"] -= 1
-                if it["id"] == "totem":
-                    status_msg = "\033[1;33m[TOTEM KÍCH HOẠT]: Bụi vàng Hổ phách bao bọc thể xác! Toàn bộ tứ chi đã được nối liền vẹn nguyên!\033[0m"
-                elif it["id"] == "poppy":
-                    status_msg = "\033[1;32m[HOA ANH TÚC]: Hồi phục +50 HP. Máu đông lại, vết thương hở đã được cầm máu!\033[0m"
-                elif it["id"] == "weed":
-                    status_msg = "\033[1;32m[CỎ DƯỢC LIỆU]: Hít khói thuốc (+120 HP). Thể xác thư giãn, cơn đau thấu xương biến mất!\033[0m"
-                elif it["id"] == "bread":
-                    status_msg = "\033[1;33m[BÁNH MÌ]: Ăn bánh mì mốc (-40 Đói). Khôi phục sinh lực, chống kiệt sức đói lả!\033[0m"
-                elif it["id"] == "ale":
-                    status_msg = "\033[1;36m[RƯỢU CỔ]: Uống một hớp lớn (+35 Mind). Rửa vết thương hở, triệt tiêu nguy cơ hoại tử!\033[0m"
-                elif it["id"] == "splint":
-                    status_msg = "\033[1;32m[NẸP GỖ]: Cố định xương gãy. Khôi phục lại 100% lực đánh và phản xạ né đòn!\033[0m"
-            else:
-                status_msg = f"\033[1;31m[HẾT VẬT PHẨM]: Bạn không còn {it['name']} trong túi đồ!\033[0m"
+            # Phím Mũi tên
+            if ch in (b'\x00', b'\xe0'):
+                ext = msvcrt.getch()
+                if ext in (b'H', b'K'):  # Lên hoặc Trái
+                    sel_idx = (sel_idx - 1) % num_items
+                elif ext in (b'P', b'M'):  # Xuống hoặc Phải
+                    sel_idx = (sel_idx + 1) % num_items
 
-        elif ch in (b'q', b'Q', b'\x1b'):
-            break
+            # Phím W/S / A/D
+            elif ch in (b'w', b'W', b'a', b'A'):
+                sel_idx = (sel_idx - 1) % num_items
+            elif ch in (b's', b'S', b'd', b'D'):
+                sel_idx = (sel_idx + 1) % num_items
+
+            # Phím số 1-9, 0 (nhảy nhanh)
+            elif ch in (b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9'):
+                val = int(ch.decode('ascii')) - 1
+                if val < num_items:
+                    sel_idx = val
+            elif ch in (b'0',):
+                if num_items >= 10:
+                    sel_idx = 9
+
+            # Sử dụng vật phẩm [Enter] / [Space]
+            elif ch in (b'\r', b'\n', b' '):
+                cur_it = items[sel_idx]
+                if cur_it["qty"] > 0:
+                    cur_it["qty"] -= 1
+                    if inv_dict is not None and cur_it["id"] in inv_dict:
+                        inv_dict[cur_it["id"]] = cur_it["qty"]
+                    last_used = cur_it
+
+                    if cur_it["id"] == "totem":
+                        if hero is not None:
+                            if "debuffs" in hero:
+                                hero["debuffs"].clear()
+                            if "severed_limbs" in hero:
+                                hero["severed_limbs"] = {"head": 100, "torso": 100, "arm_r": 100, "arm_l": 100, "leg_r": 100, "leg_l": 100}
+                            hero["hp"] = hero.get("max_hp", 100)
+                        status_msg = f"★ [KÍCH HOẠT TOTEM OF FLESH]: Tái sinh toàn bộ tứ chi bị đứt! Xương tủy hàn gắn nguyên vẹn!"
+
+                    elif cur_it["id"] == "poppy":
+                        heal = 65 if (hero and hero.get("name") == "CAHARA") else (30 if is_hardcore else 50)
+                        if hero is not None:
+                            hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + heal)
+                            if "bleeding" in hero.get("debuffs", []):
+                                hero["debuffs"].remove("bleeding")
+                        status_msg = f"● [HOA ANH TÚC]: Đã đắp cao dán! +{heal} HP và cầm máu hoàn toàn!"
+
+                    elif cur_it["id"] == "weed":
+                        heal = 75 if is_hardcore else 120
+                        if hero is not None:
+                            hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + heal)
+                        status_msg = f"● [THẢO DƯỢC]: Hít khói thảo mộc! +{heal} HP và làm dịu cơn đau!"
+
+                    elif cur_it["id"] == "bread":
+                        if hero is not None:
+                            hero["hunger"] = max(0, hero.get("hunger", 0) - 40)
+                        status_msg = f"● [BÁNH MÌ MỐC]: Đã ăn lương khô! Cơn đói khát giảm -40 điểm!"
+
+                    elif cur_it["id"] == "meat":
+                        if hero is not None:
+                            hero["hunger"] = max(0, hero.get("hunger", 0) - 60)
+                            hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + 20)
+                        status_msg = f"● [THỊT SẤY KHÔ]: Đã ăn thịt muối! -60 Đói và hồi phục +20 HP!"
+
+                    elif cur_it["id"] == "ale":
+                        if hero is not None:
+                            hero["mind"] = min(hero.get("max_mind", 100), hero.get("mind", 100) + 35)
+                        status_msg = f"● [RƯỢU CỔ]: Uống vại rượu sồi! +35 Mind, nỗi kinh hoàng tan biến!"
+
+                    elif cur_it["id"] == "vial":
+                        if hero is not None and "debuffs" in hero:
+                            for deb in ["infection", "poison", "gangrene"]:
+                                if deb in hero["debuffs"]:
+                                    hero["debuffs"].remove(deb)
+                        status_msg = f"● [BÌNH CỒN]: Rót cồn sát trùng! Xóa bỏ hoại tử và độc tố máu!"
+
+                    elif cur_it["id"] == "splint":
+                        if hero is not None and "debuffs" in hero:
+                            if "fracture" in hero["debuffs"]:
+                                hero["debuffs"].remove("fracture")
+                        status_msg = f"● [NẸP GỖ]: Đã cố định xương gãy! Tay chân phục hồi khả năng chiến đấu!"
+
+                    elif cur_it["id"] == "coin":
+                        if hero is not None:
+                            hero["lucky_coin"] = hero.get("lucky_coin", 0) + 1
+                        status_msg = f"● [ĐỒNG XU]: Đã chuẩn bị đồng xu may mắn trong tay!"
+
+                    elif cur_it["id"] == "key":
+                        status_msg = f"● [CHÌA KHÓA]: Cần đến Cổng Thoát Hiểm Phía Đông để tra chìa mở khóa!"
+                else:
+                    status_msg = f"✖ [HẾT VẬT PHẨM]: Bạn không còn {cur_it['name']} trong túi đồ!"
+
+            # Đóng túi đồ [Q] / [Esc]
+            elif ch in (b'q', b'Q', b'\x1b'):
+                return items, last_used
+
+    finally:
+        print("\033[?25h", end="", flush=True)
 
 def main():
-    run_grid_inventory_interactive()
+    items, used = run_pouch_interactive()
     dui.clear_screen()
-    print("[OK] Đã đóng giao diện túi đồ ô lưới.")
+    print("\033[1;30m+====================================================================================================+\033[0m")
+    print(f"\033[1;30m| \033[1;32m{fit_exact(' [ĐÓNG TỦ ĐỒ / TÚI SINH TỒN]: Đã quay trở về trạng thái khám phá hầm ngục!', 96)}\033[1;30m |\033[0m")
+    print("\033[1;30m+====================================================================================================+\033[0m")
+    print("\n  Số lượng vật phẩm hiện tại trong túi đồ:")
+    for it in items:
+        q_str = f"{it['qty']}/{it['max_qty']}"
+        print(f"   - {it['name']:<18} : \033[1;33m{q_str}\033[0m ({it['type']})")
+    print("\n\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
+    print("  \033[1;37m[1]\033[0m Mở lại Tủ đồ & Túi sinh tồn")
+    print("  \033[1;37m[Q]\033[0m Thoát ra ngoài")
+    print("\033[1;30m+====================================================================================================+\033[0m")
+
+    if os.name == 'nt' and sys.stdin.isatty():
+        choice = input("\nLựa chọn của bạn [1/Q]: ").strip().lower()
+        if choice == '1':
+            main()
+        else:
+            print("[OK] Đã đóng túi đồ.")
 
 if __name__ == "__main__":
     main()

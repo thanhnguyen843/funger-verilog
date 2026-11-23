@@ -41,6 +41,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import demo_interactive_ui as combat_engine
 from monsters_catalog import ALL_MONSTERS_CATALOG, REGULAR_MONSTER_IDS, BOSS_MONSTER_IDS, MIMIC_ID
+from demo_grid_inventory import run_pouch_interactive
 
 # =============================================================================
 # CONSTANTS & MAP DEFINITIONS (36 x 20)
@@ -421,11 +422,33 @@ def run_master_game():
     solo_hero["buff"] = ""
     solo_hero["debuffs"] = []
 
-    # Inventory setup
+    # Inventory setup with Totem and authentic survival items
     if solo_hero["name"] == "CAHARA":
-        inventory = {"poppy": 5, "weed": 3, "bread": 6, "ale": 3}
+        inventory = {
+            "totem": 1,
+            "poppy": 5,
+            "weed": 3,
+            "bread": 6,
+            "meat": 3,
+            "ale": 3,
+            "vial": 2,
+            "splint": 2,
+            "coin": 3,
+            "key": 0
+        }
     else:
-        inventory = {"poppy": 3, "weed": 2, "bread": 4, "ale": 2}
+        inventory = {
+            "totem": 1,
+            "poppy": 3,
+            "weed": 2,
+            "bread": 4,
+            "meat": 2,
+            "ale": 2,
+            "vial": 2,
+            "splint": 1,
+            "coin": 2,
+            "key": 0
+        }
 
     # Map State
     player_x = 2
@@ -831,8 +854,10 @@ def run_master_game():
             elif ch in (b'd', b'D'):
                 res = handle_map_move(1, 0)
             elif ch in (b'i', b'I'):
-                in_pouch = True
-                pouch_cur = 0
+                inventory["key"] = key_count
+                run_pouch_interactive(hero=solo_hero, inv_dict=inventory, is_hardcore=is_hardcore)
+                key_count = inventory.get("key", key_count)
+                recent_log = "[SURVIVAL POUCH]: Returned to labyrinth exploration."
                 continue
             elif ch in (b'g', b'G'):
                 run_guide_modal()
