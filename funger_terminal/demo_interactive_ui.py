@@ -588,11 +588,20 @@ cursor_idx = 0
 combat_outcome = None
 
 # =============================================================================
-# FLICKER-FREE ATOMIC TERMINAL BLITTING ENGINE
+# FLICKER-FREE ATOMIC TERMINAL BLITTING ENGINE (EXACT 100 COLUMNS & TAIL ERASE)
 # =============================================================================
+def fit_100_cols(s):
+    w = display_width(s)
+    if w < 100:
+        return s + " " * (100 - w)
+    elif w > 100:
+        return fit_ansi(s, 100)
+    return s
+
 def atomic_blit(screen_rows):
     """Blits entire screen atomically via cursor home to eliminate flicker 100%."""
-    frame_str = "\033[H" + "\n".join(screen_rows) + "\n"
+    formatted = [fit_100_cols(r) for r in screen_rows]
+    frame_str = "\033[H" + "\n".join(formatted) + "\n\033[J"
     sys.stdout.write(frame_str)
     sys.stdout.flush()
 
@@ -748,70 +757,44 @@ def run_solo_select_interactive():
                 return None, -1
 
 # =============================================================================
-# RENDER SCREEN: SOLO POKÉMON-STYLE COMBAT ARENA (100 COLUMNS, FLICKER-FREE)
+# RENDER SCREEN: COMPACT SOLO POKÉMON-STYLE COMBAT ARENA (29 ROWS, EXACT 100 COLS)
 # =============================================================================
 def render_screen():
     hero = active_hero
     screen_rows = []
 
     # -------------------------------------------------------------------------
-    # MAIN HEADER (100 COLUMNS)
+    # MAIN HEADER (3 ROWS, EXACT 100 COLS)
     # -------------------------------------------------------------------------
-    screen_rows.append("\033[1;30m+====================================================================================================+\033[0m")
+    screen_rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
     title_str = f"FEAR & HUNGER: SOLO SURVIVOR COMBAT ARENA - {hero['name']} [{hero['role']}]"
-    pad_left = (96 - len(title_str)) // 2
-    pad_right = 96 - len(title_str) - pad_left
+    pad_left = (96 - display_width(title_str)) // 2
+    pad_right = 96 - display_width(title_str) - pad_left
     screen_rows.append(f"\033[1;30m| \033[1;37m{' ' * pad_left}{title_str}{' ' * pad_right}\033[1;30m |\033[0m")
-    screen_rows.append("\033[1;30m+====================================================================================================+\033[0m")
-    screen_rows.append("")
+    screen_rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
 
     # -------------------------------------------------------------------------
-    # ZONE 1: OPPONENT ZONE (TOP)
+    # ZONE 1: OPPONENT ZONE (7 ROWS, EXACT 100 COLS)
     # Left: Monster Tactical Card (54 cols) | Gap: 4 spaces | Right: Sprite (42 cols)
     # -------------------------------------------------------------------------
     c_mcard = "\033[1;33m" if current_menu == "TARGET_LIMB" else "\033[1;30m"
     m_border = f"{c_mcard}+" + "-" * 52 + f"+{c_mcard}\033[0m"
 
-    if monster["debuff_decapitated"]:
+    if monster.get("debuff_decapitated"):
         m_sprite = MONSTER_SPRITE_DECAPITATED
         m_model_sub = "\033[90m[NEUTRALIZED]\033[0m"
-    elif monster["debuff_legs"]:
+    elif monster.get("debuff_legs"):
         m_sprite = MONSTER_SPRITE_CRAWLING
         m_model_sub = "\033[1;33m[CROUCHED]\033[0m"
-    elif monster["debuff_arm_r"] or monster["debuff_arm_l"]:
+    elif monster.get("debuff_arm_r") or monster.get("debuff_arm_l"):
         m_sprite = MONSTER_SPRITE_DISARMED
         m_model_sub = "\033[1;33m[DISARMED]\033[0m"
     else:
         m_sprite = MONSTER_SPRITE_INTACT
         m_model_sub = ""
 
-    m_pct = int(max(0, monster["hp"]) / float(monster["max_hp"]) * 100)
+    m_pct = int(max(0, monster["hp"]) / float(max(1, monster["max_hp"])) * 100)
     m_hp_bar = make_bar(monster["hp"], monster["max_hp"], 16, "31")
-
-    has_monster_injury = (
-        monster["debuff_decapitated"] or
-        monster["debuff_legs"] or
-        monster["debuff_arm_r"] or
-        monster["debuff_arm_l"]
-    )
-
-    m_inj_header = "\033[1;33m  ANATOMY & DEBUFFS:\033[0m" if has_monster_injury else ""
-    m_inj_1 = ""
-    m_inj_2 = ""
-    m_inj_3 = ""
-
-    if monster["debuff_decapitated"]:
-        m_inj_1 = "\033[90m  [HEAD]  Decapitated (Neutralized)\033[0m"
-    elif monster["debuff_legs"]:
-        m_inj_1 = "\033[1;33m  [LEGS]  Broken (Crouched, 100% Flee)\033[0m"
-        m_inj_2 = "\033[1;33m  [HEAD]  Exposed (100% Decapitate Hit)\033[0m"
-        if monster["debuff_arm_r"]:
-            m_inj_3 = "\033[1;33m  [R-ARM] Severed (Disarmed, ATK -14)\033[0m"
-    elif monster["debuff_arm_r"] or monster["debuff_arm_l"]:
-        if monster["debuff_arm_r"]:
-            m_inj_1 = "\033[1;33m  [R-ARM] Severed (Disarmed, ATK -14)\033[0m"
-        if monster["debuff_arm_l"]:
-            m_inj_2 = "\033[1;36m  [L-ARM] Severed (Guard Broken)\033[0m"
 
     arch = monster.get("archetype", "NORMAL")
     if arch == "SPECTRAL":
@@ -825,20 +808,23 @@ def render_screen():
     else:
         trait_desc = "\033[90m  TRAIT : STANDARD COMBATANT\033[0m"
 
-    # 14 Rows of Monster Card (54 cols each)
+    if monster.get("debuff_decapitated"):
+        m_status = "\033[90m  STATUS: [HEAD] Decapitated (Neutralized)\033[0m"
+    elif monster.get("debuff_legs"):
+        m_status = "\033[1;33m  STATUS: [LEGS] Broken (Crouched, 100% Hit)\033[0m"
+    elif monster.get("debuff_arm_r"):
+        m_status = "\033[1;33m  STATUS: [R-ARM] Severed (Disarmed, ATK -14)\033[0m"
+    elif monster.get("debuff_arm_l"):
+        m_status = "\033[1;36m  STATUS: [L-ARM] Severed (Guard Broken)\033[0m"
+    else:
+        m_status = "\033[90m  ANATOMY: All Limbs Functional & Intact\033[0m"
+
     m_card_rows = [
         m_border,
         make_card_row(f"\033[1;31m  FOE   : #{monster['id']:02d} {monster['name']:<17} \033[1;33m[{arch}]\033[0m", c_mcard),
-        make_card_row("", c_mcard),
         make_card_row(f"  HP    : {m_hp_bar} \033[1;31m{monster['hp']:3d}/{monster['max_hp']:3d} ({m_pct:3d}%)\033[0m", c_mcard),
-        make_card_row("", c_mcard),
         make_card_row(trait_desc, c_mcard),
-        make_card_row("", c_mcard),
-        make_card_row(m_inj_header, c_mcard),
-        make_card_row(m_inj_1, c_mcard),
-        make_card_row(m_inj_2, c_mcard),
-        make_card_row(m_inj_3, c_mcard),
-        make_card_row("", c_mcard),
+        make_card_row(m_status, c_mcard),
         make_card_row("", c_mcard),
         m_border
     ]
@@ -846,20 +832,18 @@ def render_screen():
     m_model_rows = [
         pad_str("          \033[1;31m[ENEMY]\033[0m", 42)
     ]
-    for r in range(12):
+    for r in range(5):
         sp = m_sprite[r] if r < len(m_sprite) else " " * 29
         m_model_rows.append(format_model_row(sp))
-    m_sub_pad = pad_str(f"       {m_model_sub}", 42) if m_model_sub else pad_str("", 42)
-    m_model_rows.append(m_sub_pad)
+    sub_tag = f"       {m_model_sub}" if m_model_sub else ""
+    m_model_rows.append(pad_str(sub_tag, 42))
 
-    for r_idx in range(14):
+    for r_idx in range(7):
         screen_rows.append(f"{m_card_rows[r_idx]}    {m_model_rows[r_idx]}\033[0m")
 
-    screen_rows.append("")
-
     # -------------------------------------------------------------------------
-    # ZONE 2: SOLO HERO ZONE (BOTTOM)
-    # Left: Hero Sprite Model (42 cols) | Gap: 4 spaces | Right: Card (54 cols)
+    # ZONE 2: SOLO HERO ZONE (7 ROWS, EXACT 100 COLS)
+    # Left: Hero Sprite Model (42 cols, NO [HERO] tag!) | Gap: 4 | Right: Card (54 cols)
     # -------------------------------------------------------------------------
     c_hcard = "\033[1;32m" if current_menu in ("POUCH", "TACTICS") else "\033[1;30m"
     h_border = f"{c_hcard}+" + "-" * 52 + f"+{c_hcard}\033[0m"
@@ -867,155 +851,111 @@ def render_screen():
     hero_key = hero["name"]
     h_sprite = HERO_SPRITES.get(hero_key, FALLBACK_SPRITES.get(hero_key, [" " * 29] * 12))
 
-    h_pct = int(max(0, hero["hp"]) / float(hero["max_hp"]) * 100)
+    h_pct = int(max(0, hero["hp"]) / float(max(1, hero["max_hp"])) * 100)
     h_hp_bar = make_bar(hero["hp"], hero["max_hp"], 16, "32")
-    h_mnd_bar = make_bar(hero["mind"], hero["max_mind"], 12, "36")
+    h_mnd_bar = make_bar(hero["mind"], hero["max_mind"], 10, "36")
 
     h_tox = hero.get("toxicity", 0)
     max_t = hero.get("max_toxicity", 100)
-    h_tox_bar = make_bar(h_tox, max_t, 12, "31" if h_tox >= max_t else ("33" if h_tox >= (max_t * 0.8) else "32"))
     tox_badge = "\033[1;31m[INTOXICATED]\033[0m" if h_tox >= max_t else ("\033[1;33m[HIGH]\033[0m" if h_tox >= (max_t * 0.8) else "\033[90m[SAFE]\033[0m")
 
-    status_line = ""
+    # Only show status when an actual buff/debuff exists; NEVER show "Battle Ready"
     if hero.get("debuffs"):
-        status_line = f"\033[1;31m  STATUS: {', '.join(hero['debuffs'])}\033[0m"
+        h_status = f"\033[1;31m  STATUS: {', '.join(hero['debuffs'])}\033[0m"
     elif hero.get("buff"):
-        status_line = f"\033[1;32m  STATUS: {hero['buff']}\033[0m"
+        h_status = f"\033[1;32m  STATUS: {hero['buff']}\033[0m"
     else:
-        status_line = f"\033[90m  STATUS: Battle Ready\033[0m"
+        h_status = f"\033[1;36m  PASSIV: {hero['passive'][:36]}\033[0m"
 
-    h_model_rows = [
-        pad_str("          \033[1;32m[HERO]\033[0m", 42)
+    h_card_rows = [
+        h_border,
+        make_card_row(f"\033[1;32m  HERO  : {hero['name']:<9} \033[90m[{hero['role']}]\033[0m", c_hcard),
+        make_card_row(f"  HP    : {h_hp_bar} \033[1;32m{hero['hp']:3d}/{hero['max_hp']:3d} ({h_pct:3d}%)\033[0m", c_hcard),
+        make_card_row(f"  MIND  : {h_mnd_bar} \033[1;36m{hero['mind']:3d}/{hero['max_mind']:3d}\033[0m | \033[90mTOXIC:\033[0m \033[1;{'31' if h_tox >= max_t else '32'}m{h_tox:2d}%\033[0m {tox_badge}", c_hcard),
+        make_card_row(f"  ARMOR : \033[1;37m{hero['phys_resist_str'][:18]}\033[0m | \033[1;35m{int(hero['dodge_rate']*100)}% Dodge\033[0m", c_hcard),
+        make_card_row(h_status, c_hcard),
+        h_border
     ]
-    for r in range(12):
+
+    h_model_rows = []
+    for r in range(6):
         sp = h_sprite[r] if r < len(h_sprite) else " " * 29
         h_model_rows.append(format_model_row(sp))
     h_model_rows.append(pad_str("", 42))
 
-    # 14 Rows of Solo Hero Card
-    h_card_rows = [
-        h_border,
-        make_card_row(f"\033[1;32m  HERO  : {hero['name']:<9} \033[90m[{hero['role']}]\033[0m", c_hcard),
-        make_card_row("", c_hcard),
-        make_card_row(f"  HP    : {h_hp_bar} \033[1;32m{hero['hp']:3d}/{hero['max_hp']:3d} ({h_pct:3d}%)\033[0m", c_hcard),
-        make_card_row("", c_hcard),
-        make_card_row(f"  MIND  : {h_mnd_bar} \033[1;36m{hero['mind']:3d}/{hero['max_mind']:3d}\033[0m", c_hcard),
-        make_card_row("", c_hcard),
-        make_card_row(f"  TOXIC : {h_tox_bar} \033[1;{'31' if h_tox >= max_t else '32'}m{h_tox:3d}%\033[0m {tox_badge}", c_hcard),
-        make_card_row("", c_hcard),
-        make_card_row(f"  ARMOR : \033[1;37m{hero['phys_resist_str'][:20]}\033[0m | \033[1;35m{int(hero['dodge_rate']*100)}% Dodge\033[0m", c_hcard),
-        make_card_row(f"\033[1;33m  TRAIT : {hero['trait'][:36]}\033[0m", c_hcard),
-        make_card_row(f"\033[1;36m  PASSIV: {hero['passive'][:36]}\033[0m", c_hcard),
-        make_card_row(status_line, c_hcard),
-        h_border
-    ]
-
-    for r_idx in range(14):
+    for r_idx in range(7):
         screen_rows.append(f"{h_model_rows[r_idx]}    {h_card_rows[r_idx]}\033[0m")
 
-    screen_rows.append("")
+    # -------------------------------------------------------------------------
+    # SECTION 3: COMBAT LOG BOX (3 ROWS, EXACT 100 COLS)
+    # -------------------------------------------------------------------------
+    screen_rows.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
+    log_text = f"\033[1;33m[LOG]\033[0m \033[1;37m{combat_log}\033[0m"
+    screen_rows.append(f"\033[1;30m| \033[0m{fit_ansi(log_text, 94)}\033[1;30m |\033[0m")
+    screen_rows.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
 
     # -------------------------------------------------------------------------
-    # SECTION 3: COMBAT LOG BOX (EXACT 100 COLUMNS, 2-ROW WRAP)
-    # -------------------------------------------------------------------------
-    screen_rows.append("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
-    import textwrap
-    wrapped = textwrap.wrap(combat_log, width=88)
-    if not wrapped:
-        wrapped = [""]
-
-    line1 = f"\033[1;33m[LOG]\033[0m \033[1;37m{wrapped[0]}\033[0m"
-    screen_rows.append(f"\033[1;30m| \033[0m{fit_ansi(line1, 96)}\033[1;30m |\033[0m")
-
-    if len(wrapped) > 1:
-        line2 = f"      \033[1;37m{' '.join(wrapped[1:])}\033[0m"
-        screen_rows.append(f"\033[1;30m| \033[0m{fit_ansi(line2, 96)}\033[1;30m |\033[0m")
-    else:
-        line2 = ""
-        screen_rows.append(f"\033[1;30m| \033[0m{fit_ansi(line2, 96)}\033[1;30m |\033[0m")
-
-    screen_rows.append("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
-    screen_rows.append("")
-
-    # -------------------------------------------------------------------------
-    # SECTION 4: SOLO ACTION MENU (NO SWITCH HERO)
+    # SECTION 4: COMBAT COMMANDS MENU (6 ROWS, EXACT 100 COLS)
     # -------------------------------------------------------------------------
     menu_data = get_current_menu_data()
     title = menu_data["title"]
     options = menu_data["options"]
 
     screen_rows.append(f"  \033[1;37m{title}\033[0m")
-    screen_rows.append("  \033[90m(Use W / S or Arrow keys to navigate, Enter to confirm):\033[0m")
-    screen_rows.append("")
-
     for idx, opt in enumerate(options):
         is_sel = (idx == cursor_idx)
         label = opt["label"]
         desc = opt["desc"]
 
         if is_sel:
-            screen_rows.append(f"    \033[1;33m▶  [{idx+1}] \033[1;37;43m {label:<22} \033[0m \033[1;33m{desc}\033[0m")
+            screen_rows.append(f"    \033[1;33m▶  [{idx+1}] \033[1;37;43m {label:<14} \033[0m \033[1;33m{desc}\033[0m")
         else:
-            screen_rows.append(f"       \033[90m[{idx+1}]   {label:<22} {desc}\033[0m")
+            screen_rows.append(f"       \033[90m[{idx+1}]   {label:<14} {desc}\033[0m")
 
-    for _ in range(max(0, 6 - len(options))):
+    for _ in range(max(0, 5 - len(options))):
         screen_rows.append("")
 
-    screen_rows.append("")
-
     # -------------------------------------------------------------------------
-    # FOOTER: CONTROL GUIDE (100 COLUMNS)
+    # SECTION 5: FOOTER (3 ROWS, EXACT 100 COLS)
     # -------------------------------------------------------------------------
-    screen_rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
+    screen_rows.append("\033[1;30m" + "=" * 98 + "\033[0m")
     if current_menu == "MAIN":
-        screen_rows.append("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S]\033[0m Navigate  |  \033[1;37m[Enter/Space]\033[0m Select Submenu  |  \033[1;31m[Q]\033[0m Quit")
+        screen_rows.append("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S / 1-5]\033[0m Navigate  |  \033[1;37m[Enter/Space]\033[0m Select  |  \033[1;31m[Q]\033[0m Quit")
     else:
-        screen_rows.append("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S]\033[0m Navigate  |  \033[1;37m[Enter/Space]\033[0m Confirm Action  |  \033[1;33m[B/Esc]\033[0m Back")
-    screen_rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
+        screen_rows.append("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S / 1-6]\033[0m Navigate  |  \033[1;37m[Enter/Space]\033[0m Confirm  |  \033[1;33m[B/Esc]\033[0m Back")
+    screen_rows.append("\033[1;30m" + "=" * 98 + "\033[0m")
 
-    # Atomic write to console without clearing screen
     atomic_blit(screen_rows)
 
 # =============================================================================
-# MENU DATA RESOLUTION (SOLO ACTIONS)
+# MENU DATA RESOLUTION (UNIFIED 5-OPTION CORE COMBAT MENU)
 # =============================================================================
 def get_current_menu_data():
     h = active_hero
 
     if current_menu == "MAIN":
+        flee_pct = "100%" if (monster.get("debuff_legs") or h["name"] == "CAHARA") else "50%"
         return {
-            "title": f"SOLO COMMANDS ({h['name']} - {h['role']})",
+            "title": f"COMBAT COMMANDS ({h['name']} - {h['role']})",
             "options": [
-                {"label": "ACTION",   "desc": "-> Attack, Guard, Flee"},
-                {"label": "SKILL",    "desc": f"-> Class abilities ({h['name']})"},
-                {"label": "ITEM",     "desc": f"-> Survival bag (Cap: {h.get('bag_cap', 5)})"},
-                {"label": "TACTICS",  "desc": "-> Stances (Berserk / Iron Guard / Agile)"}
-            ]
-        }
-    elif current_menu == "ACTION":
-        flee_text = "Escape battle (\033[1;32m100% Guaranteed - Foe crawling\033[0m)" if monster["debuff_legs"] else "Escape battle (50% Chance)"
-        if h["name"] == "CAHARA":
-            flee_text = "Escape battle (\033[1;32m100% Guaranteed - Rogue Agility\033[0m)"
-        return {
-            "title": "ACTION > SELECT TACTICAL COMMAND",
-            "options": [
-                {"label": "ATTACK",  "desc": "-> Target specific limbs to disable foe"},
+                {"label": "ATTACK",  "desc": "-> Target specific limbs (Head / Torso / Arms / Legs)"},
                 {"label": "GUARD",   "desc": "-> Brace for impact (-70% incoming damage)"},
-                {"label": "FLEE",    "desc": f"-> {flee_text}"},
-                {"label": "BACK",    "desc": "-> Return to main commands"}
+                {"label": "SKILL",   "desc": f"-> Class abilities & magic ({h['name']})"},
+                {"label": "ITEM",    "desc": f"-> Administer supplies from pouch (Cap: {h.get('bag_cap', 5)})"},
+                {"label": "FLEE",    "desc": f"-> Disengage and retreat to corridor ({flee_pct} Chance)"}
             ]
         }
     elif current_menu == "TARGET_LIMB":
-        crawl_hint = "\033[1;32m(100% Critical Finish!)\033[0m" if monster["debuff_legs"] else "(25% Hit | Instant Decapitate)"
+        crawl_hint = "\033[1;32m(100% Critical Finish!)\033[0m" if monster.get("debuff_legs") else "(35% Hit | Instant Decapitate)"
         return {
             "title": "ACTION > ATTACK > SELECT TARGET LIMB",
             "options": [
                 {"label": "HEAD",       "desc": f"-> {crawl_hint}"},
                 {"label": "TORSO",      "desc": "-> 100% Hit | Safe strike, heavy body damage"},
                 {"label": "RIGHT ARM",  "desc": "-> 100% Hit | Sever sword arm -> Disarm foe"},
-                {"label": "LEFT ARM",   "desc": "-> 100% Hit | Sever shield arm -> Weaken attack"},
+                {"label": "LEFT ARM",   "desc": "-> 100% Hit | Sever shield arm -> Shatter guard"},
                 {"label": "LEGS",       "desc": "-> 100% Hit | Break legs -> Force crouch (100% Flee)"},
-                {"label": "BACK",       "desc": "-> Return to action menu"}
+                {"label": "BACK",       "desc": "-> Return to main combat menu"}
             ]
         }
     elif current_menu == "SKILL":
@@ -1023,7 +963,7 @@ def get_current_menu_data():
         opts = []
         for sk in h_skills:
             opts.append({"label": sk["label"], "desc": sk["desc"]})
-        opts.append({"label": "BACK", "desc": "-> Return to main commands"})
+        opts.append({"label": "BACK", "desc": "-> Return to main combat menu"})
         return {
             "title": f"SKILLS & ABILITIES ({h['name']} - {h['role']})",
             "options": opts
@@ -1033,11 +973,11 @@ def get_current_menu_data():
         return {
             "title": f"ITEM POUCH & SURVIVAL SUPPLIES (Capacity: {cap})",
             "options": [
-                {"label": f"WHITE POPPY [{inventory['poppy']}/{cap}]", "desc": "-> Flower bud | Restore HP & cure bleeding"},
-                {"label": f"HERBAL WEED [{inventory['weed']}/{cap}]",  "desc": "-> Healing herb | Restore +120 HP"},
-                {"label": f"MOLDY BREAD [{inventory['bread']}/{cap}]", "desc": "-> Dungeon rations | Reduce Hunger"},
-                {"label": f"VINTAGE ALE [{inventory['ale']}/{cap}]",   "desc": "-> Fermented ale | Restore Mind & buff"},
-                {"label": "BACK",                                       "desc": "-> Return to main commands"}
+                {"label": f"WHITE POPPY [{inventory['poppy']}/{cap}]", "desc": "-> Restores HP & heals wounds"},
+                {"label": f"MEDICINAL HERB [{inventory['weed']}/{cap}]", "desc": "-> Restores +120 HP potent medicine"},
+                {"label": f"MOLDY BREAD [{inventory['bread']}/{cap}]",  "desc": "-> Dungeon rations | Relieves hunger"},
+                {"label": f"VINTAGE ALE [{inventory['ale']}/{cap}]",    "desc": "-> Cleanses terror | Restores Mind"},
+                {"label": "BACK",                                       "desc": "-> Return to main combat menu"}
             ]
         }
     elif current_menu == "TACTICS":
@@ -1047,7 +987,7 @@ def get_current_menu_data():
                 {"label": "BERSERK",     "desc": "-> +50% Attack power, +30% damage taken"},
                 {"label": "IRON GUARD",  "desc": "-> -70% Damage taken, restore 5% HP/turn"},
                 {"label": "AGILE DANCE", "desc": "-> +35% Dodge rate, 100% flee chance"},
-                {"label": "BACK",        "desc": "-> Return to main commands"}
+                {"label": "BACK",        "desc": "-> Return to main combat menu"}
             ]
         }
     return {"title": "MENU", "options": []}
@@ -1060,24 +1000,10 @@ def handle_selection():
     hero = active_hero
 
     if current_menu == "MAIN":
-        if cursor_idx == 0:
-            current_menu = "ACTION"
-            cursor_idx = 0
-        elif cursor_idx == 1:
-            current_menu = "SKILL"
-            cursor_idx = 0
-        elif cursor_idx == 2:
-            current_menu = "POUCH"
-            cursor_idx = 0
-        elif cursor_idx == 3:
-            current_menu = "TACTICS"
-            cursor_idx = 0
-
-    elif current_menu == "ACTION":
-        if cursor_idx == 0:    # Attack
+        if cursor_idx == 0:    # ATTACK -> Target Limb
             current_menu = "TARGET_LIMB"
             cursor_idx = 0
-        elif cursor_idx == 1:  # Guard
+        elif cursor_idx == 1:  # GUARD -> Immediate Guard
             if hero["name"] == "NAS'HRAH":
                 combat_log = "NAS'HRAH REFUSES TO GUARD! 'I am a god, I bow to no worm!'"
             else:
@@ -1087,8 +1013,14 @@ def handle_selection():
             enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
-        elif cursor_idx == 2:  # Flee
-            if monster["debuff_legs"] or hero["name"] == "CAHARA":
+        elif cursor_idx == 2:  # SKILL -> Open Skill Menu
+            current_menu = "SKILL"
+            cursor_idx = 0
+        elif cursor_idx == 3:  # ITEM -> Open Item Pouch
+            current_menu = "POUCH"
+            cursor_idx = 0
+        elif cursor_idx == 4:  # FLEE -> Immediate Escape Attempt
+            if monster.get("debuff_legs") or hero["name"] == "CAHARA":
                 combat_log = "ESCAPE SUCCESSFUL! Safely retreated into dungeon corridors."
                 combat_outcome = "FLEE"
             else:
@@ -1098,58 +1030,64 @@ def handle_selection():
                 else:
                     combat_log = "ESCAPE FAILED! Foe blocks the corridor and retaliates!"
                     enemy_turn()
-                    current_menu = "MAIN"
-                    cursor_idx = 0
-        elif cursor_idx == 3:  # Back
             current_menu = "MAIN"
             cursor_idx = 0
 
     elif current_menu == "TARGET_LIMB":
-        arch = monster.get("archetype", "NORMAL")
-
-        # Universal damage with affinity: every hero can damage every foe!
         if cursor_idx == 5: # Back
-            current_menu = "ACTION"
+            current_menu = "MAIN"
             cursor_idx = 0
             return
 
+        arch = monster.get("archetype", "NORMAL")
         base_slash = hero["atk"]
         if arch == "SPECTRAL":
-            # Blade passes through partly, dealing spirit severance damage
             dmg = max(12, int(base_slash * 0.45))
             monster["hp"] = max(0, monster["hp"] - dmg)
-            combat_log = f"SPIRIT SEVERANCE! {hero['name']}'s weapon disrupts ghostly mist for {dmg} DMG! (Skills deal full magic DMG)."
-            enemy_turn()
+            combat_log = f"SPIRIT SEVERANCE! {hero['name']}'s weapon disrupts ghostly mist for {dmg} DMG!"
+            if monster["hp"] <= 0:
+                combat_log += " | Foe neutralized! VICTORY!"
+                combat_outcome = "VICTORY"
+            else:
+                enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
             return
         elif arch == "ARMORED":
             dmg = max(10, int(base_slash * 0.35))
             monster["hp"] = max(0, monster["hp"] - dmg)
-            combat_log = f"HEAVY CLANG! {hero['name']} strikes armor plate for {dmg} DMG! (Smite & Magic break DEF)."
-            enemy_turn()
+            combat_log = f"HEAVY CLANG! {hero['name']} strikes armor plate for {dmg} DMG!"
+            if monster["hp"] <= 0:
+                combat_log += " | Foe neutralized! VICTORY!"
+                combat_outcome = "VICTORY"
+            else:
+                enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
             return
 
         # Normal/Ambusher/Terror targets
         if cursor_idx == 0:    # Head
-            if monster["debuff_legs"]:
-                dmg = monster["hp"]
+            if monster.get("debuff_legs"):
                 monster["hp"] = 0
                 monster["debuff_decapitated"] = True
                 combat_log = f"CRITICAL FINISH! Foe is crouched; {hero['name']} cleanly severs head! VICTORY!"
+                combat_outcome = "VICTORY"
             else:
                 if random.random() < 0.35:
-                    dmg = monster["hp"]
                     monster["hp"] = 0
                     monster["debuff_decapitated"] = True
-                    combat_log = f"DECAPITATION! Fatal strike for {dmg} DMG! VICTORY!"
+                    combat_log = f"DECAPITATION! Fatal strike for {monster['max_hp']} DMG! VICTORY!"
+                    combat_outcome = "VICTORY"
                 else:
                     dmg = 20
                     monster["hp"] = max(0, monster["hp"] - dmg)
                     combat_log = f"Glancing strike across the head for {dmg} DMG."
-            enemy_turn()
+                    if monster["hp"] <= 0:
+                        combat_log += " | Foe neutralized! VICTORY!"
+                        combat_outcome = "VICTORY"
+                    else:
+                        enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
         elif cursor_idx == 1:  # Torso
@@ -1157,7 +1095,11 @@ def handle_selection():
             dmg = max(24, dmg)
             monster["hp"] = max(0, monster["hp"] - dmg)
             combat_log = f"{hero['name']} strikes torso for {dmg} DMG."
-            enemy_turn()
+            if monster["hp"] <= 0:
+                combat_log += " | Foe neutralized! VICTORY!"
+                combat_outcome = "VICTORY"
+            else:
+                enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
         elif cursor_idx == 2:  # Right Arm
@@ -1165,8 +1107,12 @@ def handle_selection():
             monster["hp"] = max(0, monster["hp"] - dmg)
             monster["debuff_arm_r"] = True
             monster["atk"] = max(8, monster["atk"] - 14)
-            combat_log = f"DISARMED! Weapon arm severed (-{dmg} HP). Foe's ATK reduced to 10!"
-            enemy_turn()
+            combat_log = f"DISARMED! Weapon arm severed (-{dmg} HP). Foe's ATK reduced to {monster['atk']}!"
+            if monster["hp"] <= 0:
+                combat_log += " | Foe neutralized! VICTORY!"
+                combat_outcome = "VICTORY"
+            else:
+                enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
         elif cursor_idx == 3:  # Left Arm
@@ -1174,7 +1120,11 @@ def handle_selection():
             monster["hp"] = max(0, monster["hp"] - dmg)
             monster["debuff_arm_l"] = True
             combat_log = f"SHIELD BROKEN! Left arm disabled (-{dmg} HP). Foe defense shattered!"
-            enemy_turn()
+            if monster["hp"] <= 0:
+                combat_log += " | Foe neutralized! VICTORY!"
+                combat_outcome = "VICTORY"
+            else:
+                enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
         elif cursor_idx == 4:  # Legs
@@ -1182,7 +1132,11 @@ def handle_selection():
             monster["hp"] = max(0, monster["hp"] - dmg)
             monster["debuff_legs"] = True
             combat_log = f"LEGS BROKEN! -{dmg} HP. Foe collapses to floor -> 100% FLEE & 100% HEAD HIT!"
-            enemy_turn()
+            if monster["hp"] <= 0:
+                combat_log += " | Foe neutralized! VICTORY!"
+                combat_outcome = "VICTORY"
+            else:
+                enemy_turn()
             current_menu = "MAIN"
             cursor_idx = 0
 
@@ -1543,10 +1497,14 @@ def handle_selection():
 # ENEMY TURN & DAMAGE RESOLUTION (SOLO SURVIVOR WITH DEFENSE AFFINITIES)
 # =============================================================================
 def enemy_turn():
-    global combat_log
+    global combat_log, combat_outcome
     hero = active_hero
+    hero["hp"] = max(0, hero.get("hp", 0))
+    monster["hp"] = max(0, monster.get("hp", 0))
+    hero["mind"] = max(0, hero.get("mind", 0))
+    hero["toxicity"] = max(0, hero.get("toxicity", 0))
 
-    if monster["hp"] <= 0 or monster["debuff_decapitated"]:
+    if monster["hp"] <= 0 or monster.get("debuff_decapitated"):
         combat_log += " | Foe neutralized! VICTORY!"
         combat_outcome = "VICTORY"
         return
