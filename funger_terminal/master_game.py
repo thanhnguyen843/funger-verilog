@@ -426,27 +426,19 @@ def run_master_game():
     if solo_hero["name"] == "CAHARA":
         inventory = {
             "totem": 1,
-            "poppy": 5,
-            "weed": 3,
             "bread": 6,
-            "meat": 3,
+            "meat": 4,
             "ale": 3,
-            "vial": 2,
-            "splint": 2,
-            "coin": 3,
+            "vial": 3,
             "key": 0
         }
     else:
         inventory = {
             "totem": 1,
-            "poppy": 3,
-            "weed": 2,
             "bread": 4,
             "meat": 2,
             "ale": 2,
             "vial": 2,
-            "splint": 1,
-            "coin": 2,
             "key": 0
         }
 
@@ -863,19 +855,18 @@ def run_master_game():
                 run_guide_modal()
                 continue
             elif ch in (b'h', b'H'):
-                # Quick heal
-                if inventory["poppy"] > 0:
-                    inventory["poppy"] -= 1
-                    heal = 65 if solo_hero["name"] == "CAHARA" else (30 if is_hardcore else 50)
-                    solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
-                    recent_log = f"[QUICK HEAL]: Consumed Poppy Flower (+{heal} HP). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
-                elif inventory["weed"] > 0:
-                    inventory["weed"] -= 1
-                    heal = 75 if is_hardcore else 120
-                    solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
-                    recent_log = f"[QUICK HEAL]: Consumed Marijuana Herb (+{heal} HP). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
+                # Quick heal with meat or bread
+                if inventory.get("meat", 0) > 0:
+                    inventory["meat"] -= 1
+                    solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + 20)
+                    solo_hero["hunger"] = max(0, solo_hero.get("hunger", 0) - 60)
+                    recent_log = f"[QUICK HEAL]: Ate Dried Meat (+20 HP, -60 Hunger). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
+                elif inventory.get("bread", 0) > 0:
+                    inventory["bread"] -= 1
+                    solo_hero["hunger"] = max(0, solo_hero.get("hunger", 0) - 40)
+                    recent_log = f"[QUICK NOURISH]: Ate Moldy Bread (-40 Hunger). HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
                 else:
-                    recent_log = "[QUICK HEAL]: No medicinal herbs in pouch!"
+                    recent_log = "[QUICK HEAL]: No provisions in pouch!"
                 continue
             elif ch in (b'q', b'Q', b'\x03'):
                 clear_screen()

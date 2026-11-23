@@ -228,21 +228,7 @@ def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardc
                             if "severed_limbs" in hero:
                                 hero["severed_limbs"] = {"head": 100, "torso": 100, "arm_r": 100, "arm_l": 100, "leg_r": 100, "leg_l": 100}
                             hero["hp"] = hero.get("max_hp", 100)
-                        status_msg = f"★ [KÍCH HOẠT TOTEM OF FLESH]: Tái sinh toàn bộ tứ chi bị đứt! Xương tủy hàn gắn nguyên vẹn!"
-
-                    elif cur_it["id"] == "poppy":
-                        heal = 65 if (hero and hero.get("name") == "CAHARA") else (30 if is_hardcore else 50)
-                        if hero is not None:
-                            hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + heal)
-                            if "bleeding" in hero.get("debuffs", []):
-                                hero["debuffs"].remove("bleeding")
-                        status_msg = f"● [HOA ANH TÚC]: Đã đắp cao dán! +{heal} HP và cầm máu hoàn toàn!"
-
-                    elif cur_it["id"] == "weed":
-                        heal = 75 if is_hardcore else 120
-                        if hero is not None:
-                            hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + heal)
-                        status_msg = f"● [THẢO DƯỢC]: Hít khói thảo mộc! +{heal} HP và làm dịu cơn đau!"
+                        status_msg = f"★ [KÍCH HOẠT TOTEM OF UNDYING]: Tái sinh toàn bộ tứ chi bị đứt! Sinh lực hồi phục 100%!"
 
                     elif cur_it["id"] == "bread":
                         if hero is not None:
@@ -262,21 +248,10 @@ def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardc
 
                     elif cur_it["id"] == "vial":
                         if hero is not None and "debuffs" in hero:
-                            for deb in ["infection", "poison", "gangrene"]:
+                            for deb in ["infection", "poison", "gangrene", "bleeding"]:
                                 if deb in hero["debuffs"]:
                                     hero["debuffs"].remove(deb)
-                        status_msg = f"● [BÌNH CỒN]: Rót cồn sát trùng! Xóa bỏ hoại tử và độc tố máu!"
-
-                    elif cur_it["id"] == "splint":
-                        if hero is not None and "debuffs" in hero:
-                            if "fracture" in hero["debuffs"]:
-                                hero["debuffs"].remove("fracture")
-                        status_msg = f"● [NẸP GỖ]: Đã cố định xương gãy! Tay chân phục hồi khả năng chiến đấu!"
-
-                    elif cur_it["id"] == "coin":
-                        if hero is not None:
-                            hero["lucky_coin"] = hero.get("lucky_coin", 0) + 1
-                        status_msg = f"● [ĐỒNG XU]: Đã chuẩn bị đồng xu may mắn trong tay!"
+                        status_msg = f"● [BÌNH CỒN]: Rót cồn sát trùng! Xóa bỏ xuất huyết, hoại tử và độc tố!"
 
                     elif cur_it["id"] == "key":
                         status_msg = f"● [CHÌA KHÓA]: Cần đến Cổng Thoát Hiểm Phía Đông để tra chìa mở khóa!"
