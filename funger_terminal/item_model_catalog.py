@@ -5,26 +5,205 @@
 ITEM MODEL CATALOG (BỘ MÔ HÌNH PIXEL ART VẬT PHẨM TỦ ĐỒ)
 Fear & Hunger: Terminal Labyrinth - Solo Explorer Architecture
 ================================================================================
-Các mô hình pixel art được chọn lọc chuẩn xác từ các bảng sprite người dùng cung cấp:
-  - Totem: Nguyên mẫu Totem of Undying từ ảnh người dùng (mắt ngọc lục bảo, thân vàng, viền nâu).
-  - Bánh mì: Ổ Baguette nướng giòn có khía xẻ vàng óng (Bảng 1).
-  - Thịt: Đùi thịt cầm tay rút xương kinh điển (Bảng 1).
-  - Rượu: Vại bia gỗ sồi sủi bọt trắng xóa có quai cầm (Bảng 2).
-  - Hóa chất: Lọ cầu tròn nút bần phát sáng dung dịch giả kim (Bảng 2).
-  - Chìa khóa: Chìa khóa sắt cổ ngữ Hexen đúc ren ma thuật (Bảng 3).
+Tất cả 7 mô hình được xây dựng chuẩn xác từ các ảnh pixel art người dùng cung cấp:
+  1. TOTEM OF UNDYING : Thần tượng Minecraft mắt ngọc lục bảo, thân vàng (Ảnh Totem).
+  2. POPPY FLOWER     : Hoa anh túc đỏ thẫm có lá và đài hoa (Ảnh Flower).
+  3. MARIJUANA HERB   : Lá thảo dược răng cưa 5 cánh xanh biếc (Ảnh Leaf Grid).
+  4. MOLDY BREAD      : Ổ Baguette nướng giòn với 3 khía vát vàng sáng (Ảnh Bread).
+  5. DRIED MEAT       : Đùi thịt cầm tay rút xương đỏ hồng (Ảnh Meat Drumstick).
+  6. ALCHEMICAL VIAL  : Bình thuốc cổ nút bần nhãn chú ấn Hexen (Ảnh Potion Bottle).
+  7. RUNIC KEY        : Chìa khóa sắt cổ ngữ Hexen đúc ren ma thuật (Bảng 3).
 Mỗi mô hình chuẩn xác 12 dòng, chiều rộng 29 ký tự, phối màu ANSI TrueColor rực rỡ.
 ================================================================================
 """
 
-# Bảng màu cho Totem of Undying
+import re
+
+ANSI_RE = re.compile(r'\x1b\[[0-9;]*m')
+
+def fit_exact_29(s):
+    w = len(ANSI_RE.sub('', s))
+    if w < 29:
+        return s + ' ' * (29 - w)
+    elif w > 29:
+        lspaces = len(s) - len(s.lstrip(' '))
+        cut = w - 29
+        if lspaces >= cut:
+            s = s[cut:]
+            return s + ' ' * (29 - len(ANSI_RE.sub('', s)))
+    return s
+
+C_RST = "\033[0m"
+
+# -----------------------------------------------------------------------------
+# 1. TOTEM OF UNDYING (Minecraft)
+# -----------------------------------------------------------------------------
 C_OUT = "\033[38;2;160;70;15m"    # Viền nâu đậm
 C_ARM = "\033[38;2;182;90;23m"    # Cánh tay nâu
 C_GLD = "\033[38;2;220;140;40m"   # Thân vàng gold
 C_YEL = "\033[38;2;252;225;130m"  # Vàng sáng trán & sống mũi
 C_EYE = "\033[38;2;0;235;140m"    # Mắt ngọc lục bảo Emerald
 C_WHT = "\033[1;37m"              # Điểm sáng mắt
-C_RST = "\033[0m"
 
+totem_sprite = [
+    fit_exact_29(f"        {C_OUT}▄▄▄▄▄▄▄▄▄▄▄▄{C_RST}"),
+    fit_exact_29(f"      {C_OUT}▄█{C_YEL}████████████{C_OUT}█▄{C_RST}"),
+    fit_exact_29(f"       {C_OUT}█{C_GLD}██{C_YEL}████████{C_GLD}██{C_OUT}█{C_RST}"),
+    fit_exact_29(f"       {C_OUT}█{C_GLD}██{C_WHT}█{C_EYE}█{C_YEL}████{C_WHT}█{C_EYE}█{C_GLD}██{C_OUT}█{C_RST}"),
+    fit_exact_29(f"       {C_OUT}█{C_GLD}██{C_EYE}██{C_YEL}████{C_EYE}██{C_GLD}██{C_OUT}█{C_RST}"),
+    fit_exact_29(f"       {C_OUT}█{C_GLD}████{C_YEL}████{C_GLD}████{C_OUT}█{C_RST}"),
+    fit_exact_29(f"   {C_OUT}▄▄▄▄▄{C_OUT}██{C_GLD}██{C_YEL}████{C_GLD}██{C_OUT}██{C_OUT}▄▄▄▄▄{C_RST}"),
+    fit_exact_29(f"  {C_OUT}█{C_ARM}██████{C_OUT}█{C_GLD}████████{C_OUT}█{C_ARM}██████{C_OUT}█{C_RST}"),
+    fit_exact_29(f"   {C_OUT}▀▀▀▀▀{C_OUT}██{C_YEL}████████{C_OUT}██{C_OUT}▀▀▀▀▀{C_RST}"),
+    fit_exact_29(f"       {C_OUT}█{C_GLD}████████████{C_OUT}█{C_RST}"),
+    fit_exact_29(f"       {C_OUT}█{C_ARM}████████████{C_OUT}█{C_RST}"),
+    fit_exact_29(f"        {C_OUT}▀▀▀▀▀▀▀▀▀▀▀▀{C_RST}")
+]
+
+# -----------------------------------------------------------------------------
+# 2. POPPY FLOWER (Hoa anh túc)
+# -----------------------------------------------------------------------------
+C_RED1 = "\033[38;2;235;45;45m"
+C_RED2 = "\033[38;2;180;25;25m"
+C_CORE = "\033[38;2;70;20;20m"
+C_PLN  = "\033[38;2;250;210;50m"
+C_GRN1 = "\033[38;2;55;185;65m"
+C_GRN2 = "\033[38;2;30;125;40m"
+
+poppy_sprite = [
+    fit_exact_29(f"          {C_RED1}▄▄▄████▄▄▄{C_RST}"),
+    fit_exact_29(f"       {C_RED1}▄██████████████▄{C_RST}"),
+    fit_exact_29(f"      {C_RED1}████{C_RED2}██████████{C_RED1}████{C_RST}"),
+    fit_exact_29(f"      {C_RED1}████{C_CORE}██{C_PLN}████{C_CORE}██{C_RED1}████{C_RST}"),
+    fit_exact_29(f"      {C_RED1}████{C_PLN}██{C_CORE}████{C_PLN}██{C_RED1}████{C_RST}"),
+    fit_exact_29(f"      {C_RED2}████{C_CORE}██{C_PLN}████{C_CORE}██{C_RED2}████{C_RST}"),
+    fit_exact_29(f"       {C_RED2}▀██████████████▀{C_RST}"),
+    fit_exact_29(f"          {C_RED2}▀▀▀████▀▀▀{C_RST}"),
+    fit_exact_29(f"   {C_GRN1}▄▄▄▄{C_RST}       {C_GRN2}██{C_RST}       {C_GRN1}▄▄▄▄{C_RST}"),
+    fit_exact_29(f"  {C_GRN1}██████▄▄{C_RST}    {C_GRN2}██{C_RST}    {C_GRN1}▄▄██████{C_RST}"),
+    fit_exact_29(f"   {C_GRN1}▀███████▄{C_RST}  {C_GRN2}██{C_RST}  {C_GRN1}▄███████▀{C_RST}"),
+    fit_exact_29(f"      {C_GRN1}▀▀███{C_RST}   {C_GRN2}██{C_RST}   {C_GRN1}███▀▀{C_RST}")
+]
+
+# -----------------------------------------------------------------------------
+# 3. MARIJUANA HERB (Lá thảo mộc răng cưa)
+# -----------------------------------------------------------------------------
+C_LF1 = "\033[38;2;90;210;85m"
+C_LF2 = "\033[38;2;45;155;50m"
+C_LF3 = "\033[38;2;25;105;30m"
+
+weed_sprite = [
+    fit_exact_29(f"             {C_LF1}▄██▄{C_RST}"),
+    fit_exact_29(f"           {C_LF1}▄██████▄{C_RST}"),
+    fit_exact_29(f"   {C_LF1}▄██▄{C_RST}    {C_LF2}████████{C_RST}    {C_LF1}▄██▄{C_RST}"),
+    fit_exact_29(f"   {C_LF1}██████▄{C_RST} {C_LF2}████████{C_RST} {C_LF1}▄██████{C_RST}"),
+    fit_exact_29(f"   {C_LF2}▀████████████████████▀{C_RST}"),
+    fit_exact_29(f"     {C_LF2}▀████████████████▀{C_RST}"),
+    fit_exact_29(f"  {C_LF1}▄██████{C_RST}  {C_LF2}████████{C_RST}  {C_LF1}▄██████▄{C_RST}"),
+    fit_exact_29(f"  {C_LF2}▀██████▄▄████████▄▄██████▀{C_RST}"),
+    fit_exact_29(f"    {C_LF2}▀▀████████████████▀▀{C_RST}"),
+    fit_exact_29(f"       {C_LF3}▀████████████▀{C_RST}"),
+    fit_exact_29(f"           {C_LF3}████████{C_RST}"),
+    fit_exact_29(f"             {C_LF3}████{C_RST}")
+]
+
+# -----------------------------------------------------------------------------
+# 4. MOLDY BREAD (Ổ Baguette nướng giòn khía xẻ)
+# -----------------------------------------------------------------------------
+C_BR1 = "\033[38;2;230;160;60m"
+C_BR2 = "\033[38;2;180;110;40m"
+C_CUT = "\033[38;2;255;235;150m"
+C_DKB = "\033[38;2;130;70;20m"
+
+bread_sprite = [
+    fit_exact_29(f"                 {C_BR1}▄▄████▄▄{C_RST}"),
+    fit_exact_29(f"             {C_BR1}▄▄████████████▄{C_RST}"),
+    fit_exact_29(f"           {C_BR1}▄██{C_CUT}████{C_BR1}████{C_CUT}████{C_BR1}██▄{C_RST}"),
+    fit_exact_29(f"       {C_BR1}▄▄██████{C_CUT}██{C_BR1}██████{C_CUT}██{C_BR1}████▄{C_RST}"),
+    fit_exact_29(f"     {C_BR1}▄██████████{C_CUT}██{C_BR1}██████{C_CUT}██{C_BR1}████▀{C_RST}"),
+    fit_exact_29(f"   {C_BR1}▄██████{C_CUT}████{C_BR1}██████{C_CUT}██{C_BR1}██████▀{C_RST}"),
+    fit_exact_29(f" {C_BR2}▄████████{C_CUT}██{C_BR2}██████{C_CUT}██{C_BR2}██████▀{C_RST}"),
+    fit_exact_29(f" {C_BR2}▀██████████{C_CUT}██{C_BR2}████████████▀{C_RST}"),
+    fit_exact_29(f"  {C_DKB}▀██████████████████████▀{C_RST}"),
+    fit_exact_29(f"    {C_DKB}▀▀████████████████▀▀{C_RST}"),
+    fit_exact_29(f"        {C_DKB}▀▀████████▀▀{C_RST}"),
+    fit_exact_29(f"            {C_DKB}▀▀▀▀{C_RST}")
+]
+
+# -----------------------------------------------------------------------------
+# 5. DRIED MEAT (Đùi thịt cầm tay rút xương)
+# -----------------------------------------------------------------------------
+C_BONE = "\033[38;2;245;245;235m"
+C_BSHD = "\033[38;2;190;190;180m"
+C_MT1  = "\033[38;2;215;55;55m"
+C_MT2  = "\033[38;2;160;35;35m"
+C_FAT  = "\033[38;2;250;185;170m"
+
+meat_sprite = [
+    fit_exact_29(f"                       {C_BONE}▄▄██{C_RST}"),
+    fit_exact_29(f"                      {C_BONE}██████{C_RST}"),
+    fit_exact_29(f"                     {C_BSHD}██████{C_RST}"),
+    fit_exact_29(f"               {C_MT1}▄▄▄▄{C_BSHD}████{C_RST}"),
+    fit_exact_29(f"           {C_MT1}▄▄██████████▄{C_RST}"),
+    fit_exact_29(f"     {C_MT1}▄▄████████{C_FAT}████{C_MT1}██████▄{C_RST}"),
+    fit_exact_29(f"   {C_MT1}▄██{C_FAT}░░{C_MT1}██████{C_FAT}██████{C_MT1}██████{C_RST}"),
+    fit_exact_29(f"  {C_MT2}████████████{C_FAT}████{C_MT2}████████{C_RST}"),
+    fit_exact_29(f"  {C_MT2}██{C_FAT}░░{C_MT2}████████████████████{C_RST}"),
+    fit_exact_29(f"  {C_MT2}▀████████████████████▀{C_RST}"),
+    fit_exact_29(f"    {C_MT2}▀▀██████████████▀▀{C_RST}"),
+    fit_exact_29(f"        {C_MT2}▀▀▀████▀▀▀{C_RST}")
+]
+
+# -----------------------------------------------------------------------------
+# 6. ALCHEMICAL VIAL (Bình thuốc nút bần nhãn Hexen)
+# -----------------------------------------------------------------------------
+C_CRK = "\033[38;2;190;140;80m"
+C_GLS = "\033[1;37m"
+C_LBL = "\033[38;2;230;215;180m"
+C_LBLS = "\033[1;30m"
+C_ELX1 = "\033[38;2;60;185;245m"
+C_ELX2 = "\033[38;2;25;120;195m"
+
+bottle_sprite = [
+    fit_exact_29(f"           {C_CRK}▄▄▄▄▄▄▄▄{C_RST}"),
+    fit_exact_29(f"           {C_CRK}████████{C_RST}"),
+    fit_exact_29(f"             {C_GLS}████{C_RST}"),
+    fit_exact_29(f"           {C_GLS}▄▄████▄▄{C_RST}"),
+    fit_exact_29(f"   {C_GLS}▄▄██████████████████▄▄{C_RST}"),
+    fit_exact_29(f"  {C_GLS}█{C_LBL}░░░░░░░░░░{C_ELX1}████████████{C_GLS}█{C_RST}"),
+    fit_exact_29(f"  {C_GLS}█{C_LBL}░░{C_LBLS}[HEX]{C_LBL}░░{C_ELX1}████████████{C_GLS}█{C_RST}"),
+    fit_exact_29(f"  {C_GLS}█{C_LBL}░░{C_LBLS} RUNE{C_LBL}░░{C_ELX1}████████████{C_GLS}█{C_RST}"),
+    fit_exact_29(f"  {C_GLS}█{C_LBL}░░░░░░░░░░{C_ELX2}████████████{C_GLS}█{C_RST}"),
+    fit_exact_29(f"  {C_GLS}█{C_ELX2}██████████████████████{C_GLS}█{C_RST}"),
+    fit_exact_29(f"  {C_GLS}▀██████████████████████▀{C_RST}"),
+    fit_exact_29(f"     {C_GLS}▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀{C_RST}")
+]
+
+# -----------------------------------------------------------------------------
+# 7. RUNIC KEY (Chìa khóa cổ ngữ Hexen)
+# -----------------------------------------------------------------------------
+C_K1 = "\033[38;2;190;200;225m"
+C_K2 = "\033[38;2;135;145;165m"
+C_K3 = "\033[38;2;90;100;120m"
+
+key_sprite = [
+    fit_exact_29(f"            {C_K1}▄▄████▄▄{C_RST}"),
+    fit_exact_29(f"           {C_K1}████▀▀████{C_RST}"),
+    fit_exact_29(f"           {C_K2}███    ███{C_RST}"),
+    fit_exact_29(f"           {C_K2}████▄▄████{C_RST}"),
+    fit_exact_29(f"            {C_K2}▀▀████▀▀{C_RST}"),
+    fit_exact_29(f"              {C_K2}██{C_RST}"),
+    fit_exact_29(f"              {C_K3}██{C_RST}"),
+    fit_exact_29(f"              {C_K3}██ ▄▄█{C_RST}"),
+    fit_exact_29(f"              {C_K3}██ ▀▀█{C_RST}"),
+    fit_exact_29(f"              {C_K3}██ ▄▄█{C_RST}"),
+    fit_exact_29(f"              {C_K3}██ ▀▀█{C_RST}"),
+    fit_exact_29(f"              {C_K3}▀▀{C_RST}")
+]
+
+# =============================================================================
+# ITEM CATALOG EXPORT
+# =============================================================================
 ITEM_CATALOG = [
     {
         "id": "totem",
@@ -38,25 +217,47 @@ ITEM_CATALOG = [
         "usage": "Khẩn cấp (Map & Combat)",
         "rarity": "Độc Bản Cổ Xưa (Mythic)",
         "lore": [
-            "Bảo vật tạc hình người tí hon với đôi mắt ngọc lục bảo rực sáng.",
-            "Khi kích hoạt, thần vật vỡ vụn thành luồng bụi vàng ấm áp",
-            "tái tạo lại da thịt, gắn liền xương tủy và nối lại toàn bộ",
-            "tứ chi đã mất trở về trạng thái lành lặn nguyên bản!"
+            "Bảo vật thần bí tạc hình người tí hon với đôi mắt ngọc lục bảo rực sáng.",
+            "Khi kích hoạt, thần vật vỡ vụn thành luồng bụi vàng ấm áp che chở sinh mạng,",
+            "nối lại toàn bộ tứ chi bị đứt và đưa cơ thể về trạng thái nguyên bản!"
         ],
-        "sprite": [
-            f"        {C_OUT}▄▄▄▄▄▄▄▄▄▄▄▄{C_RST}         ",
-            f"      {C_OUT}▄█{C_YEL}████████████{C_OUT}█▄{C_RST}       ",
-            f"       {C_OUT}█{C_GLD}██{C_YEL}████████{C_GLD}██{C_OUT}█{C_RST}        ",
-            f"       {C_OUT}█{C_GLD}██{C_WHT}█{C_EYE}█{C_YEL}████{C_WHT}█{C_EYE}█{C_GLD}██{C_OUT}█{C_RST}        ",
-            f"       {C_OUT}█{C_GLD}██{C_EYE}██{C_YEL}████{C_EYE}██{C_GLD}██{C_OUT}█{C_RST}        ",
-            f"       {C_OUT}█{C_GLD}████{C_YEL}████{C_GLD}████{C_OUT}█{C_RST}        ",
-            f"   {C_OUT}▄▄▄▄▄{C_OUT}██{C_GLD}██{C_YEL}████{C_GLD}██{C_OUT}██{C_OUT}▄▄▄▄▄{C_RST}    ",
-            f"  {C_OUT}█{C_ARM}██████{C_OUT}█{C_GLD}████████{C_OUT}█{C_ARM}██████{C_OUT}█{C_RST}   ",
-            f"   {C_OUT}▀▀▀▀▀{C_OUT}██{C_YEL}████████{C_OUT}██{C_OUT}▀▀▀▀▀{C_RST}    ",
-            f"       {C_OUT}█{C_GLD}████████████{C_OUT}█{C_RST}        ",
-            f"       {C_OUT}█{C_ARM}████████████{C_OUT}█{C_RST}        ",
-            f"        {C_OUT}▀▀▀▀▀▀▀▀▀▀▀▀{C_RST}         "
-        ]
+        "sprite": totem_sprite
+    },
+    {
+        "id": "poppy",
+        "name": "POPPY FLOWER",
+        "type": "THẢO DƯỢC Y TẾ",
+        "qty": 3,
+        "max_qty": 10,
+        "effect": "+50 HP (+65 với Cahara)",
+        "cure": "Cầm Máu (Bleeding)",
+        "target": "Vết Thương Hở",
+        "usage": "Map & Trong Trận Đánh",
+        "rarity": "Dược Liệu Hầm Ngục",
+        "lore": [
+            "Bông hoa anh túc đỏ thẫm sinh trưởng từ những vũng máu trong ngục tối.",
+            "Cánh hoa nghiền nát tạo thành lớp cao dán đông máu tức thì,",
+            "chặn đứng cơn xuất huyết hiểm nghèo đang đe dọa sinh mạng."
+        ],
+        "sprite": poppy_sprite
+    },
+    {
+        "id": "weed",
+        "name": "MARIJUANA HERB",
+        "type": "DƯỢC LIỆU GIẢM ĐAU",
+        "qty": 2,
+        "max_qty": 10,
+        "effect": "+120 HP (+75 Hardcore)",
+        "cure": "Cơn Đau Dữ Dội, Sốc Sức",
+        "target": "Hệ Thần Kinh",
+        "usage": "Map & Trong Trận Đánh",
+        "rarity": "Thảo Mộc Quý",
+        "lore": [
+            "Bó lá thảo dược khô với cấu trúc răng cưa và hương nồng đặc trưng.",
+            "Khi đốt lên hít sâu, khói thuốc lập tức làm dịu hệ thần kinh,",
+            "xua tan các cơn đau quằn quại và hồi phục thể lực dồi dào."
+        ],
+        "sprite": weed_sprite
     },
     {
         "id": "bread",
@@ -70,24 +271,11 @@ ITEM_CATALOG = [
         "usage": "Khám Phá Bản Đồ (Map)",
         "rarity": "Lương Khô Phổ Thông",
         "lore": [
-            "Ổ bánh mì lúa mạch nướng giòn tìm thấy trong các hòm gỗ bỏ hoang.",
-            "Dù lớp vỏ ngoài đã ngả màu xám với vết mốc rải rác nhưng phần",
-            "ruột bên trong vẫn cứu sống bạn khỏi cơn đói lả nguy kịch."
+            "Ổ bánh mì Baguette nướng dài với các khía vát giòn tan tìm thấy trong hòm rương.",
+            "Dù có chút vết mốc bên ngoài nhưng vẫn là nguồn lương thực quý giá",
+            "giúp bạn sống sót qua những ngày dài đói lả trong ngục tối."
         ],
-        "sprite": [
-            "         \033[38;2;210;150;70m▄▄▄▄████████▄▄▄▄\033[0m    ",
-            "       \033[38;2;210;150;70m▄██████████████████▄\033[0m  ",
-            "      \033[38;2;190;130;60m████\033[38;2;250;220;140m██\033[38;2;190;130;60m████\033[38;2;250;220;140m██\033[38;2;190;130;60m████\033[38;2;250;220;140m██\033[38;2;190;130;60m████\033[0m ",
-            "     \033[38;2;190;130;60m██████\033[38;2;250;220;140m██\033[38;2;190;130;60m████\033[38;2;250;220;140m██\033[38;2;190;130;60m████\033[38;2;250;220;140m██\033[38;2;190;130;60m████\033[0m ",
-            "     \033[38;2;170;110;50m████████\033[38;2;250;220;140m██\033[38;2;170;110;50m████\033[38;2;250;220;140m██\033[38;2;170;110;50m████████\033[0m ",
-            "     \033[38;2;170;110;50m██████████\033[38;2;250;220;140m██\033[38;2;170;110;50m████\033[38;2;250;220;140m██\033[38;2;170;110;50m██████\033[0m ",
-            "      \033[38;2;150;90;40m██████████\033[38;2;250;220;140m██\033[38;2;150;90;40m██████████\033[0m  ",
-            "      \033[38;2;150;90;40m▀██████████████████▀\033[0m  ",
-            "       \033[38;2;130;80;35m▀████████████████▀\033[0m   ",
-            "         \033[38;2;110;70;30m▀▀▀▀▀▀▀▀▀▀▀▀▀▀\033[0m     ",
-            "                             ",
-            "                             "
-        ]
+        "sprite": bread_sprite
     },
     {
         "id": "meat",
@@ -96,60 +284,16 @@ ITEM_CATALOG = [
         "qty": 2,
         "max_qty": 10,
         "effect": "-60 Đói Khát & +20 HP",
-        "cure": "Đói Lả, Kiệt Quệ",
+        "cure": "Đói Lả, Kiệt Quệ Thể Lực",
         "target": "Dạ Dày & Cơ Bắp",
         "usage": "Khám Phá Bản Đồ (Map)",
         "rarity": "Lương Khô Quý",
         "lore": [
-            "Khúc đùi thịt động vật săn bắn được sấy khô bằng muối biển và khói.",
-            "Lớp mỡ giòn dai cung cấp nguồn calo dồi dào, giúp hồi phục thể lực",
-            "nhanh chóng sau những cuộc giao tranh ác liệt chống lại quái thú."
+            "Khúc đùi thịt sấy muối xông khói với thớ thịt săn chắc và đầu xương trắng.",
+            "Lớp mỡ giòn dai cung cấp nguồn năng lượng khổng lồ, hồi phục",
+            "sinh lực và thể lực sau những trận huyết chiến ác liệt."
         ],
-        "sprite": [
-            "            \033[38;2;180;50;50m▄▄████▄\033[0m          ",
-            "          \033[38;2;180;50;50m▄████████▄\033[0m         ",
-            "        \033[38;2;160;40;40m▄████████████\033[0m        ",
-            "       \033[38;2;160;40;40m████\033[38;2;240;180;160m████\033[38;2;160;40;40m██████\033[0m       ",
-            "       \033[38;2;140;30;30m███\033[38;2;240;180;160m██████\033[38;2;140;30;30m█████\033[0m       ",
-            "       \033[38;2;140;30;30m████\033[38;2;240;180;160m████\033[38;2;140;30;30m██████\033[0m       ",
-            "        \033[38;2;120;25;25m▀███████████▀\033[0m        ",
-            "          \033[38;2;120;25;25m▀███████▀\033[0m          ",
-            "            \033[38;2;230;230;220m████\033[0m             ",
-            "            \033[38;2;230;230;220m████\033[0m             ",
-            "          \033[38;2;230;230;220m▄█▀  ▀█▄\033[0m           ",
-            "          \033[38;2;230;230;220m▀▀    ▀▀\033[0m           "
-        ]
-    },
-    {
-        "id": "ale",
-        "name": "VINTAGE ALE",
-        "type": "RƯỢU THẦN KHÍ",
-        "qty": 2,
-        "max_qty": 10,
-        "effect": "+35 Mind (Thần Trí)",
-        "cure": "Kinh Hoàng, Hoảng Loạn",
-        "target": "Tâm Trí & Tinh Thần",
-        "usage": "Map & Trong Trận Đánh",
-        "rarity": "Rượu Ủ Cổ Xưa",
-        "lore": [
-            "Chiếc vại bia gỗ sồi ủ men vàng óng với lớp bọt trắng sủi bông.",
-            "Vị cồn nồng ấm làm tê liệt nỗi sợ hãi, ngăn chặn tâm trí rơi vào",
-            "hố sâu điên loạn và ảo giác ma quái trong bóng tối vô tận."
-        ],
-        "sprite": [
-            "          \033[1;37m▄▄▄▄▄▄▄▄▄\033[0m          ",
-            "         \033[1;37m███████████\033[0m         ",
-            "        \033[1;37m▀▀▀███████▀▀▀\033[0m        ",
-            "        \033[38;2;220;170;50m███████████\033[38;2;160;100;40m▄▄\033[0m        ",
-            "        \033[38;2;220;170;50m███████████\033[38;2;160;100;40m██\033[0m        ",
-            "        \033[38;2;200;150;40m███████████\033[38;2;160;100;40m██\033[0m        ",
-            "        \033[38;2;200;150;40m███████████\033[38;2;160;100;40m██\033[0m        ",
-            "        \033[38;2;180;130;30m███████████\033[38;2;160;100;40m▀▀\033[0m        ",
-            "        \033[38;2;180;130;30m███████████\033[0m          ",
-            "        \033[38;2;150;100;20m▀█████████▀\033[0m          ",
-            "         \033[38;2;120;80;20m▀▀▀▀▀▀▀▀▀\033[0m           ",
-            "                             "
-        ]
+        "sprite": meat_sprite
     },
     {
         "id": "vial",
@@ -157,30 +301,17 @@ ITEM_CATALOG = [
         "type": "CỒN SÁT TRÙNG",
         "qty": 2,
         "max_qty": 5,
-        "effect": "Xóa Bỏ Nhiễm Trùng & Độc Tố",
+        "effect": "Xóa Nhiễm Trùng & Độc Tố",
         "cure": "Hoại Tử, Nhiễm Trùng Máu",
         "target": "Vết Cắt & Khớp Xương",
         "usage": "Khám Phá & Combat",
         "rarity": "Dung Dịch Thuật Giả Kim",
         "lore": [
-            "Bình thủy tinh tròn có nút bần chứa dung dịch thanh tẩy phát sáng.",
+            "Bình thủy tinh có nút bần và nhãn chú ấn Hexen chứa dung dịch thanh tẩy.",
             "Rót trực tiếp vào vết thương để thiêu đốt sạch sẽ vi khuẩn",
             "hoại thư, ngăn ngừa vết cắt chuyển sang màu xanh độc địa."
         ],
-        "sprite": [
-            "            \033[38;2;180;140;80m▄▄▄▄\033[0m             ",
-            "            \033[38;2;180;140;80m████\033[0m             ",
-            "             \033[38;2;100;200;255m██\033[0m              ",
-            "           \033[38;2;100;200;255m▄▄████▄▄\033[0m          ",
-            "         \033[38;2;100;200;255m▄██████████▄\033[0m        ",
-            "        \033[38;2;80;180;240m████\033[1;37m░░\033[38;2;80;180;240m████████\033[0m       ",
-            "       \033[38;2;60;160;220m██████\033[1;37m░░\033[38;2;60;160;220m████████\033[0m      ",
-            "       \033[38;2;40;140;200m████████████████\033[0m      ",
-            "       \033[38;2;30;120;180m████████████████\033[0m      ",
-            "        \033[38;2;20;100;160m▀████████████▀\033[0m       ",
-            "          \033[38;2;15;80;140m▀▀██████▀▀\033[0m         ",
-            "                             "
-        ]
+        "sprite": bottle_sprite
     },
     {
         "id": "key",
@@ -198,19 +329,6 @@ ITEM_CATALOG = [
             "Thu thập đủ 3 chiếc chìa khóa này từ quái vật tinh anh và hòm rương",
             "để mở toang Cánh Cổng Phía Đông và trốn thoát khỏi Labyrinth."
         ],
-        "sprite": [
-            "            \033[38;2;180;190;210m▄▄████▄▄\033[0m         ",
-            "           \033[38;2;180;190;210m████▀▀████\033[0m        ",
-            "           \033[38;2;150;160;180m███    ███\033[0m        ",
-            "           \033[38;2;150;160;180m████▄▄████\033[0m        ",
-            "            \033[38;2;130;140;160m▀▀████▀▀\033[0m         ",
-            "              \033[38;2;130;140;160m██\033[0m             ",
-            "              \033[38;2;110;120;140m██\033[0m             ",
-            "              \033[38;2;110;120;140m██ ▄▄█\033[0m         ",
-            "              \033[38;2;90;100;120m██ ▀▀█\033[0m         ",
-            "              \033[38;2;90;100;120m██ ▄▄█\033[0m         ",
-            "              \033[38;2;70;80;100m██ ▀▀█\033[0m         ",
-            "              \033[38;2;70;80;100m▀▀\033[0m             "
-        ]
+        "sprite": key_sprite
     }
 ]
