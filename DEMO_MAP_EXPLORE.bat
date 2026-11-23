@@ -1,6 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 chcp 65001 >nul
+mode con: cols=104 lines=38 >nul 2>&1
 reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1 /f >nul 2>&1
 cd /d "%~dp0funger_terminal"
 

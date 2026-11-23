@@ -33,9 +33,53 @@ if os.name == 'nt':
             kernel32.SetConsoleMode(hOut, mode.value | 0x0004)
         kernel32.SetConsoleOutputCP(65001)
         kernel32.SetConsoleCP(65001)
+        os.system('mode con: cols=104 lines=38 >nul 2>&1')
     except Exception:
         pass
     import msvcrt
+
+import re
+import unicodedata
+ANSI_REGEX = re.compile(r'\x1b\[[0-9;]*[mGKH]')
+
+def char_width(c):
+    ea = unicodedata.east_asian_width(c)
+    if ea in ('W', 'F'): return 2
+    if unicodedata.category(c) in ('Mn', 'Me', 'Cf'): return 0
+    return 1
+
+def display_width(s):
+    clean = ANSI_REGEX.sub('', s)
+    return sum(char_width(c) for c in clean)
+
+def fit_ansi(s, max_len):
+    cur_w = display_width(s)
+    if cur_w == max_len:
+        return s
+    if cur_w < max_len:
+        return s + ' ' * (max_len - cur_w)
+    vis_len = 0
+    res = []
+    idx = 0
+    ansi_prefix = re.compile(r'^\x1b\[[0-9;]*[mGKH]')
+    while idx < len(s):
+        m = ansi_prefix.match(s[idx:])
+        if m:
+            res.append(m.group(0))
+            idx += m.end()
+        else:
+            c = s[idx]
+            w = char_width(c)
+            if vis_len + w > max_len:
+                break
+            res.append(c)
+            vis_len += w
+            idx += 1
+    padded = ''.join(res) + '\033[0m'
+    actual_w = display_width(padded)
+    if actual_w < max_len:
+        padded += ' ' * (max_len - actual_w)
+    return padded
 
 # Map Grid Dimensions (Matches map_rom.v 100%)
 MAP_WIDTH = 36
@@ -240,7 +284,7 @@ def render_screen():
         print(f"{border_left_pad}{row_str}")
 
     print("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
-    print(f"  \033[1;36m[LOG]:\033[0m \033[1;37m{recent_log:<90}\033[0m")
+    print(f"  \033[1;36m[LOG]:\033[0m \033[1;37m{fit_ansi(recent_log, 88)}\033[0m")
     print("\033[1;30m+====================================================================================================+\033[0m")
     print("  \033[90mLEGEND:\033[0m \033[42m  \033[0m Wall  \033[90m .\033[0m Path  \033[1;33m O\033[0m Lead  \033[41;1;37m #\033[0m Barricade  \033[45;1;37m §\033[0m Seal  \033[43;1;30m =\033[0m Crawl  \033[48;2;139;69;19;1;37m C\033[0m Chest  \033[46;1;30m G\033[0m Gate")
     print("  \033[90mCONTROLS:\033[0m \033[1;37m[W/A/S/D]\033[0m Move  |  \033[1;33m[1-4]\033[0m Deploy Vanguard (1:Cahara 2:D'arce 3:Enki 4:Girl)  |  \033[1;31m[Q]\033[0m Quit")

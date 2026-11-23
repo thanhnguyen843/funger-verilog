@@ -36,6 +36,7 @@ if os.name == 'nt':
             kernel32.SetConsoleMode(hOut, mode.value | 0x0004)
         kernel32.SetConsoleOutputCP(65001)
         kernel32.SetConsoleCP(65001)
+        os.system('mode con: cols=104 lines=54 >nul 2>&1')
     except Exception:
         pass
     import msvcrt
@@ -54,14 +55,42 @@ def display_width(s):
     clean = ANSI_REGEX.sub('', s)
     return sum(char_width(c) for c in clean)
 
+def fit_ansi(s, max_len):
+    """Safely clamps and pads string with ANSI escape codes to exact visible length."""
+    cur_w = display_width(s)
+    if cur_w == max_len:
+        return s
+    if cur_w < max_len:
+        return s + ' ' * (max_len - cur_w)
+    # Truncate safely without cutting ANSI escape sequences
+    vis_len = 0
+    res = []
+    idx = 0
+    ansi_prefix = re.compile(r'^\x1b\[[0-9;]*[mGKH]')
+    while idx < len(s):
+        m = ansi_prefix.match(s[idx:])
+        if m:
+            res.append(m.group(0))
+            idx += m.end()
+        else:
+            c = s[idx]
+            w = char_width(c)
+            if vis_len + w > max_len:
+                break
+            res.append(c)
+            vis_len += w
+            idx += 1
+    padded = ''.join(res) + '\033[0m'
+    actual_w = display_width(padded)
+    if actual_w < max_len:
+        padded += ' ' * (max_len - actual_w)
+    return padded
+
 def pad_str(s, n):
-    cur = display_width(s)
-    if cur < n:
-        return s + " " * (n - cur)
-    return s
+    return fit_ansi(s, n)
 
 def make_card_row(content, c_card):
-    return f"{c_card}| {pad_str(content, 50)} {c_card}|"
+    return f"{c_card}| {fit_ansi(content, 50)} {c_card}|"
 
 def make_bar(curr, max_v, bar_len=16, color_code="32"):
     if max_v <= 0:
@@ -261,7 +290,7 @@ squad = [
         "buff": "",
         "is_guarding": False,
         "dodge_rate": 0.20,
-        "passive": "Fast Hands (+20% Dodge, Flee, Trap Disarm)",
+        "passive": "Fast Hands (+20% Dodge, 100% Flee)",
         "debuffs": []
     },
     {
@@ -280,7 +309,7 @@ squad = [
         "buff": "",
         "is_guarding": False,
         "dodge_rate": 0.05,
-        "passive": "Iron Will (-25% DMG, Holy Smite Armor Break)",
+        "passive": "Iron Will (-25% DMG, Holy Smite)",
         "debuffs": []
     },
     {
@@ -299,7 +328,7 @@ squad = [
         "buff": "",
         "is_guarding": False,
         "dodge_rate": 0.10,
-        "passive": "Enlightenment (+5 MND/turn, True Magic)",
+        "passive": "Enlightenment (+5 MND/t, Magic)",
         "debuffs": []
     },
     {
@@ -318,7 +347,7 @@ squad = [
         "buff": "",
         "is_guarding": False,
         "dodge_rate": 0.30,
-        "passive": "Innocent Aura (Enemy ATK -30%, Dread Immune)",
+        "passive": "Innocent Aura (-30% Foe ATK, Calm)",
         "debuffs": []
     }
 ]
@@ -503,7 +532,7 @@ def render_screen():
         make_card_row("", c_hcard),
         make_card_row(f"  TOXIC : {h_tox_bar} \033[1;{'31' if h_tox >= 80 else '32'}m{h_tox:3d}%\033[0m {tox_badge}", c_hcard),
         make_card_row("", c_hcard),
-        make_card_row(f"\033[1;33m  PASSIV: {hero['passive'][:38]}\033[0m", c_hcard),
+        make_card_row(f"\033[1;33m  PASSIV: {hero['passive']}\033[0m", c_hcard),
         make_card_row(status_line, c_hcard),
         h_border
     ]
@@ -514,11 +543,24 @@ def render_screen():
     print()
 
     # -------------------------------------------------------------------------
-    # SECTION 3: COMBAT LOG BOX (100 COLUMNS)
+    # SECTION 3: COMBAT LOG BOX (EXACT 100 COLUMNS, 2-ROW WRAP TO PREVENT TRUNCATION)
     # -------------------------------------------------------------------------
     print("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
-    log_content = pad_str(f"\033[1;33m[LOG]\033[0m \033[1;37m{combat_log}\033[0m", 96)
-    print(f"| {log_content} \033[1;30m|")
+    import textwrap
+    wrapped = textwrap.wrap(combat_log, width=88)
+    if not wrapped:
+        wrapped = [""]
+
+    line1 = f"\033[1;33m[LOG]\033[0m \033[1;37m{wrapped[0]}\033[0m"
+    print(f"\033[1;30m| \033[0m{fit_ansi(line1, 96)}\033[1;30m |\033[0m")
+
+    if len(wrapped) > 1:
+        line2 = f"      \033[1;37m{' '.join(wrapped[1:])}\033[0m"
+        print(f"\033[1;30m| \033[0m{fit_ansi(line2, 96)}\033[1;30m |\033[0m")
+    else:
+        line2 = ""
+        print(f"\033[1;30m| \033[0m{fit_ansi(line2, 96)}\033[1;30m |\033[0m")
+
     print("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
     print()
 
@@ -605,7 +647,7 @@ def get_current_menu_data():
                 tox_str = f"\033[90mTOX:{tox_val:2d}%\033[0m"
             opts.append({
                 "label": f"{comp['name']:<9} [{comp['role']:<9}]",
-                "desc": f"HP:{comp['hp']:3d}/{comp['max_hp']:3d} MND:{comp['mind']:3d} {tox_str} | {comp['passive'][:20]}{status_tag}{tag}"
+                "desc": f"HP:{comp['hp']:3d}/{comp['max_hp']:3d} MND:{comp['mind']:3d} {tox_str} | {comp['passive']}{status_tag}{tag}"
             })
         opts.append({"label": "BACK", "desc": "-> Keep current vanguard, return to action menu"})
         return {
