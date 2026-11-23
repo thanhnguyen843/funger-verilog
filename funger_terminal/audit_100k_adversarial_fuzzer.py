@@ -69,7 +69,7 @@ def run_100k_adversarial_audit(total_iterations=100000):
     def mock_blit(screen_rows):
         stats["render_frame_audits"] += 1
         formatted = [dui.fit_100_cols(r) for r in screen_rows]
-        if len(formatted) > 32:
+        if len(formatted) > 35:
             stats["bad_height_frames"] += 1
         for r in formatted:
             if vlen(r) != 100:

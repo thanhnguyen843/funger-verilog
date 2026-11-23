@@ -859,8 +859,8 @@ def render_screen():
         screen_rows.append(f"{m_card_rows[r_idx]}    {m_model_rows[r_idx]}\033[0m")
 
     # -------------------------------------------------------------------------
-    # ZONE 2: SOLO HERO ZONE (7 ROWS, EXACT 100 COLS)
-    # Left: Hero Sprite Model (42 cols, NO [HERO] tag!) | Gap: 4 | Right: Card (54 cols)
+    # ZONE 2: SOLO HERO ZONE (12 ROWS, EXACT 100 COLS - FULL INTACT MODEL)
+    # Left: Hero Sprite Model (42 cols, FULL 12 ROWS!) | Gap: 4 | Right: Card (54 cols)
     # -------------------------------------------------------------------------
     c_hcard = "\033[1;32m" if current_menu in ("POUCH", "TACTICS") else "\033[1;30m"
     h_border = f"{c_hcard}+" + "-" * 52 + f"+{c_hcard}\033[0m"
@@ -876,31 +876,37 @@ def render_screen():
     max_t = hero.get("max_toxicity", 100)
     tox_badge = "\033[1;31m[INTOXICATED]\033[0m" if h_tox >= max_t else ("\033[1;33m[HIGH]\033[0m" if h_tox >= (max_t * 0.8) else "\033[90m[SAFE]\033[0m")
 
-    # Only show status when an actual buff/debuff exists; NEVER show "Battle Ready"
+    # Only show status when an actual buff/debuff exists; otherwise show passive
     if hero.get("debuffs"):
         h_status = f"\033[1;31m  STATUS: {', '.join(hero['debuffs'])}\033[0m"
     elif hero.get("buff"):
         h_status = f"\033[1;32m  STATUS: {hero['buff']}\033[0m"
     else:
-        h_status = f"\033[1;36m  PASSIV: {hero['passive'][:36]}\033[0m"
+        h_status = f"\033[1;36m  PASSIV: {hero['passive'][:42]}\033[0m"
+
+    stance_desc = "\033[1;32m  STANCE: Defensive Guard (-70% Incoming DMG)\033[0m" if hero.get("is_guarding") else "\033[90m  STANCE: Balanced Combat Stance\033[0m"
 
     h_card_rows = [
         h_border,
         make_card_row(f"\033[1;32m  HERO  : {hero['name']:<9} \033[90m[{hero['role']}]\033[0m", c_hcard),
         make_card_row(f"  HP    : {h_hp_bar} \033[1;32m{hero['hp']:3d}/{hero['max_hp']:3d} ({h_pct:3d}%)\033[0m", c_hcard),
         make_card_row(f"  MIND  : {h_mnd_bar} \033[1;36m{hero['mind']:3d}/{hero['max_mind']:3d}\033[0m | \033[90mTOXIC:\033[0m \033[1;{'31' if h_tox >= max_t else '32'}m{h_tox:2d}%\033[0m {tox_badge}", c_hcard),
-        make_card_row(f"  ARMOR : \033[1;37m{hero['phys_resist_str'][:18]}\033[0m | \033[1;35m{int(hero['dodge_rate']*100)}% Dodge\033[0m", c_hcard),
+        make_card_row(f"  ARMOR : \033[1;37m{hero['phys_resist_str'][:20]}\033[0m | \033[1;35m{int(hero['dodge_rate']*100)}% Dodge\033[0m", c_hcard),
+        make_card_row(f"  MAG-R : \033[1;37m{hero['magic_resist_str'][:20]}\033[0m | \033[1;31mATK: {hero['atk']:2d} DMG\033[0m", c_hcard),
+        make_card_row(f"  TRAIT : \033[1;33m{hero['trait'][:42]}\033[0m", c_hcard),
+        make_card_row(f"  BUFF  : \033[1;32m{hero['item_buff_str'][:42]}\033[0m", c_hcard),
+        make_card_row(f"  SKILLS: \033[1;36m{hero['skills'][0]['label'][:18]}\033[0m / \033[1;36m{hero['skills'][1]['label'][:18]}\033[0m", c_hcard),
         make_card_row(h_status, c_hcard),
+        make_card_row(stance_desc, c_hcard),
         h_border
     ]
 
     h_model_rows = []
-    for r in range(6):
+    for r in range(12):
         sp = h_sprite[r] if r < len(h_sprite) else " " * 29
         h_model_rows.append(format_model_row(sp))
-    h_model_rows.append(pad_str("", 42))
 
-    for r_idx in range(7):
+    for r_idx in range(12):
         screen_rows.append(f"{h_model_rows[r_idx]}    {h_card_rows[r_idx]}\033[0m")
 
     # -------------------------------------------------------------------------

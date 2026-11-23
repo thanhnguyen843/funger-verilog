@@ -335,35 +335,49 @@ def run_difficulty_screen():
 def run_guide_modal():
     clear_screen()
     rows = []
+    # Box 1: Title Header Box
     rows.append(make_border_line("=", border_color="\033[1;36m"))
     rows.append(make_centered_box_row("\033[1;37mFEAR & HUNGER: EXPEDITION SURVIVOR GUIDE BOOK\033[0m", border_color="\033[1;36m"))
     rows.append(make_border_line("=", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("\033[1;33m[LABYRINTH TILES & HAZARDS]:\033[0m", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  \033[1;33m O\033[0m Explorer   : Your current position in the pitch-black catacombs.", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  \033[90m .\033[0m Pathway    : Stone dungeon corridor illuminated by your torchlight.", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  \033[42m  \033[0m Wall       : Solid masonry bedrock. Impassable barrier.", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  \033[45;1;37m M\033[0m Monster    : Roaming subterranean beast. Contact initiates combat arena.", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  \033[48;2;139;69;19;1;37m C\033[0m Chest      : Ancient vault. Contains supplies or lethal needle traps.", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  \033[41;1;37m #\033[0m Barricade  : Heavy rockfall debris. Smashed open upon forceful contact.", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  \033[45;1;37m §\033[0m Seal       : Arcane Hexen ward. Occultists dispel it; others suffer burns.", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  \033[43;1;30m =\033[0m Crevice    : Narrow rock crawlspace. Squeeze through carefully.", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  \033[46;1;30m G\033[0m Exit Gate  : Eastern escape portal. REQUIRES 3 RUNIC KEYS TO UNLOCK!", border_color="\033[1;36m"))
-    rows.append(make_border_line("-", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("\033[1;33m[SURVIVAL SUPPLIES & POUCH]:\033[0m", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  Poppy Flower   : +50 HP (+65 Cahara, +30 Hardcore). Staunches bleeding flesh.", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  Marijuana Herb : +120 HP (+75 Hardcore). Potent medicinal smoke.", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  Moldy Bread    : -40 Hunger. Relieves starvation to prevent HP deterioration.", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  Vintage Ale    : +35 Mind. Quells creeping madness, terror, and panic.", border_color="\033[1;36m"))
-    rows.append(make_border_line("-", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("\033[1;33m[CONTROLS]:\033[0m", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  [W/A/S/D] or Arrows : Navigate catacombs (expands torchlight).", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  [I]                 : Open vertical survival pouch ([W/S] Navigate, [Enter] Use).", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  [H]                 : Quick Heal with best available medicinal herb.", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  [G]                 : Toggle this Guide Book overlay.", border_color="\033[1;36m"))
-    rows.append(make_left_box_row("  [Q]                 : Surrender current expedition and quit.", border_color="\033[1;36m"))
-    rows.append(make_border_line("=", border_color="\033[1;36m"))
-    rows.append("  \033[1;37m[CONTROLS]: Press [G], [Enter], or [Esc] to close Guide and return to Map\033[0m")
-    rows.append(make_border_line("=", border_color="\033[1;36m"))
+    rows.append("")
+
+    # Box 2: Labyrinth Tiles & Hazards
+    rows.append(make_border_line("-", border_color="\033[1;33m"))
+    rows.append(make_left_box_row("\033[1;33m[LABYRINTH TILES & HAZARDS]\033[0m", border_color="\033[1;33m"))
+    rows.append(make_left_box_row("  \033[1;33m O\033[0m Explorer   : Your current position in the pitch-black catacombs.", border_color="\033[1;33m"))
+    rows.append(make_left_box_row("  \033[90m .\033[0m Pathway    : Stone dungeon corridor illuminated by your torchlight.", border_color="\033[1;33m"))
+    rows.append(make_left_box_row("  \033[42m  \033[0m Wall       : Solid masonry bedrock. Impassable barrier.", border_color="\033[1;33m"))
+    rows.append(make_left_box_row("  \033[45;1;37m M\033[0m Monster    : Roaming subterranean beast. Contact initiates combat arena.", border_color="\033[1;33m"))
+    rows.append(make_left_box_row("  \033[48;2;139;69;19;1;37m C\033[0m Chest      : Ancient vault. Contains supplies or lethal needle traps.", border_color="\033[1;33m"))
+    rows.append(make_left_box_row("  \033[41;1;37m #\033[0m Barricade  : Heavy rockfall debris. Smashed open upon forceful contact.", border_color="\033[1;33m"))
+    rows.append(make_left_box_row("  \033[45;1;37m §\033[0m Seal       : Arcane Hexen ward. Occultists dispel it; others suffer burns.", border_color="\033[1;33m"))
+    rows.append(make_left_box_row("  \033[43;1;30m =\033[0m Crevice    : Narrow rock crawlspace. Squeeze through carefully.", border_color="\033[1;33m"))
+    rows.append(make_left_box_row("  \033[46;1;30m G\033[0m Exit Gate  : Eastern escape portal. REQUIRES 3 RUNIC KEYS TO UNLOCK!", border_color="\033[1;33m"))
+    rows.append(make_border_line("-", border_color="\033[1;33m"))
+    rows.append("")
+
+    # Box 3: Survival Supplies & Medicine
+    rows.append(make_border_line("-", border_color="\033[1;32m"))
+    rows.append(make_left_box_row("\033[1;32m[SURVIVAL SUPPLIES & MEDICINE]\033[0m", border_color="\033[1;32m"))
+    rows.append(make_left_box_row("  Poppy Flower   : +50 HP (+65 Cahara, +30 Hardcore). Staunches bleeding flesh.", border_color="\033[1;32m"))
+    rows.append(make_left_box_row("  Marijuana Herb : +120 HP (+75 Hardcore). Potent medicinal smoke.", border_color="\033[1;32m"))
+    rows.append(make_left_box_row("  Moldy Bread    : -40 Hunger. Relieves starvation to prevent HP deterioration.", border_color="\033[1;32m"))
+    rows.append(make_left_box_row("  Vintage Ale    : +35 Mind. Quells creeping madness, terror, and panic.", border_color="\033[1;32m"))
+    rows.append(make_border_line("-", border_color="\033[1;32m"))
+    rows.append("")
+
+    # Box 4: Controls & Navigation
+    rows.append(make_border_line("-", border_color="\033[1;37m"))
+    rows.append(make_left_box_row("\033[1;37m[EXPEDITION CONTROLS & NAVIGATION]\033[0m", border_color="\033[1;37m"))
+    rows.append(make_left_box_row("  [W/A/S/D] or Arrows : Navigate catacombs (expands torchlight).", border_color="\033[1;37m"))
+    rows.append(make_left_box_row("  [I] Pouch           : Open vertical survival pouch ([W/S] Navigate, [Enter] Use).", border_color="\033[1;37m"))
+    rows.append(make_left_box_row("  [H] Quick Heal      : Heal immediately with best available herb from pouch.", border_color="\033[1;37m"))
+    rows.append(make_left_box_row("  [Q] Surrender       : Surrender current expedition and quit back to surface.", border_color="\033[1;37m"))
+    rows.append(make_border_line("-", border_color="\033[1;37m"))
+    rows.append("")
+
+    # Return Prompt
+    rows.append("  \033[1;37m[GUIDE CONTROLS]: Press [G], [Enter], or [Esc] to close Guide and return to Map\033[0m")
     atomic_blit(rows)
     if os.name == 'nt' and sys.stdin.isatty():
         while True:
@@ -448,8 +462,18 @@ def run_master_game():
 
         rows.append("\033[1;30m+====================================================================================================+\033[0m")
         rows.append(f"\033[1;30m| \033[1;37m     FEAR & HUNGER: TERMINAL LABYRINTH - SOLO EXPLORER EXPEDITION  {diff_tag:<32}\033[1;30m |\033[0m")
-        rows.append("\033[1;30m+====================================================================================================+\033[0m")
-        rows.append(f"  \033[1;32m[EXPLORER]:\033[0m \033[1;37m{h_info:<27}\033[0m \033[1;36m[KEYS]:\033[0m \033[1;37m{key_count}/3\033[0m  \033[1;33m[POS]:\033[0m \033[1;37m({player_x:2d},{player_y:2d})\033[0m  \033[1;35m[TRAIT]:\033[0m \033[1;33m{solo_hero['trait'][:20]:<20}\033[0m  \033[1;31m[SLAIN]:\033[0m \033[1;37m{monsters_defeated}\033[0m")
+        rows.append("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
+        h_name_role = f"{solo_hero['name']} [{solo_hero['role']}]"
+        h_hp_str = f"HP: {solo_hero['hp']:3d}/{solo_hero['max_hp']:3d}"
+        h_mind_str = f"MIND: {solo_hero.get('mind', 100):3d}/{solo_hero.get('max_mind', 100):3d}"
+        h_hunger_str = f"HUNGER: {solo_hero.get('hunger', 0):2d}/100"
+        rows.append(f"  \033[1;32m[EXPLORER]:\033[0m \033[1;37m{h_name_role:<26}\033[0m  \033[1;32m{h_hp_str}\033[0m  |  \033[1;36m{h_mind_str}\033[0m  |  \033[1;33m{h_hunger_str}\033[0m")
+        pos_str = f"POS: ({player_x:2d},{player_y:2d})"
+        keys_str = f"KEYS: {key_count}/3"
+        slain_str = f"SLAIN: {monsters_defeated}"
+        steps_str = f"STEPS: {step_count:<4d}"
+        trait_str = f"TRAIT: {solo_hero['trait']}"
+        rows.append(f"  \033[1;33m[EXPEDITION]:\033[0m \033[1;37m{pos_str:<12}\033[0m \033[1;36m{keys_str:<9}\033[0m \033[1;31m{slain_str:<9}\033[0m \033[1;37m{steps_str:<11}\033[0m |  \033[1;35m{trait_str[:38]}\033[0m")
         rows.append("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
 
         # 20 rows of map area (14 spaces pad + 72 cols map + 14 spaces pad = 100 cols)
@@ -512,7 +536,7 @@ def run_master_game():
         rows.append("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
 
         if pouch_open:
-            rows.append("  \033[1;33m[SURVIVAL POUCH - SELECT ITEM TO ADMINISTER (W/S to navigate, Enter to use, [I/Esc] close)]:\033[0m")
+            rows.append("  \033[1;33m[SURVIVAL POUCH - SELECT ITEM TO ADMINISTER]:\033[0m")
             pouch_options = [
                 (f"Poppy Flower    x{inventory['poppy']:<2}  (+50 HP)    - Staunches bleeding & heals flesh", inventory['poppy'] > 0),
                 (f"Marijuana Herb  x{inventory['weed']:<2}  (+120 HP)   - Potent ancient medicinal cure", inventory['weed'] > 0),
@@ -527,9 +551,9 @@ def run_master_game():
                 rows.append(f"  {c_code}{prefix} [{p_idx+1}] {p_text}\033[0m")
             rows.append("\033[1;30m+====================================================================================================+\033[0m")
             rows.append("  \033[1;37m[CONTROLS]: [W/S] Navigate  |  [Enter] Administer Item  |  [I/Esc] Close Pouch\033[0m")
-            rows.append("\033[1;30m====================================================================================================\033[0m")
         else:
             rows.append(f"  \033[1;33m[EXPEDITION LOG]:\033[0m \033[1;37m{fit_ansi(recent_log, 78)}\033[0m")
+            rows.append("")
             rows.append("\033[1;30m+====================================================================================================+\033[0m")
             rows.append("  \033[1;37m[CONTROLS]: [W/A/S/D] Move  |  [I] Pouch  |  [H] Quick Heal  |  [G] Guide  |  [Q] Quit\033[0m")
             rows.append("\033[1;30m====================================================================================================\033[0m")
@@ -843,30 +867,48 @@ def run_master_game():
 def show_victory_screen(hero, steps, slain, chests, is_hardcore):
     clear_screen()
     rows = []
+    raw_banner = [
+        r" ___      ___ ___  ________  _________  ________  ________      ___    ___",
+        r"|\  \    /  /|\  \|\   ____\|\___   ___\\   __  \|\   __  \    |\  \  /  /|",
+        r"\ \  \  /  / | \  \ \  \___|\|___ \  \_\ \  \|\  \ \  \|\  \   \ \  \/  / /",
+        r" \ \  \/  / / \ \  \ \  \        \ \  \ \ \  \\\  \ \   _  _\   \ \    / /",
+        r"  \ \    / /   \ \  \ \  \____    \ \  \ \ \  \\\  \ \  \\  \|   \/  /  /",
+        r"   \ \__/ /     \ \__\ \_______\   \ \__\ \ \_______\ \__\\ _\   __/  / /",
+        r"    \|__|/       \|__|\|_______|    \|__|  \|_______|\|__|\|__| |\___/ /",
+        r"                                                                \|___|/"
+    ]
+    max_b_len = max(len(l) for l in raw_banner)
+
+    # Box 1: Victory Banner
     rows.append(make_border_line("=", border_color="\033[1;33m"))
-    rows.append("\033[1;33m|   ___      ___ ___  ________  _________  ________  ________      ___    ___                       |\033[0m")
-    rows.append("\033[1;33m|  |\\  \\    /  /|\\  \\|\\   ____\\|\\___   ___\\\\   __  \\|\\   __  \\    |\\  \\  /  /|                      |\033[0m")
-    rows.append("\033[1;33m|  \\ \\  \\  /  / | \\  \\ \\  \\___|\\|___ \\  \\_\\ \\  \\|\\  \\ \\  \\|\\  \\   \\ \\  \\/  / /                      |\033[0m")
-    rows.append("\033[1;33m|   \\ \\  \\/  / / \\ \\  \\ \\  \\        \\ \\  \\ \\ \\  \\\\\\  \\ \\   _  _\\   \\ \\    / /                       |\033[0m")
-    rows.append("\033[1;33m|    \\ \\    / /   \\ \\  \\ \\  \\____    \\ \\  \\ \\ \\  \\\\\\  \\ \\  \\\\  \\|   \\/  /  /                        |\033[0m")
-    rows.append("\033[1;33m|     \\ \\__/ /     \\ \\__\\ \\_______\\   \\ \\__\\ \\ \\_______\\ \\__\\\\ _\\   __/  / /                         |\033[0m")
-    rows.append("\033[1;33m|      \\|__|/       \\|__|\\|_______|    \\|__|  \\|_______|\\|__|\\|__| |\\___/ /                          |\033[0m")
-    rows.append("\033[1;33m|                                                                  \\|___|/                           |\033[0m")
+    for b_line in raw_banner:
+        rows.append(make_centered_box_row("\033[1;33m" + b_line.ljust(max_b_len) + "\033[0m", border_color="\033[1;33m"))
     rows.append(make_centered_box_row("\033[1;32m[ E S C A P E   A C H I E V E D   -   V I C T O R Y ]\033[0m", border_color="\033[1;33m"))
     rows.append(make_border_line("=", border_color="\033[1;33m"))
-    rows.append(make_left_box_row("\033[1;32mALL 3 RUNIC KEYS INSERTED! THE MASSIVE RUNIC GATES GRIND OPEN AS GOLDEN SUNLIGHT FLOODS THE DARK!\033[0m", border_color="\033[1;33m"))
-    rows.append(make_left_box_row(f"\033[1;37m{hero['name']} [{hero['role']}] has triumphed over subterranean dread and escaped alive!\033[0m", border_color="\033[1;33m"))
-    rows.append(make_border_line("-", border_color="\033[1;33m"))
-    mode_str = "TERROR & STARVATION (Hardcore Survivor)" if is_hardcore else "FEAR & HUNGER (Standard Survivor)"
-    rows.append(f"  \033[1;33mEXPEDITION STATS:\033[0m")
-    rows.append(f"    - Difficulty Conquered : \033[1;32m{mode_str}\033[0m")
-    rows.append(f"    - Hero Standing        : \033[1;37m{hero['name']} ({hero['hp']}/{hero['max_hp']} HP, Mind: {hero['mind']}/100)\033[0m")
-    rows.append(f"    - Total Steps Taken    : \033[1;36m{steps} steps\033[0m")
-    rows.append(f"    - Foes Neutralized     : \033[1;31m{slain} monsters vanquished\033[0m")
-    rows.append(f"    - Ancient Chests Looted: \033[1;33m{chests} vaults cleared\033[0m")
     rows.append("")
+
+    # Box 2: Proclamation Box
+    rows.append(make_border_line("-", border_color="\033[1;32m"))
+    rows.append(make_centered_box_row("\033[1;32mALL 3 RUNIC KEYS INSERTED! THE RUNIC GATES GRIND OPEN AS GOLDEN SUNLIGHT FLOODS THE DARK!\033[0m", border_color="\033[1;32m"))
+    rows.append(make_centered_box_row(f"\033[1;37m{hero['name']} [{hero['role']}] has triumphed over subterranean dread and escaped alive!\033[0m", border_color="\033[1;32m"))
+    rows.append(make_border_line("-", border_color="\033[1;32m"))
+    rows.append("")
+
+    # Box 3: Expedition Performance Log
+    mode_str = "TERROR & STARVATION (Hardcore Survivor)" if is_hardcore else "FEAR & HUNGER (Standard Survivor)"
+    rows.append(make_border_line("-", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("\033[1;36m[EXPEDITION PERFORMANCE LOG]:\033[0m", border_color="\033[1;36m"))
+    rows.append(make_left_box_row(f"  - Difficulty Conquered : \033[1;32m{mode_str}\033[0m", border_color="\033[1;36m"))
+    rows.append(make_left_box_row(f"  - Hero Standing        : \033[1;37m{hero['name']} ({hero['hp']}/{hero['max_hp']} HP, Mind: {hero['mind']}/100)\033[0m", border_color="\033[1;36m"))
+    rows.append(make_left_box_row(f"  - Total Steps Taken    : \033[1;33m{steps} steps\033[0m", border_color="\033[1;36m"))
+    rows.append(make_left_box_row(f"  - Foes Neutralized     : \033[1;31m{slain} monsters vanquished\033[0m", border_color="\033[1;36m"))
+    rows.append(make_left_box_row(f"  - Ancient Vaults Looted: \033[1;33m{chests} vaults cleared\033[0m", border_color="\033[1;36m"))
+    rows.append(make_border_line("-", border_color="\033[1;36m"))
+    rows.append("")
+
+    # Box 4: Controls
     rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
-    rows.append("  [CONTROLS]: Press [Enter] or [Q] to return to surface")
+    rows.append("  \033[1;37m[CONTROLS]: Press [Enter] or [Q] to return to surface\033[0m")
     rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
     atomic_blit(rows)
     if os.name == 'nt' and sys.stdin.isatty():
@@ -878,21 +920,33 @@ def show_victory_screen(hero, steps, slain, chests, is_hardcore):
 def show_game_over_screen(hero, killer):
     clear_screen()
     rows = []
+    raw_banner = [
+        r"  ____    _    __  __ _____    _____     _______ ____  ",
+        r" / ___|  / \  |  \/  | ____|  / _ \ \   / / ____|  _ \ ",
+        r"| |  _  / _ \ | |\/| |  _|   | | | \ \ / /|  _| | |_) |",
+        r"| |_| |/ ___ \| |  | | |___  | |_| |\ V / | |___|  _ < ",
+        r" \____/_/   \_\_|  |_|_____|  \___/  \_/  |_____|_| \_\\"
+    ]
+    max_b_len = max(len(l) for l in raw_banner)
+
+    # Box 1: Game Over Banner
     rows.append(make_border_line("=", border_color="\033[1;31m"))
-    rows.append("\033[1;31m|   ________  ________  _____ ______   _______           ________  ___      ___ _______   ________   |\033[0m")
-    rows.append("\033[1;31m|  |\\   ____\\|\\   __  \\|\\   _ \\  _   \\|\\  ___ \\         |\\   __  \\|\\  \\    /  /|\\  ___ \\ |\\   __  \\  |\033[0m")
-    rows.append("\033[1;31m|  \\ \\  \\___|\\ \\  \\|\\  \\ \\  \\\\\\__\\ \\  \\ \\   __/|        \\ \\  \\|\\  \\ \\  \\  /  / | \\   __/|\\ \\  \\|\\  \\ |\033[0m")
-    rows.append("\033[1;31m|   \\ \\  \\  __\\ \\   __  \\ \\  \\\\|__| \\  \\ \\  \\_|/__       \\ \\  \\\\\\  \\ \\  \\/  / / \\ \\  \\_|/_\\ \\   _  _\\|\033[0m")
-    rows.append("\033[1;31m|    \\ \\  \\|\\  \\ \\  \\ \\  \\ \\  \\    \\ \\  \\ \\  \\_|\\ \\       \\ \\  \\\\\\  \\ \\    / /   \\ \\  \\_|\\ \\ \\  \\\\  \\||\033[0m")
-    rows.append("\033[1;31m|     \\ \\_______\\ \\__\\ \\__\\ \\__\\    \\ \\__\\ \\_______\\       \\ \\_______\\ \\__/ /     \\ \\_______\\ \\__\\\\ _\\|\033[0m")
-    rows.append("\033[1;31m|      \\|_______|\\|__|\\|__|\\|__|     \\|__|\\|_______|        \\|_______|\\|__|/       \\|_______|\\|__|\\|__|\033[0m")
-    rows.append(make_border_line("=", border_color="\033[1;31m"))
-    rows.append(make_left_box_row(f"\033[1;37m{hero['name']} HAS FALLEN TO {killer.upper()} IN THE DARK PERIMETER OF THE LABYRINTH.\033[0m", border_color="\033[1;31m"))
-    rows.append(make_left_box_row("\033[90mYour flesh decays into subterranean ash... The forgotten gods claim another soul.\033[0m", border_color="\033[1;31m"))
+    for b_line in raw_banner:
+        rows.append(make_centered_box_row("\033[1;31m" + b_line.ljust(max_b_len) + "\033[0m", border_color="\033[1;31m"))
+    rows.append(make_centered_box_row("\033[1;31m[ S U R V I V O R   D E M I S E   -   Y O U   D I E D ]\033[0m", border_color="\033[1;31m"))
     rows.append(make_border_line("=", border_color="\033[1;31m"))
     rows.append("")
+
+    # Box 2: Demise Proclamation Box
+    rows.append(make_border_line("-", border_color="\033[1;31m"))
+    rows.append(make_centered_box_row(f"\033[1;37m{hero['name']} HAS FALLEN TO {killer.upper()} IN THE DARK PERIMETER.\033[0m", border_color="\033[1;31m"))
+    rows.append(make_centered_box_row("\033[90mYour flesh decays into subterranean ash... The forgotten gods claim another soul.\033[0m", border_color="\033[1;31m"))
+    rows.append(make_border_line("-", border_color="\033[1;31m"))
+    rows.append("")
+
+    # Box 3: Controls
     rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
-    rows.append("  [CONTROLS]: Press [Enter] or [Q] to exit")
+    rows.append("  \033[1;37m[CONTROLS]: Press [Enter] or [Q] to exit\033[0m")
     rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
     atomic_blit(rows)
     if os.name == 'nt' and sys.stdin.isatty():
