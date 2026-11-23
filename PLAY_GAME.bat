@@ -6,7 +6,7 @@ cd /d "%~dp0funger_terminal"
 
 cls
 echo ====================================================================
-echo   FEAR ^& HUNGER: TERMINAL LABYRINTH - HARDWARE ADVENTURE
+echo   FEAR ^& HUNGER: TERMINAL LABYRINTH - SOLO EXPLORER EDITION
 echo ====================================================================
 echo.
 
@@ -14,7 +14,7 @@ if not exist sim mkdir sim
 
 where iverilog >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
-    echo [*] Compiling Verilog RTL hardware engine...
+    echo [*] Verifying Verilog RTL hardware engine...
     iverilog -I src -o sim/funger_play.out ^
         src/damage_alu.v ^
         src/rng_unit.v ^
@@ -45,7 +45,7 @@ if %ERRORLEVEL% EQU 0 (
         pause
         exit /b %ERRORLEVEL%
     )
-    echo [OK] Engine compiled successfully!
+    echo [OK] Hardware RTL verified successfully!
     echo.
 ) else (
     if not exist sim\funger_play.out (
@@ -57,7 +57,7 @@ if %ERRORLEVEL% EQU 0 (
 
 where python >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
-    python launch_game.py sim/funger_play.out
+    python master_game.py
 ) else (
     vvp sim/funger_play.out
 )

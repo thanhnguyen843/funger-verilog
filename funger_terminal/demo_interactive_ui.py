@@ -585,6 +585,7 @@ monster = {
 combat_log = "Battle initiated. Shadow Swordsman unsheathes dark blade."
 current_menu = "MAIN"
 cursor_idx = 0
+combat_outcome = None
 
 # =============================================================================
 # FLICKER-FREE ATOMIC TERMINAL BLITTING ENGINE
@@ -687,7 +688,7 @@ def run_solo_select_interactive():
     while True:
         render_solo_select_screen(sel_idx)
 
-        if os.name == 'nt':
+        if os.name == 'nt' and sys.stdin.isatty():
             ch = msvcrt.getch()
             # Drain trailing keys if held down to avoid lag
             while msvcrt.kbhit():
@@ -715,24 +716,36 @@ def run_solo_select_interactive():
                     inventory = {"poppy": 5, "weed": 3, "bread": 6, "ale": 3}
                 else:
                     inventory = {"poppy": 3, "weed": 2, "bread": 4, "ale": 2}
-                break
+                return active_hero, sel_idx
             elif ch in (b'q', b'Q', b'\x03'):
                 sys.stdout.write("\033[?25h\n[OK] Exited Solo Selection.\n")
-                sys.exit(0)
+                return None, -1
             elif ch in (b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8'):
                 sel_idx = int(ch.decode('ascii')) - 1
                 render_solo_select_screen(sel_idx)
         else:
             line = sys.stdin.readline().strip().lower()
-            if line == 'w':
+            if line in ('1', '2', '3', '4', '5', '6', '7', '8'):
+                sel_idx = int(line) - 1
+                active_hero = copy.deepcopy(ALL_HEROES[sel_idx])
+                if active_hero["name"] == "CAHARA":
+                    inventory = {"poppy": 5, "weed": 3, "bread": 6, "ale": 3}
+                else:
+                    inventory = {"poppy": 3, "weed": 2, "bread": 4, "ale": 2}
+                return active_hero, sel_idx
+            elif line == 'w':
                 sel_idx = (sel_idx - 1) % num_heroes
             elif line == 's':
                 sel_idx = (sel_idx + 1) % num_heroes
-            elif line in ('', 'enter'):
+            elif line in ('', 'enter', 'e', ' '):
                 active_hero = copy.deepcopy(ALL_HEROES[sel_idx])
-                break
-            elif line == 'q':
-                sys.exit(0)
+                if active_hero["name"] == "CAHARA":
+                    inventory = {"poppy": 5, "weed": 3, "bread": 6, "ale": 3}
+                else:
+                    inventory = {"poppy": 3, "weed": 2, "bread": 4, "ale": 2}
+                return active_hero, sel_idx
+            elif line in ('q', 'quit'):
+                return None, -1
 
 # =============================================================================
 # RENDER SCREEN: SOLO POKÉMON-STYLE COMBAT ARENA (100 COLUMNS, FLICKER-FREE)
@@ -1043,7 +1056,7 @@ def get_current_menu_data():
 # SELECTION LOGIC & COMBAT SIMULATION (SOLO EXPLORER)
 # =============================================================================
 def handle_selection():
-    global current_menu, cursor_idx, combat_log
+    global current_menu, cursor_idx, combat_log, combat_outcome
     hero = active_hero
 
     if current_menu == "MAIN":
@@ -1077,13 +1090,11 @@ def handle_selection():
         elif cursor_idx == 2:  # Flee
             if monster["debuff_legs"] or hero["name"] == "CAHARA":
                 combat_log = "ESCAPE SUCCESSFUL! Safely retreated into dungeon corridors."
-                time.sleep(1.2)
-                sys.exit(0)
+                combat_outcome = "FLEE"
             else:
                 if random.random() < 0.5:
                     combat_log = "ESCAPE SUCCESSFUL! Retreating from the chamber."
-                    time.sleep(1.2)
-                    sys.exit(0)
+                    combat_outcome = "FLEE"
                 else:
                     combat_log = "ESCAPE FAILED! Foe blocks the corridor and retaliates!"
                     enemy_turn()
@@ -1205,8 +1216,7 @@ def handle_selection():
                 enemy_turn()
             elif cursor_idx == 3:  # Smoke Bomb
                 combat_log = "SMOKE BOMB! Dense fog blinds opponent. 100% ESCAPE SUCCESSFUL!"
-                time.sleep(1.2)
-                sys.exit(0)
+                combat_outcome = "FLEE"
 
         elif h["name"] == "D'ARCE":
             if cursor_idx == 0:    # Defense stance
@@ -1538,6 +1548,7 @@ def enemy_turn():
 
     if monster["hp"] <= 0 or monster["debuff_decapitated"]:
         combat_log += " | Foe neutralized! VICTORY!"
+        combat_outcome = "VICTORY"
         return
 
     # 1. Frontline auto-detox (The Girl: -10% tox/turn)
@@ -1616,23 +1627,29 @@ def enemy_turn():
     # Down check
     if hero["hp"] == 0:
         combat_log += f" | {hero['name']} has fallen in the dark catacombs! DEFEAT!"
+        combat_outcome = "DEFEAT"
 
 # =============================================================================
 # MAIN INTERACTIVE LOOP
 # =============================================================================
 def run_interactive_loop():
-    global current_menu, cursor_idx
+    global current_menu, cursor_idx, combat_outcome
 
     # Clear screen once on entry and hide cursor
     sys.stdout.write("\033[2J\033[H\033[?25l")
     sys.stdout.flush()
 
     while True:
+        if combat_outcome is not None:
+            render_screen()
+            time.sleep(1.0)
+            return combat_outcome, active_hero, inventory
+
         render_screen()
         menu_data = get_current_menu_data()
         num_options = len(menu_data["options"])
 
-        if os.name == 'nt':
+        if os.name == 'nt' and sys.stdin.isatty():
             ch = msvcrt.getch()
             while msvcrt.kbhit():
                 discard = msvcrt.getch()
@@ -1655,14 +1672,17 @@ def run_interactive_loop():
                     cursor_idx = 0
             elif ch in (b'q', b'Q', b'\x03'):  # Quit
                 sys.stdout.write("\033[?25h\n[OK] Exited Solo Combat Arena.\n")
-                break
+                return "QUIT", active_hero, inventory
             elif ch in (b'1', b'2', b'3', b'4', b'5', b'6'):
                 num = int(ch.decode('ascii')) - 1
                 if num < num_options:
                     cursor_idx = num
                     handle_selection()
         else:
-            line = sys.stdin.readline().strip().lower()
+            raw = sys.stdin.readline()
+            if not raw:
+                break
+            line = raw.strip().lower()
             if line == 'w':
                 cursor_idx = (cursor_idx - 1) % num_options
             elif line == 's':
@@ -1670,7 +1690,45 @@ def run_interactive_loop():
             elif line in ('', 'c', 'enter'):
                 handle_selection()
             elif line in ('b', 'q'):
-                break
+                return "QUIT", active_hero, inventory
+
+    return combat_outcome or "QUIT", active_hero, inventory
+
+def run_solo_combat(hero_obj, monster_id=8, monster_name="SHADOW SWORDSMAN", monster_archetype="ARMORED", monster_hp=95, monster_atk=24, monster_def=99, inv=None):
+    global active_hero, monster, inventory, combat_log, current_menu, cursor_idx, combat_outcome
+    active_hero = copy.deepcopy(hero_obj)
+    active_hero["is_guarding"] = False
+    active_hero["buff"] = active_hero.get("buff", "")
+    active_hero["debuffs"] = active_hero.get("debuffs", [])
+
+    if inv is not None:
+        inventory = dict(inv)
+    else:
+        if active_hero["name"] == "CAHARA":
+            inventory = {"poppy": 5, "weed": 3, "bread": 6, "ale": 3}
+        else:
+            inventory = {"poppy": 3, "weed": 2, "bread": 4, "ale": 2}
+
+    monster = {
+        "name": monster_name,
+        "id": monster_id,
+        "archetype": monster_archetype,
+        "hp": monster_hp,
+        "max_hp": monster_hp,
+        "atk": monster_atk,
+        "def": monster_def,
+        "debuff_arm_r": False,
+        "debuff_arm_l": False,
+        "debuff_legs": False,
+        "debuff_decapitated": False
+    }
+
+    combat_log = f"Battle initiated! {monster_name} unsheathes weapon!"
+    current_menu = "MAIN"
+    cursor_idx = 0
+    combat_outcome = None
+
+    return run_interactive_loop()
 
 # =============================================================================
 # SHOWCASE AUTO TRACE
