@@ -310,44 +310,44 @@ def handle_move(dx, dy):
 
     hero = squad[active_hero_idx]
 
-    # Barricade collision (Requires D'arce)
+    # Barricade collision (Requires Heavy Brute Force: D'arce or Ragnvaldr)
     if tile == TILE_BARRICADE and (nx, ny) not in cleared_tiles:
-        if hero["name"] == "D'ARCE":
+        if hero["name"] in ("D'ARCE", "RAGNVALDR"):
             cleared_tiles.add((nx, ny))
-            recent_log = f"[D'ARCE]: Heavy warhammer & tower shield shatter the rusted iron barricade! Passage opened!"
+            recent_log = f"[{hero['name']}]: Heavy brute force shatters the rusted iron barricade! Passage opened!"
         else:
-            recent_log = f"[BLOCKED]: Heavy rusted iron barricade at ({nx}, {ny})! Too heavy! Switch to D'ARCE [2] to shatter!"
+            recent_log = f"[BLOCKED]: Heavy rusted iron barricade at ({nx}, {ny})! Too heavy! Switch to D'ARCE or RAGNVALDR to shatter!"
             return
 
-    # Hexen Seal collision (Requires Enki)
+    # Hexen Seal collision (Requires Occult Mastery: Enki or Nas'hrah)
     elif tile == TILE_SEAL and (nx, ny) not in cleared_tiles:
-        if hero["name"] == "ENKI":
+        if hero["name"] in ("ENKI", "NAS'HRAH"):
             cleared_tiles.add((nx, ny))
-            recent_log = f"[ENKI]: Chants counter-curse in eldritch tongue, dissolving the Hexen Seal into ash! Pathway open!"
+            recent_log = f"[{hero['name']}]: Chants counter-curse in eldritch tongue, dissolving the Hexen Seal into ash! Pathway open!"
         else:
             hero["hp"] = max(1, hero["hp"] - 10)
-            recent_log = f"[BLOCKED]: Arcane purple runes shock {hero['name']} (-10 HP)! Switch to ENKI [3] to dispel!"
+            recent_log = f"[BLOCKED]: Arcane purple runes shock {hero['name']} (-10 HP)! Switch to ENKI or NAS'HRAH to dispel!"
             return
 
-    # Crawlspace collision (Requires The Girl)
+    # Crawlspace collision (Requires Nimble Form: The Girl or Moonless)
     elif tile == TILE_CRAWLSPACE:
-        if hero["name"] == "THE GIRL":
-            recent_log = f"[THE GIRL]: Squeezes easily through the narrow 1-foot rock crevice!"
+        if hero["name"] in ("THE GIRL", "MOONLESS"):
+            recent_log = f"[{hero['name']}]: Squeezes easily through the narrow 1-foot rock crevice!"
         else:
-            recent_log = f"[BLOCKED]: Rock crevice at ({nx}, {ny}) is too tight for an adult warrior! Switch to THE GIRL [4] to crawl!"
+            recent_log = f"[BLOCKED]: Rock crevice at ({nx}, {ny}) is too tight for an adult warrior! Switch to THE GIRL or MOONLESS to crawl!"
             return
 
-    # Interact with chest
+    # Interact with chest (Requires Trap Disarm: Cahara or Le'garde)
     elif tile == TILE_CHEST and (nx, ny) not in cleared_tiles:
         cleared_tiles.add((nx, ny))
         if (nx, ny) in [(6, 11), (12, 17)]:
-            if hero["name"] == "CAHARA":
+            if hero["name"] in ("CAHARA", "LE'GARDE"):
                 key_count = min(3, key_count + 1)
-                recent_log = f"[CAHARA]: Fast hands detects spring needle trap and disarms it safely! Obtained Runic Key ({key_count}/3)!"
+                recent_log = f"[{hero['name']}]: Keen perception detects spring needle trap and disarms it safely! Obtained Runic Key ({key_count}/3)!"
             else:
                 hero["hp"] = max(1, hero["hp"] - 30)
                 key_count = min(3, key_count + 1)
-                recent_log = f"[TRAP TRIGGERED]: Mimic jaws snap shut! {hero['name']} takes -30 HP! Got Key ({key_count}/3). Need CAHARA [1] to disarm safely!"
+                recent_log = f"[TRAP TRIGGERED]: Mimic jaws snap shut! {hero['name']} takes -30 HP! Got Key ({key_count}/3). Need CAHARA to disarm safely!"
         else:
             key_count = min(3, key_count + 1)
             recent_log = f"[CHEST]: Opened ancient chest at ({nx}, {ny})! Obtained Runic Key ({key_count}/3)!"

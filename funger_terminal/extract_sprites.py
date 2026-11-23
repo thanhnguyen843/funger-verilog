@@ -5,7 +5,16 @@ import re
 out_c = subprocess.check_output(["vvp", "sim/show_characters.out"], cwd="d:/NeoProjects/Verilog-lab/retro_game_verilog/funger_terminal").decode("utf-8", errors="ignore")
 blocks_c = out_c.split("----------------------------------------------------------------------------------------------------------------")
 
-heroes = {"CAHARA": 0, "D'ARCE": 1, "ENKI": 2, "THE GIRL": 6}
+heroes = {
+    "CAHARA": 0,
+    "D'ARCE": 1,
+    "ENKI": 2,
+    "RAGNVALDR": 3,
+    "LE'GARDE": 4,
+    "MOONLESS": 5,
+    "THE GIRL": 6,
+    "NAS'HRAH": 7
+}
 
 extracted_heroes = {}
 for h_name, b_idx in heroes.items():
