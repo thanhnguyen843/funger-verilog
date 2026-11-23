@@ -89,18 +89,110 @@ def get_sprite_lines(mid, state):
                 "                             ",
                 "      \033[90m▄▀▀▀▄▄▀▀▀▄\033[0m             ",
                 "   \033[90m▄▀▀▀▀▀▀▀▀▀▀▀▀▀▄\033[0m           ",
-                "   \033[90m▀▀▀▀   ▀▀  ▀▀▀▀\033[0m (COLLAPSED)",
+                "   \033[90m▀▀▀▀   ▀▀  ▀▀▀▀\033[0m(COLLAPSED)",
                 "   \033[90m░░░░░░░░░░░░░░░\033[0m           ",
+                "                             "
+            ]
+    elif mid == 18: # Shadow Slug (17x12 Low-Profile Gastropod)
+        if state == 0: # Normal
+            return [
+                "  \033[1;37m▀▀   ▀▀\033[0m                    ",
+                "   \033[1;37m▄▀▀▀▄\033[0m                     ",
+                "   \033[1;37m▀ ▀ ▀▄▀▀▀▀▄▄\033[0m              ",
+                "    \033[1;37m▀▀▀▀▀▀▀▀▀▀▀▀▀▄▄\033[0m          ",
+                "    \033[1;37m▀ ▀   ▀  ▀\033[0m               ",
+                "   \033[1;37m▄▀ ▀▄ ▄▀ ▄▀\033[0m               ",
+                "                             ",
+                "    \033[90m[SLUG CREEPING POSTURE]\033[0m  ",
+                "                             ",
+                "                             ",
+                "                             ",
+                "                             "
+            ]
+        elif state == 1: # Injured (Severed Right Antenna with Amber Socket)
+            return [
+                "  \033[1;37m▀▀\033[0m                         ",
+                "   \033[1;37m▄▀▀\033[0m \033[1;33m▄\033[0m  (ANTENNA SEVERED)  ",
+                "   \033[1;37m▀ ▀ ▀▄▀▀▀▀▄▄\033[0m              ",
+                "    \033[1;37m▀▀▀▀▀▀▀▀▀▀▀▀▀▄▄\033[0m          ",
+                "    \033[1;37m▀ ▀   ▀  ▀\033[0m               ",
+                "   \033[1;33m▄▀\033[0m \033[1;37m▀▄ ▄▀ ▄▀\033[0m (LEG FRACTURE)",
+                "                             ",
+                "  \033[1;33m[SHELL WOUNDED & SLOWED]\033[0m   ",
+                "                             ",
+                "                             ",
+                "                             ",
+                "                             "
+            ]
+        else: # Dead (Crushed Head, Inert Shell in Ash Gray)
+            return [
+                "                             ",
+                "                             ",
+                "   \033[90m▀ ▀ ▀▄▀▀▀▀▄▄\033[0m              ",
+                "    \033[90m▀▀▀▀▀▀▀▀▀▀▀▀▀▄▄\033[0m          ",
+                "    \033[90m▀ ▀   ▀  ▀\033[0m               ",
+                "   \033[90m▄▀ ▀▄ ▄▀ ▄▀\033[0m (DEFLATED)    ",
+                "                             ",
+                "   \033[90m[INERT SHELL NEUTRALIZED]\033[0m ",
+                "                             ",
+                "                             ",
+                "                             ",
+                "                             "
+            ]
+    elif mid == 19: # Dark Construct (23x12 Mechanical Automaton)
+        if state == 0: # Normal
+            return [
+                "  \033[1;37m▄▀▀▄ ▄▀▀▄\033[0m                  ",
+                "  \033[1;37m▀▄▄▀ ▀▄▄▀\033[0m                  ",
+                "    \033[1;37m▀    ▀\033[0m                   ",
+                "    \033[1;37m▀▀   ▀▀  ▄▄▄▄▄\033[0m           ",
+                "     \033[1;37m▄▀▄▄▀▀▀▀ ▀▀ ▀▀▀▀▄▄\033[0m      ",
+                "     \033[1;37m▀▀▄▀▄▀▄▄▀▄▄▀▄▄▀▄▀▄▀▀\033[0m    ",
+                "                             ",
+                "    \033[90m[TWIN-CORE POWER CHASSIS]\033[0m",
+                "                             ",
+                "                             ",
+                "                             ",
+                "                             "
+            ]
+        elif state == 1: # Injured (Right Core Blasted Off, Amber Energy Leak)
+            return [
+                "  \033[1;37m▄▀▀▄\033[0m                       ",
+                "  \033[1;37m▀▄▄▀\033[0m     (CORE CRACKED)    ",
+                "    \033[1;37m▀\033[0m    \033[1;33m▄\033[0m  (AMBER LEAK)     ",
+                "    \033[1;37m▀▀   ▀▀  ▄▄▄▄▄\033[0m           ",
+                "     \033[1;37m▄▀▄▄▀▀▀▀ ▀▀\033[0m \033[1;33m▀▀▀▀▄▄\033[0m      ",
+                "     \033[1;37m▀▀▄▀▄▀▄▄▀▄▄▀▄▄▀▄▀▄▀▀\033[0m    ",
+                "                             ",
+                "    \033[1;33m[CHASSIS OVERHEATING]\033[0m    ",
+                "                             ",
+                "                             ",
+                "                             ",
+                "                             "
+            ]
+        else: # Dead (Cores Extinguished, Deactivated Chassis in Ash Gray)
+            return [
+                "                             ",
+                "                             ",
+                "                             ",
+                "    \033[90m▀▀   ▀▀  ▄▄▄▄▄\033[0m           ",
+                "     \033[90m▄▀▄▄▀▀▀▀ ▀▀ ▀▀▀▀▄▄\033[0m      ",
+                "     \033[90m▀▀▄▀▄▀▄▄▀▄▄▀▄▄▀▄▀▄▀▀\033[0m    ",
+                "                             ",
+                "    \033[90m[CONSTRUCT DEACTIVATED]\033[0m  ",
+                "                             ",
+                "                             ",
+                "                             ",
                 "                             "
             ]
     else:
         # Generic Postural Transformation
         if state == 0: # Normal
             return [
-                "       \033[1;37m▄▀▀▀▀▀▀▀▄\033[0m              ",
+                "       \033[1;37m▄▀▀▀▀▀▀▀▄\033[0m             ",
                 "      \033[1;37m▀▀ ▄  ▄ ▀▀\033[0m             ",
                 "      \033[1;37m▀▀▀▀▀▀▀▀▀▀\033[0m             ",
-                "       \033[1;37m▄▀▀▀▀▀▄\033[0m   \033[1;37m▄▀\033[0m(WEAPON)   ",
+                "       \033[1;37m▄▀▀▀▀▀▄\033[0m   \033[1;37m▄▀\033[0m(WEAPON)  ",
                 "      \033[1;37m▀▀▀▀▀▀▀▀ ▄▀▀\033[0m           ",
                 "      \033[1;37m▀▀▀▀▀▀▀▀▀▀▀▀\033[0m           ",
                 "      \033[1;37m▀▀ ▀▀▀▀ ▀▀\033[0m             ",
@@ -116,10 +208,10 @@ def get_sprite_lines(mid, state):
                 "                             ",
                 "                             ",
                 "                             ",
-                "       \033[1;37m▄▀▀▀▀▀▀▀▄\033[0m              ",
+                "       \033[1;37m▄▀▀▀▀▀▀▀▄\033[0m             ",
                 "      \033[1;37m▀▀ ▄  ▄ ▀▀\033[0m             ",
                 "      \033[1;37m▀▀▀▀▀▀▀▀▀▀\033[0m             ",
-                "       \033[1;37m▄▀▀▀▀\033[0m\033[1;33m▀▄\033[0m   (DISARMED)   ",
+                "       \033[1;37m▄▀▀▀▀\033[0m\033[1;33m▀▄\033[0m  (DISARMED)   ",
                 "      \033[1;37m▀▀▀▀▀▀▀▀\033[0m               ",
                 "    \033[1;37m▄▀▀▀▀▀▀▀\033[0m\033[1;33m▀▀▀▄\033[0m (CROUCHED)  ",
                 "   \033[1;37m▀▀▀▀▀▀\033[0m\033[1;33m▀▀\033[0m\033[1;37m▀▀▀▀▀▀\033[0m            ",
@@ -134,9 +226,9 @@ def get_sprite_lines(mid, state):
                 "                             ",
                 "                             ",
                 "                             ",
-                "       \033[90m▄▀▀▀▀▀▄\033[0m   (HEADLESS)   ",
+                "       \033[90m▄▀▀▀▀▀▄\033[0m  (HEADLESS)   ",
                 "      \033[90m▀▀▀▀▀▀▀▀\033[0m               ",
-                "    \033[90m▄▀▀▀▀▀▀▀▀▀▀▀▄\033[0m (NEUTRALIZED)",
+                "   \033[90m▄▀▀▀▀▀▀▀▀▀▀▀▄\033[0m(NEUTRALIZED)",
                 "   \033[90m░░░░░░░░░░░░░░\033[0m            ",
                 "                             "
             ]
@@ -170,7 +262,63 @@ def render_interactive():
         f"|  \033[1;37mPOSTURAL MORPHOLOGY & DISMEMBERMENT:\033[0m            |",
     ]
 
-    if current_state == 0:
+    if current_mid == 18:
+        if current_state == 0:
+            card_rows += [
+                "|  * Antennae  : \033[1;37mDUAL INTACT (Sensory Radar)\033[0m       |",
+                "|  * Shell Body: \033[1;37mHARDENED (Low Crawling Stance)\033[0m    |",
+                "|  * Mandibles : \033[1;37mARMED (Venomous Creeping Bite)\033[0m    |",
+                "|  * Aesthetics: \033[1;37mPure Phosphor White (#FFFFFF)\033[0m     |",
+                "|                                                  |",
+                "|  \033[90m(Press [2] to sever sensory antennae)\033[0m           |",
+            ]
+        elif current_state == 1:
+            card_rows += [
+                "|  * Antennae  : \033[1;33mRIGHT SEVERED (Sensory Blinded)\033[0m   |",
+                "|  * Socket    : \033[1;33mCAUTERIZED (Amber Fracture Joint)\033[0m |",
+                "|  * Shell/Legs: \033[1;33mFRACTURED (Disoriented Crawl)\033[0m     |",
+                "|  * Aesthetics: \033[1;37mWhite Body\033[0m + \033[1;33mAmber Socket & Joints\033[0m|",
+                "|                                                  |",
+                "|  \033[1;33m[MECHANIC]: Blinded; accuracy & speed halved!\033[0m   |",
+            ]
+        else:
+            card_rows += [
+                "|  * Head/Sensors: \033[90mCRUSHED & NEUTRALIZED\033[0m           |",
+                "|  * Carcass     : \033[90mCOLLAPSED (Inert Shell Residue)\033[0m |",
+                "|  * Integrity   : \033[90m0 / MAX HP (NEUTRALIZED)\033[0m        |",
+                "|  * Aesthetics  : \033[90mDeactivated Ash Gray (#6E7378)\033[0m |",
+                "|                                                  |",
+                "|  \033[1;32m[VICTORY]: Subterranean slug neutralized!\033[0m        |",
+            ]
+    elif current_mid == 19:
+        if current_state == 0:
+            card_rows += [
+                "|  * Power Core: \033[1;37mTWIN CHARGED (Full Output)\033[0m        |",
+                "|  * Chassis   : \033[1;37mARMORED (Heavy Tracked Automaton)\033[0m |",
+                "|  * Cannon Arm: \033[1;37mCALIBRATED (Dark Pulse Laser)\033[0m     |",
+                "|  * Aesthetics: \033[1;37mPure Phosphor White (#FFFFFF)\033[0m     |",
+                "|                                                  |",
+                "|  \033[90m(Press [2] to blast right power core)\033[0m           |",
+            ]
+        elif current_state == 1:
+            card_rows += [
+                "|  * Power Core: \033[1;33mRIGHT CORE BLASTED OFF (50% PWR)\033[0m  |",
+                "|  * Core Root : \033[1;33mAMBER DISCHARGE (Energy Sparking)\033[0m |",
+                "|  * Chassis   : \033[1;33mREAR CRACK (Leaking Arc Fissures)\033[0m |",
+                "|  * Aesthetics: \033[1;37mWhite Body\033[0m + \033[1;33mAmber Discharge Joint\033[0m|",
+                "|                                                  |",
+                "|  \033[1;33m[MECHANIC]: Overheating! Laser cannon offline\033[0m    |",
+            ]
+        else:
+            card_rows += [
+                "|  * Power Cores : \033[90mEXTINGUISHED (0 V Energy Output)\033[0m|",
+                "|  * Automaton   : \033[90mDEACTIVATED (Inert Chassis)\033[0m     |",
+                "|  * Integrity   : \033[90m0 / MAX HP (NEUTRALIZED)\033[0m        |",
+                "|  * Aesthetics  : \033[90mDeactivated Ash Gray (#6E7378)\033[0m |",
+                "|                                                  |",
+                "|  \033[1;32m[VICTORY]: Dark Construct powered down!\033[0m         |",
+            ]
+    elif current_state == 0:
         card_rows += [
             "|  * Weapon Arm: \033[1;37mWIELDING (Full Attack Power)\033[0m      |",
             "|  * Lower Body: \033[1;37mUPRIGHT (Standing Stance)\033[0m         |",
