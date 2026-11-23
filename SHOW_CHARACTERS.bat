@@ -45,12 +45,13 @@ if %ERRORLEVEL% EQU 0 (
     )
 )
 
-echo [*] Rendering TrueColor pixel art sprites and tactical attributes...
-echo.
-vvp sim/show_characters.out
-
-echo.
-echo ====================================================================
-echo   Render complete for all 8 Fear ^& Hunger heroes.
-echo ====================================================================
-pause
+where python >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+    echo [*] Launching Interactive Hero Explorer with Live Models...
+    python demo_interactive_ui.py --guide
+) else (
+    echo [*] Rendering TrueColor pixel art sprites and tactical attributes...
+    echo.
+    vvp sim/show_characters.out
+    pause
+)

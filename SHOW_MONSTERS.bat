@@ -46,13 +46,13 @@ if %ERRORLEVEL% EQU 0 (
     )
 )
 
-echo [*] Rendering 36 monster sprites and tactical specifications...
-echo.
-vvp sim/show_monsters.out
-
-echo.
-echo ====================================================================
-echo   Render complete for all 36 Fear ^& Hunger monsters.
-echo   Tip: Run SHOW_MONSTER_STATES.bat to inspect tri-state morphology!
-echo ====================================================================
-pause
+where python >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+    echo [*] Launching Interactive Monster Encyclopedia & Morphology Inspector...
+    python demo_monster_states.py
+) else (
+    echo [*] Rendering 36 monster sprites and tactical specifications...
+    echo.
+    vvp sim/show_monsters.out
+    pause
+)

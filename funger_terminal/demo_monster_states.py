@@ -10,6 +10,7 @@ Hardware Inspection: NORMAL (2'b00 - White) vs INJURED (2'b01 - Amber) vs DEAD (
 import sys
 import os
 import time
+import re
 
 # Windows VT & UTF-8 setup
 if os.name == 'nt':
@@ -233,8 +234,21 @@ def get_sprite_lines(mid, state):
                 "                             "
             ]
 
+def strip_ansi(s):
+    return re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', s)
+
+def visible_len(s):
+    return len(strip_ansi(s))
+
+def fit_100_cols(s):
+    vlen = visible_len(s)
+    if vlen < 100:
+        return s + " " * (100 - vlen)
+    elif vlen > 100:
+        return s
+    return s
+
 def render_interactive():
-    sys.stdout.write("\033[2J\033[H")
     name = MONSTER_NAMES[current_mid - 1]
     lines = get_sprite_lines(current_mid, current_state)
 
@@ -246,10 +260,11 @@ def render_interactive():
     state_colors = ["\033[1;37m", "\033[1;33m", "\033[90m"]
     state_reg = f"2'b0{current_state}" if current_state < 2 else "2'b10"
 
-    print("\033[1;30m+====================================================================================================+\033[0m")
-    print(f"\033[1;30m| \033[1;37m   FEAR & HUNGER: TRI-STATE POSTURAL MORPHOLOGY & TECHNICAL AMBER INSPECTOR (RTL ARCHITECTURE)     \033[1;30m|\033[0m")
-    print("\033[1;30m+====================================================================================================+\033[0m")
-    print()
+    rows = []
+    rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
+    rows.append("\033[1;30m|  \033[1;37mFEAR & HUNGER: TRI-STATE POSTURAL MORPHOLOGY & TECHNICAL AMBER INSPECTOR (RTL ARCHITECTURE)     \033[1;30m|\033[0m")
+    rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
+    rows.append("")
 
     st_badge = f"{state_colors[current_state]}[{state_labels[current_state]}]\033[0m"
     card_rows = [
@@ -347,56 +362,83 @@ def render_interactive():
         ]
     card_rows.append(f"\033[1;30m+--------------------------------------------------+\033[0m")
 
-    # Print Side-by-Side (Card 52 cols + Gap 4 + Sprite 42 cols)
+    # Combine Side-by-Side (Card 52 cols + Gap 4 + Sprite 42 cols)
     for idx in range(14):
         c_line = card_rows[idx] if idx < len(card_rows) else " " * 52
         s_line = lines[idx] if idx < len(lines) else " " * 29
-        print(f"  {c_line}    {s_line}")
+        row_str = f"  {c_line}    {s_line}"
+        rows.append(fit_100_cols(row_str))
 
-    print()
-    print("\033[1;30m====================================================================================================\033[0m")
-    print("  \033[90m[SELECT STATE]:\033[0m \033[1;37m[1]\033[0m Normal (White)   |  \033[1;33m[2]\033[0m Injured (White+Amber)   |  \033[90m[3]\033[0m Dead (Ash)   |  \033[1;37m[Space]\033[0m Cycle")
-    print("  \033[90m[SELECT FOE]:  \033[0m \033[1;37m[A / Left]\033[0m Prev Foe  |  \033[1;37m[D / Right]\033[0m Next Foe   |  \033[1;31m[Q]\033[0m Quit Viewer")
-    print("\033[1;30m====================================================================================================\033[0m")
+    rows.append("")
+    rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
+    rows.append(fit_100_cols("  \033[90m[STATE]:\033[0m \033[1;37m[1]\033[0m Normal (White)  |  \033[1;33m[2]\033[0m Injured (Amber)  |  \033[90m[3]\033[0m Dead (Ash)  |  \033[1;37m[Space]\033[0m Cycle"))
+    rows.append(fit_100_cols("  \033[90m[SELECT FOE]:\033[0m \033[1;37m[A / Left]\033[0m Prev Foe  |  \033[1;37m[D / Right]\033[0m Next Foe   |  \033[1;31m[Q]\033[0m Quit Viewer"))
+    rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
+
+    # Atomic in-place write: Cursor Home + Overwrite Rows + Clear Tail
+    formatted_rows = [fit_100_cols(r) for r in rows]
+    frame_text = "\033[H" + "\n".join(formatted_rows) + "\n\033[J"
+    sys.stdout.write(frame_text)
     sys.stdout.flush()
 
 def main():
     global current_mid, current_state
-    while True:
-        render_interactive()
-        if os.name == 'nt':
-            ch = msvcrt.getch()
-            if ch in (b'\x00', b'\xe0'):
-                ext = msvcrt.getch()
-                if ext == b'K': # Left
+
+    # Initial screen setup & cursor suppression
+    sys.stdout.write("\033[2J\033[H\033[?25l")
+    sys.stdout.flush()
+
+    try:
+        while True:
+            render_interactive()
+            if os.name == 'nt' and sys.stdin.isatty():
+                ch = msvcrt.getch()
+                if ch in (b'\x00', b'\xe0'):
+                    ext = msvcrt.getch()
+                    if ext in (b'K', b'H'): # Left or Up Arrow
+                        current_mid = 36 if current_mid == 1 else current_mid - 1
+                    elif ext in (b'M', b'P'): # Right or Down Arrow
+                        current_mid = 1 if current_mid == 36 else current_mid + 1
+                    while msvcrt.kbhit():
+                        msvcrt.getch()
+                elif ch in (b'a', b'A', b'w', b'W'):
                     current_mid = 36 if current_mid == 1 else current_mid - 1
-                elif ext == b'M': # Right
+                    while msvcrt.kbhit():
+                        msvcrt.getch()
+                elif ch in (b'd', b'D', b's', b'S'):
                     current_mid = 1 if current_mid == 36 else current_mid + 1
-            elif ch in (b'a', b'A'):
-                current_mid = 36 if current_mid == 1 else current_mid - 1
-            elif ch in (b'd', b'D'):
-                current_mid = 1 if current_mid == 36 else current_mid + 1
-            elif ch == b'1':
-                current_state = 0
-            elif ch == b'2':
-                current_state = 1
-            elif ch == b'3':
-                current_state = 2
-            elif ch in (b' ', b'\r', b'\n'):
-                current_state = (current_state + 1) % 3
-            elif ch in (b'q', b'Q', b'\x1b'):
-                print("\n[OK] Tri-State Monster Inspector session terminated.")
-                break
-        else:
-            line = sys.stdin.readline().strip().lower()
-            if line == 'q':
-                break
-            elif line in ('1', '2', '3'):
-                current_state = int(line) - 1
-            elif line == 'a':
-                current_mid = 36 if current_mid == 1 else current_mid - 1
-            elif line in ('d', ''):
-                current_mid = 1 if current_mid == 36 else current_mid + 1
+                    while msvcrt.kbhit():
+                        msvcrt.getch()
+                elif ch == b'1':
+                    current_state = 0
+                elif ch == b'2':
+                    current_state = 1
+                elif ch == b'3':
+                    current_state = 2
+                elif ch in (b' ', b'\r', b'\n'):
+                    current_state = (current_state + 1) % 3
+                elif ch in (b'q', b'Q', b'\x1b'):
+                    break
+            else:
+                raw = sys.stdin.readline()
+                if not raw:
+                    break
+                line = raw.strip().lower()
+                if line == 'q':
+                    break
+                elif line in ('1', '2', '3'):
+                    current_state = int(line) - 1
+                elif line in ('a', 'w', 'prev'):
+                    current_mid = 36 if current_mid == 1 else current_mid - 1
+                elif line in ('d', 's', 'next'):
+                    current_mid = 1 if current_mid == 36 else current_mid + 1
+                elif line in (' ', 'cycle'):
+                    current_state = (current_state + 1) % 3
+    finally:
+        # Restore cursor on exit
+        sys.stdout.write("\033[?25h\n")
+        sys.stdout.flush()
+        print("[OK] Tri-State Monster Inspector session terminated cleanly.")
 
 if __name__ == "__main__":
     main()

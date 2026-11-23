@@ -78,7 +78,7 @@ module terminal_ui;
     task render_title_screen;
         input title_cursor;
         begin
-            $write("\033[2J\033[H");
+            $write("\033[H");
             $display("\033[1;31m====================================================================================================\033[0m");
             $display("\033[1;31m          ________  ___  ___      ________       ________      _______       ________               \033[0m");
             $display("\033[1;31m         |\\  _____\\|\\  \\|\\  \\    |\\   ___  \\    |\\   ____\\    |\\  ___ \\     |\\   __  \\              \033[0m");
@@ -103,7 +103,7 @@ module terminal_ui;
     task render_difficulty_select_screen;
         input diff_cursor;
         begin
-            $write("\033[2J\033[H");
+            $write("\033[H");
             $display("\033[1;35m====================================================================================================\033[0m");
             $display("\033[1;35m                   SELECT EXPEDITION DIFFICULTY - CHOOSE YOUR PATH INTO DARKNESS                    \033[0m");
             $display("\033[1;35m====================================================================================================\033[0m\n");
@@ -134,7 +134,7 @@ module terminal_ui;
         reg [7:0]   hp, atk, def;
         reg [255:0] name, cl;
         begin
-            $write("\033[2J\033[H");
+            $write("\033[H");
             $display("\033[1;36m==================================================================================\033[0m");
             $display("\033[1;36m       CHOOSE YOUR SQUAD: SELECT 4 FROM 8 AVAILABLE EXPLORERS (STATS & NAMES)     \033[0m");
             if (is_hard_mode)
@@ -166,7 +166,7 @@ module terminal_ui;
     // ------------------------------------------------------------------------
     task render_narrator_screen;
         begin
-            $write("\033[2J\033[H");
+            $write("\033[H");
             $display("\033[1;35m====================================================================================================\033[0m");
             $display("\033[1;35m                                    PROLOGUE: DUNGEONS OF TERROR                                    \033[0m");
             $display("\033[1;35m====================================================================================================\033[0m\n");
@@ -190,7 +190,7 @@ module terminal_ui;
         input [4:0] c4_id; input [7:0] c4_hp, c4_atk, c4_def;
         input [4:0] c5_id; input [7:0] c5_hp, c5_atk, c5_def;
         begin
-            $write("\033[2J\033[H");
+            $write("\033[H");
             $display("\033[1;36m====================================================================================================\033[0m");
             $display("\033[1;36m                        COMPANION DRAFT: CHOOSE 3 DISTINCT SQUAD COMPANIONS                         \033[0m");
             $display("\033[1;36m====================================================================================================\033[0m");
@@ -252,7 +252,7 @@ module terminal_ui;
                 end
             end
 
-            $write("\033[2J\033[H"); // Clean screen reset: No ghost text from previous combat screens
+            $write("\033[H"); // Clean screen reset: No ghost text from previous combat screens
             $display("\033[1;32m==================================================================================\033[0m\033[K");
             $display("\033[1;32m  LABYRINTH [TERROR & STARVATION] | POS:[%2d,%2d] | STEPS:%-3d\033[0m\033[K",
                      px, py, step_count);
@@ -305,7 +305,7 @@ module terminal_ui;
         input [4:0]   p1_id; input [7:0] p1_hp, p1_max;
         input [4:0]   p2_id; input [7:0] p2_hp, p2_max;
         begin
-            $write("\033[2J\033[H");
+            $write("\033[H");
             $display("\033[1;35m====================================================================================================\033[0m");
             $display("                    SURVIVAL MEDICINE POUCH [TERROR & STARVATION]                                   ");
             $display("\033[1;35m====================================================================================================\033[0m\n");
@@ -452,7 +452,7 @@ module terminal_ui;
                 end
             end
 
-            $write("\033[2J\033[H"); // Clean screen reset: No ghost text from previous combat screens
+            $write("\033[H"); // Clean screen reset: No ghost text from previous combat screens
             $display("\033[1;32m==================================================================================\033[0m\033[K");
             if (is_hard_mode)
                 $display("\033[1;31m  LABYRINTH [TERROR & STARVATION] | POS:[%2d,%2d] | STEPS:%-3d | KEYS:\033[1;33m%0d/3\033[1;31m\033[0m\033[K",
@@ -563,7 +563,7 @@ module terminal_ui;
         input [255:0] c0_name, c1_name, c2_name, c3_name;
         input [7:0]   c0_hp, c0_max, c1_hp, c1_max, c2_hp, c2_max, c3_hp, c3_max;
         begin
-            $write("\033[2J\033[H");
+            $write("\033[H");
             $display("\033[1;35m================================================================================================\033[0m");
             if (is_hard_mode)
                 $display("\033[1;35m             EXPLORER SURVIVAL POUCH & INVENTORY  \033[1;31m[TERROR & STARVATION]\033[1;35m                         \033[0m");
@@ -639,7 +639,7 @@ module terminal_ui;
         reg         pt_l_trans, pb_l_trans, pt_r_trans, pb_r_trans;
         reg [23:0]  pt_l_rgb, pb_l_rgb, pt_r_rgb, pb_r_rgb;
         begin
-            $write("\033[2J\033[H");
+            $write("\033[H");
             $display("\033[1;36m====================================================================================================\033[0m");
             $display("\033[1;36m                     EXPEDITION SQUAD LINEUP: 4 CHOSEN EXPLORERS & MODELS                           \033[0m");
             $display("\033[1;36m====================================================================================================\033[0m\n");
@@ -773,7 +773,7 @@ module terminal_ui;
         input [7:0]   loot_qty;
         integer lp, c;
         begin
-            $write("\033[2J\033[H");
+            $write("\033[H");
             $display("\033[1;33m==================================================================================\033[0m");
             $display("\033[1;33m               ANCIENT LABYRINTH TREASURE VAULT OPENED !                          \033[0m");
             $display("\033[1;33m==================================================================================\033[0m\n");
@@ -1438,7 +1438,7 @@ module terminal_ui;
         reg        pt_trans, pb_trans, mt_trans, mb_trans;
         reg [23:0] pt_rgb, pb_rgb, mt_rgb, mb_rgb;
         begin
-            $write("\033[2J\033[H");
+            $write("\033[H");
             $display("\033[1;31m====================================================================================================\033[0m");
             if (enemy_id == 6'd23) begin
                 $display("\033[41;1;37m                   !!! MIMIC ENCOUNTER: DECEITFUL CHEST HORROR ATTACKS! !!!                           \033[0m");
@@ -1559,7 +1559,7 @@ module terminal_ui;
             u_router.get_funger_dim(char_id, pw, ph);
             u_router.get_monster_dim(enemy_id, mw, mh);
 
-            $write("\033[2J\033[H");
+            $write("\033[H");
             $display("\033[1;31m====================================================================================================\033[0m");
             $write("  \033[1;37mTACTICAL COMBAT [TURN %0d]\033[0m  |  \033[1;33mFEAR & HUNGER LABYRINTH\033[0m", turn_no);
             if (enemy_id == 6'd23)
@@ -1739,7 +1739,7 @@ module terminal_ui;
     // ------------------------------------------------------------------------
     task render_game_over_screen;
         begin
-            $write("\033[2J\033[H");
+            $write("\033[H");
             $display("\033[1;31m====================================================================================================\033[0m");
             $display("\033[1;31m   ________  ________  _____ ______   _______           ________  ___      ___ _______   ________     \033[0m");
             $display("\033[1;31m  |\\   ____\\|\\   __  \\|\\   _ \\  _   \\|\\  ___ \\         |\\   __  \\|\\  \\    /  /|\\  ___ \\ |\\   __  \\    \033[0m");
@@ -1760,7 +1760,7 @@ module terminal_ui;
     // ------------------------------------------------------------------------
     task render_victory_screen;
         begin
-            $write("\033[2J\033[H");
+            $write("\033[H");
             $display("\033[1;33m====================================================================================================\033[0m");
             $display("\033[1;33m   ___      ___ ___  ________  _________  ________  ________      ___    ___ \033[0m");
             $display("\033[1;33m  |\\  \\    /  /|\\  \\|\\   ____\\|\\___   ___\\\\   __  \\|\\   __  \\    |\\  \\  /  /|\033[0m");

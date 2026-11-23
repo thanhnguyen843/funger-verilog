@@ -25,7 +25,8 @@ def stream_output(process):
     decoder = codecs.getincrementaldecoder('utf-8')(errors='replace')
     try:
         while True:
-            chunk = process.stdout.read(64)
+            # Use larger 4096 chunk to avoid splitting ANSI escape sequences
+            chunk = process.stdout.read(4096)
             if not chunk:
                 break
             text = decoder.decode(chunk)
@@ -48,6 +49,10 @@ def main():
     if not os.path.exists(sim_binary):
         print(f"[ERROR] Simulation binary not found at: {sim_binary}")
         return 1
+
+    # Suppress console caret cursor for flicker-free gameplay
+    sys.stdout.write("\033[?25l")
+    sys.stdout.flush()
 
     process = subprocess.Popen(
         ["vvp", sim_binary],
@@ -101,6 +106,11 @@ def main():
                         cmd = ch + b'\n'
                         last_key_time = now
 
+                    # Drain rapid repeated movement keys to prevent input buffer backlog
+                    if cmd in (b'w\n', b'a\n', b's\n', b'd\n'):
+                        while msvcrt.kbhit():
+                            msvcrt.getch()
+
                     if process.stdin:
                         try:
                             process.stdin.write(cmd)
@@ -120,6 +130,9 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        # Restore console cursor
+        sys.stdout.write("\033[?25h")
+        sys.stdout.flush()
         if process.poll() is None:
             process.terminate()
         process.wait()

@@ -789,7 +789,7 @@ module tb_play;
                 $write("  \033[1;33m>> Press [C] or Enter to return to exploration: \033[0m\033[K");
                 $fflush();
                 scan_ret = $fscanf(32'h80000000, "%s", str_input);
-                $write("\033[2J\033[H");
+                $write("\033[H");
             end else if (cmd_char == "i" || cmd_char == "I") begin
                 // Open Survival Pouch outside combat with Moving Cursor
                 sub_confirmed = 1'b0;
@@ -857,7 +857,7 @@ module tb_play;
                         $display("\n\033[1;31m  >> Supplies depleted for this item!\033[0m\n");
                     end
                 end
-                $write("\033[2J\033[H");
+                $write("\033[H");
             end else begin
                 // Navigation Input (WASD or Arrow Keys) routed via Hardware Collision Unit
                 col_dx = (cmd_char == "a" || cmd_char == "A") ? -32'sd1 : (cmd_char == "d" || cmd_char == "D") ? 32'sd1 : 32'sd0;
@@ -928,14 +928,14 @@ module tb_play;
                         $write("\n  \033[1;33m>> Press [C] or Enter to collect bounty and continue: \033[0m\033[K");
                         $fflush();
                         scan_ret = $fscanf(32'h80000000, "%s", str_input);
-                        $write("\033[2J\033[H");
+                        $write("\033[H");
                     end
                 end else if (target_tile == `TILE_MONSTER && !cleared_mask[target_idx]) begin
                     // Move onto Monster Tile
                     player_x   = target_x;
                     player_y   = target_y;
                     step_count = step_count + 1;
-                    $write("\033[2J\033[H");
+                    $write("\033[H");
 
                     // Select non-repeating monster in progressive difficulty order (low ID to high ID)
                     cur_enemy_id = 6'd1;
@@ -1350,7 +1350,7 @@ module tb_play;
                         $write("  \033[1;33m>> Press [C] or Enter to continue back to exploration: \033[0m\033[K");
                         $fflush();
                         scan_ret = $fscanf(32'h80000000, "%s", str_input);
-                        $write("\033[2J\033[H");
+                        $write("\033[H");
                     end else begin
                         player_action_log = "[FAILED TO FLEE]: Beast blocked your escape route!";
                     end
@@ -1491,7 +1491,7 @@ module tb_play;
                     $write("  \033[1;33m>> Press [C] or Enter to collect spoils and return to labyrinth: \033[0m\033[K");
                     $fflush();
                     scan_ret = $fscanf(32'h80000000, "%s", str_input);
-                    $write("\033[2J\033[H");
+                    $write("\033[H");
                 end else if (is_team_dead(0)) begin
                     game_over = 1'b1;
                     in_combat = 1'b0;
