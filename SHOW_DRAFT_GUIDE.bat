@@ -7,10 +7,10 @@ cd /d "%~dp0funger_terminal"
 
 cls
 echo ====================================================================
-echo   FEAR ^& HUNGER: EXPEDITION DRAFT GUIDE ^& SQUAD FORMATION
+echo   FEAR ^& HUNGER: SOLO SURVIVOR SELECTION ^& COMBAT ARENA
 echo ====================================================================
-echo [*] Controls: [1/2/3] Choose Preset  ^|  [C] Custom 4-Hero Draft  ^|  [Enter] Deploy
-echo [*] Features: 8 Explorers, Asymmetrical Metabolism, Softlock-Proof Verification
+echo [*] Controls: [W/S] Navigate Heroes  ^|  [Enter] Embark Solo
+echo [*] Features: 8 Solo Explorers, Universal Damage, Flicker-Free 60 FPS
 echo.
 
 where python >nul 2>&1
@@ -20,10 +20,10 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b 1
 )
 
-python demo_interactive_ui.py --draft
+python demo_interactive_ui.py --select
 
 echo.
 echo ====================================================================
-echo   Draft Guide and Combat session completed.
+echo   Solo Explorer Combat session completed.
 echo ====================================================================
 pause

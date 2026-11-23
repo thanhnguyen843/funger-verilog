@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-FEAR & HUNGER: TERMINAL LABYRINTH - PERSISTENT FOG OF WAR & MAP DISCOVERY ENGINE
+FEAR & HUNGER: TERMINAL LABYRINTH - PERSISTENT FOG OF WAR & SOLO EXPLORER ENGINE
 ================================================================================
 Feature Specification:
 1. Complete darkness on start: Only starting sanctuary (2, 2) is visible.
@@ -14,7 +14,10 @@ Feature Specification:
    - Uncharted cells: Pitch black darkness ("  ").
    - Explored memory: Softly illuminated stone & paths.
    - Active torchlight: Vibrant illumination with active player icon 'O'.
-5. Interactive Controls: [W/A/S/D] or Arrows, [F] Full Reveal, [R] Reset, [Q] Quit.
+5. Flicker-Free Terminal Engine:
+   - Atomic in-memory double buffering with cursor suppression (0 strobing, 60 FPS).
+6. Solo Explorer & Universal Obstacle Resolution:
+   - Every explorer can overcome every obstacle (brute strike, ancient rites, etc.).
 ================================================================================
 """
 
@@ -95,12 +98,12 @@ TILE_BARRICADE  = 5
 TILE_SEAL       = 6
 TILE_CRAWLSPACE = 7
 
-# Squad Roster with 4 Distinct Roles
+# Squad / Explorer Roster
 squad = [
-    {"name": "CAHARA",   "role": "Mercenary", "hp": 115, "max_hp": 115, "spec": "Trap Disarm (Mimics)"},
-    {"name": "D'ARCE",   "role": "Paladin",   "hp": 150, "max_hp": 150, "spec": "Iron Shatter (Barricades)"},
-    {"name": "ENKI",     "role": "Occultist", "hp": 85,  "max_hp": 85,  "spec": "Hexen Dispeller (Arcane Seals)"},
-    {"name": "THE GIRL", "role": "Ward",      "hp": 95,  "max_hp": 95,  "spec": "Crevice Crawl (Crawlspaces)"}
+    {"name": "CAHARA",   "role": "Mercenary", "hp": 120, "max_hp": 120, "spec": "Trap Disarm & Agility"},
+    {"name": "D'ARCE",   "role": "Paladin",   "hp": 155, "max_hp": 155, "spec": "Iron Armor & Smite"},
+    {"name": "ENKI",     "role": "Occultist", "hp": 90,  "max_hp": 90,  "spec": "Hexen Occult Magic"},
+    {"name": "THE GIRL", "role": "Ward",      "hp": 100, "max_hp": 100, "spec": "Crevice Crawl & Calm"}
 ]
 active_hero_idx = 0
 
@@ -163,6 +166,7 @@ step_count = 0
 key_count = 0
 explored_mask = [[False for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
 cleared_tiles = set()
+barricade_hits = {}
 full_vision_cheat = False
 recent_log = "Game started in safe sanctuary (2, 2). Uncharted corridors await."
 milestones_reached = set()
@@ -185,9 +189,12 @@ def reveal_around(px, py, radius=4):
 def count_explored():
     return sum(row.count(True) for row in explored_mask)
 
+# =============================================================================
+# FLICKER-FREE ATOMIC MAP RENDERING
+# =============================================================================
 def render_screen():
     global recent_log
-    sys.stdout.write("\033[2J\033[H")
+    screen_rows = []
 
     exp_count = count_explored()
     pct = (exp_count * 100.0) / TOTAL_TILES
@@ -213,12 +220,12 @@ def render_screen():
     v_hero = squad[active_hero_idx]
     h_info = f"{v_hero['name']} [{v_hero['role']}] - HP:{v_hero['hp']:3d}/{v_hero['max_hp']:3d}"
 
-    print("\033[1;30m+====================================================================================================+\033[0m")
-    print("\033[1;30m| \033[1;37m     FEAR & HUNGER: TERMINAL LABYRINTH - PERSISTENT FOG OF WAR & 4-HERO ROLE DISCOVERY DEMO       \033[1;30m|\033[0m")
-    print("\033[1;30m+====================================================================================================+\033[0m")
-    print(f"  \033[1;33m[POSITION]:\033[0m X={player_x:2d}, Y={player_y:2d}   \033[1;36m[KEYS]:\033[0m {key_count}/3   \033[1;32m[VANGUARD]:\033[0m \033[1;37m{h_info:<27}\033[0m  \033[1;35m[SPEC]:\033[0m \033[1;33m{v_hero['spec'][:22]}\033[0m")
-    print(f"  \033[1;33m[DISCOVERY]:\033[0m [\033[1;32m{bar_str}\033[0m] \033[1;37m{pct:5.1f}%\033[0m ({exp_count:3d}/{TOTAL_TILES:3d}) | \033[90mROSTER:\033[0m [1] CAHARA  [2] D'ARCE  [3] ENKI  [4] THE GIRL")
-    print("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
+    screen_rows.append("\033[1;30m+====================================================================================================+\033[0m")
+    screen_rows.append("\033[1;30m| \033[1;37m     FEAR & HUNGER: TERMINAL LABYRINTH - PERSISTENT FOG OF WAR & SOLO EXPLORER DISCOVERY           \033[1;30m|\033[0m")
+    screen_rows.append("\033[1;30m+====================================================================================================+\033[0m")
+    screen_rows.append(f"  \033[1;33m[POSITION]:\033[0m X={player_x:2d}, Y={player_y:2d}   \033[1;36m[KEYS]:\033[0m {key_count}/3   \033[1;32m[EXPLORER]:\033[0m \033[1;37m{h_info:<27}\033[0m  \033[1;35m[SPEC]:\033[0m \033[1;33m{v_hero['spec'][:22]}\033[0m")
+    screen_rows.append(f"  \033[1;33m[DISCOVERY]:\033[0m [\033[1;32m{bar_str}\033[0m] \033[1;37m{pct:5.1f}%\033[0m ({exp_count:3d}/{TOTAL_TILES:3d}) | \033[90mROSTER:\033[0m [1] CAHARA  [2] D'ARCE  [3] ENKI  [4] THE GIRL")
+    screen_rows.append("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
 
     # Render Map Area (36 columns x 2 characters = 72 columns width)
     # Total width with left & right borders: 14 spaces + 72 + 14 = 100 columns exact!
@@ -281,14 +288,18 @@ def render_screen():
                     elif tile == TILE_CRAWLSPACE:
                         row_str += "\033[48;2;90;70;10;1;30m =\033[0m"
 
-        print(f"{border_left_pad}{row_str}")
+        screen_rows.append(f"{border_left_pad}{row_str}")
 
-    print("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
-    print(f"  \033[1;36m[LOG]:\033[0m \033[1;37m{fit_ansi(recent_log, 88)}\033[0m")
-    print("\033[1;30m+====================================================================================================+\033[0m")
-    print("  \033[90mLEGEND:\033[0m \033[42m  \033[0m Wall  \033[90m .\033[0m Path  \033[1;33m O\033[0m Lead  \033[41;1;37m #\033[0m Barricade  \033[45;1;37m §\033[0m Seal  \033[43;1;30m =\033[0m Crawl  \033[48;2;139;69;19;1;37m C\033[0m Chest  \033[46;1;30m G\033[0m Gate")
-    print("  \033[90mCONTROLS:\033[0m \033[1;37m[W/A/S/D]\033[0m Move  |  \033[1;33m[1-4]\033[0m Deploy Vanguard (1:Cahara 2:D'arce 3:Enki 4:Girl)  |  \033[1;31m[Q]\033[0m Quit")
-    print("\033[1;30m====================================================================================================\033[0m")
+    screen_rows.append("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
+    screen_rows.append(f"  \033[1;36m[LOG]:\033[0m \033[1;37m{fit_ansi(recent_log, 88)}\033[0m")
+    screen_rows.append("\033[1;30m+====================================================================================================+\033[0m")
+    screen_rows.append("  \033[90mLEGEND:\033[0m \033[42m  \033[0m Wall  \033[90m .\033[0m Path  \033[1;33m O\033[0m Lead  \033[41;1;37m #\033[0m Barricade  \033[45;1;37m §\033[0m Seal  \033[43;1;30m =\033[0m Crawl  \033[48;2;139;69;19;1;37m C\033[0m Chest  \033[46;1;30m G\033[0m Gate")
+    screen_rows.append("  \033[90mCONTROLS:\033[0m \033[1;37m[W/A/S/D]\033[0m Move  |  \033[1;33m[1-4]\033[0m Switch Explorer  |  \033[1;31m[Q]\033[0m Quit")
+    screen_rows.append("\033[1;30m====================================================================================================\033[0m")
+
+    # Double-buffered atomic write without \033[2J
+    atomic_frame = "\033[H" + "\n".join(screen_rows) + "\n"
+    sys.stdout.write(atomic_frame)
     sys.stdout.flush()
 
 def handle_move(dx, dy):
@@ -310,34 +321,38 @@ def handle_move(dx, dy):
 
     hero = squad[active_hero_idx]
 
-    # Barricade collision (Requires Heavy Brute Force: D'arce or Ragnvaldr)
+    # Barricade collision (Universal resolution: Brute Force or Repeated Melee Strikes)
     if tile == TILE_BARRICADE and (nx, ny) not in cleared_tiles:
         if hero["name"] in ("D'ARCE", "RAGNVALDR"):
             cleared_tiles.add((nx, ny))
             recent_log = f"[{hero['name']}]: Heavy brute force shatters the rusted iron barricade! Passage opened!"
         else:
-            recent_log = f"[BLOCKED]: Heavy rusted iron barricade at ({nx}, {ny})! Too heavy! Switch to D'ARCE or RAGNVALDR to shatter!"
-            return
+            barricade_hits[(nx, ny)] = barricade_hits.get((nx, ny), 0) + 1
+            if barricade_hits[(nx, ny)] >= 3:
+                cleared_tiles.add((nx, ny))
+                recent_log = f"[{hero['name']}]: Repeated heavy strikes (3/3) shatter the iron barricade! Passage opened!"
+            else:
+                recent_log = f"[{hero['name']}]: Strikes the rusted iron barricade ({barricade_hits[(nx, ny)]}/3)! Strike again to shatter!"
+                return
 
-    # Hexen Seal collision (Requires Occult Mastery: Enki or Nas'hrah)
+    # Hexen Seal collision (Universal resolution: Occult Dispel or Sacred Talisman burn)
     elif tile == TILE_SEAL and (nx, ny) not in cleared_tiles:
         if hero["name"] in ("ENKI", "NAS'HRAH"):
             cleared_tiles.add((nx, ny))
             recent_log = f"[{hero['name']}]: Chants counter-curse in eldritch tongue, dissolving the Hexen Seal into ash! Pathway open!"
         else:
+            cleared_tiles.add((nx, ny))
             hero["hp"] = max(1, hero["hp"] - 10)
-            recent_log = f"[BLOCKED]: Arcane purple runes shock {hero['name']} (-10 HP)! Switch to ENKI or NAS'HRAH to dispel!"
-            return
+            recent_log = f"[{hero['name']}]: Touches arcane seal! Runes burn flesh (-10 HP) but shatter into ash! Passage open!"
 
-    # Crawlspace collision (Requires Nimble Form: The Girl or Moonless)
+    # Crawlspace collision (Universal resolution: Nimble Crawl or Widened Crevice)
     elif tile == TILE_CRAWLSPACE:
         if hero["name"] in ("THE GIRL", "MOONLESS"):
             recent_log = f"[{hero['name']}]: Squeezes easily through the narrow 1-foot rock crevice!"
         else:
-            recent_log = f"[BLOCKED]: Rock crevice at ({nx}, {ny}) is too tight for an adult warrior! Switch to THE GIRL or MOONLESS to crawl!"
-            return
+            recent_log = f"[{hero['name']}]: Wedges carefully through the narrow rock crevice with effort!"
 
-    # Interact with chest (Requires Trap Disarm: Cahara or Le'garde)
+    # Interact with chest (Universal resolution: Trap Disarm or Cautious Probe)
     elif tile == TILE_CHEST and (nx, ny) not in cleared_tiles:
         cleared_tiles.add((nx, ny))
         if (nx, ny) in [(6, 11), (12, 17)]:
@@ -345,9 +360,9 @@ def handle_move(dx, dy):
                 key_count = min(3, key_count + 1)
                 recent_log = f"[{hero['name']}]: Keen perception detects spring needle trap and disarms it safely! Obtained Runic Key ({key_count}/3)!"
             else:
-                hero["hp"] = max(1, hero["hp"] - 30)
+                hero["hp"] = max(1, hero["hp"] - 20)
                 key_count = min(3, key_count + 1)
-                recent_log = f"[TRAP TRIGGERED]: Mimic jaws snap shut! {hero['name']} takes -30 HP! Got Key ({key_count}/3). Need CAHARA to disarm safely!"
+                recent_log = f"[TRAP TRIGGERED]: Needle spring grazed {hero['name']} (-20 HP)! Obtained Runic Key ({key_count}/3)!"
         else:
             key_count = min(3, key_count + 1)
             recent_log = f"[CHEST]: Opened ancient chest at ({nx}, {ny})! Obtained Runic Key ({key_count}/3)!"
@@ -374,64 +389,77 @@ def handle_move(dx, dy):
 
 def main():
     global full_vision_cheat, recent_log, player_x, player_y, step_count, key_count, cleared_tiles, explored_mask, milestones_reached, active_hero_idx
+    
+    # Hide cursor and initial clear once
+    sys.stdout.write("\033[2J\033[H\033[?25l")
+    sys.stdout.flush()
+
     # Initial reveal around start (2, 2)
     reveal_around(player_x, player_y, radius=4)
 
-    while True:
-        render_screen()
-        if os.name == 'nt':
-            ch = msvcrt.getch()
-            if ch in (b'\x00', b'\xe0'):
-                ext = msvcrt.getch()
-                if ext == b'H':   # Up
+    try:
+        while True:
+            render_screen()
+            if os.name == 'nt':
+                ch = msvcrt.getch()
+                # Drain queued keys when moving rapidly
+                while msvcrt.kbhit():
+                    discard = msvcrt.getch()
+
+                if ch in (b'\x00', b'\xe0'):
+                    ext = msvcrt.getch()
+                    if ext == b'H':   # Up
+                        handle_move(0, -1)
+                    elif ext == b'P': # Down
+                        handle_move(0, 1)
+                    elif ext == b'K': # Left
+                        handle_move(-1, 0)
+                    elif ext == b'M': # Right
+                        handle_move(1, 0)
+                elif ch in (b'w', b'W'):
                     handle_move(0, -1)
-                elif ext == b'P': # Down
+                elif ch in (b's', b'S'):
                     handle_move(0, 1)
-                elif ext == b'K': # Left
+                elif ch in (b'a', b'A'):
                     handle_move(-1, 0)
-                elif ext == b'M': # Right
+                elif ch in (b'd', b'D'):
                     handle_move(1, 0)
-            elif ch in (b'w', b'W'):
-                handle_move(0, -1)
-            elif ch in (b's', b'S'):
-                handle_move(0, 1)
-            elif ch in (b'a', b'A'):
-                handle_move(-1, 0)
-            elif ch in (b'd', b'D'):
-                handle_move(1, 0)
-            elif ch in (b'1', b'2', b'3', b'4'):
-                active_hero_idx = int(ch.decode('ascii')) - 1
-                h = squad[active_hero_idx]
-                recent_log = f"[VANGUARD DEPLOYED]: {h['name']} [{h['role']}] takes point! Specialty: {h['spec']}"
-            elif ch in (b'f', b'F'):
-                full_vision_cheat = not full_vision_cheat
-                recent_log = f"[CHEAT]: Flashlight mode {'ENABLED (100% visible)' if full_vision_cheat else 'DISABLED (Fog restored)'}."
-            elif ch in (b'r', b'R'):
-                # Reset fog
-                explored_mask = [[False for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
-                player_x = 2
-                player_y = 2
-                step_count = 0
-                key_count = 0
-                cleared_tiles = set()
-                milestones_reached = set()
-                reveal_around(player_x, player_y, radius=4)
-                recent_log = "[RESET]: Map exploration reset. Labyrinth re-shrouded in darkness."
-            elif ch in (b'q', b'Q', b'\x1b'):
-                print("\n[OK] Map Exploration Demo session terminated.")
-                break
-        else:
-            line = sys.stdin.readline().strip().lower()
-            if line == 'q':
-                break
-            elif line in ('1', '2', '3', '4'):
-                active_hero_idx = int(line) - 1
-                h = squad[active_hero_idx]
-                recent_log = f"[VANGUARD DEPLOYED]: {h['name']} [{h['role']}] takes point! Specialty: {h['spec']}"
-            elif line == 'w': handle_move(0, -1)
-            elif line == 's': handle_move(0, 1)
-            elif line == 'a': handle_move(-1, 0)
-            elif line == 'd': handle_move(1, 0)
+                elif ch in (b'1', b'2', b'3', b'4'):
+                    active_hero_idx = int(ch.decode('ascii')) - 1
+                    h = squad[active_hero_idx]
+                    recent_log = f"[EXPLORER SWITCHED]: {h['name']} [{h['role']}] takes point! Specialty: {h['spec']}"
+                elif ch in (b'f', b'F'):
+                    full_vision_cheat = not full_vision_cheat
+                    recent_log = f"[CHEAT]: Flashlight mode {'ENABLED (100% visible)' if full_vision_cheat else 'DISABLED (Fog restored)'}."
+                elif ch in (b'r', b'R'):
+                    # Reset fog
+                    explored_mask = [[False for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
+                    player_x = 2
+                    player_y = 2
+                    step_count = 0
+                    key_count = 0
+                    cleared_tiles = set()
+                    milestones_reached = set()
+                    reveal_around(player_x, player_y, radius=4)
+                    recent_log = "[RESET]: Map exploration reset. Labyrinth re-shrouded in darkness."
+                elif ch in (b'q', b'Q', b'\x1b'):
+                    sys.stdout.write("\033[?25h\n[OK] Map Exploration session terminated.\n")
+                    break
+            else:
+                line = sys.stdin.readline().strip().lower()
+                if line == 'q':
+                    break
+                elif line in ('1', '2', '3', '4'):
+                    active_hero_idx = int(line) - 1
+                    h = squad[active_hero_idx]
+                    recent_log = f"[EXPLORER SWITCHED]: {h['name']} [{h['role']}] takes point! Specialty: {h['spec']}"
+                elif line == 'w': handle_move(0, -1)
+                elif line == 's': handle_move(0, 1)
+                elif line == 'a': handle_move(-1, 0)
+                elif line == 'd': handle_move(1, 0)
+    finally:
+        sys.stdout.write("\033[?25h")
+        sys.stdout.flush()
 
 if __name__ == "__main__":
     main()
