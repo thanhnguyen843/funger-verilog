@@ -627,9 +627,9 @@ def render_solo_select_screen(sel_idx):
     b2_top = "\033[1;30m+" + "-" * 62 + "+\033[0m"
 
     header_rows = [
-        "\033[1;30m+====================================================================================================+\033[0m",
+        "\033[1;30m+" + "=" * 98 + "+\033[0m",
         f"\033[1;30m| \033[1;37m{fit_ansi('FEAR & HUNGER: SOLO SURVIVOR EXPEDITION - SELECT YOUR EXPLORER', 96)}\033[1;30m |\033[0m",
-        "\033[1;30m+====================================================================================================+\033[0m",
+        "\033[1;30m+" + "=" * 98 + "+\033[0m",
         f"{b1_top}  {b2_top}"
     ]
 
@@ -691,7 +691,7 @@ def render_solo_select_screen(sel_idx):
         all_rows.append(comb)
 
     all_rows.append(f"{b1_top}  {b2_top}")
-    all_rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
+    all_rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
 
     atomic_blit(all_rows)
 

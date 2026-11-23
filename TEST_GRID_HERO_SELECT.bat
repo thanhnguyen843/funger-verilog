@@ -1,9 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
 chcp 65001 >nul
-mode con: cols=129 lines=36
+mode con: cols=100 lines=36
 reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1 /f >nul 2>&1
-title Fear & Hunger: 4-Hero Row Calculated Architecture (129 Columns)
+title Fear & Hunger: Solo Explorer Selection (Canonical 100-Column Layout)
 cd /d "%~dp0"
 
 cls
