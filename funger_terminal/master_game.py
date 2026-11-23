@@ -163,17 +163,23 @@ def make_left_box_row(text, width=100, border_color="", pad_left=2):
 def make_border_line(char="=", width=100, border_color=""):
     return f"{border_color}+" + (char * (width - 2)) + f"+\033[0m"
 
+def clear_screen():
+    if os.name == 'nt':
+        os.system('cls')
+    sys.stdout.write("\033[2J\033[3J\033[H\033[?25l")
+    sys.stdout.flush()
+
 def atomic_blit(rows):
     """Blits entire screen atomically via cursor home to eliminate flicker 100%."""
     formatted_rows = [fit_100_cols(r) for r in rows]
-    frame_str = "\033[H" + "\n".join(formatted_rows) + "\n\033[J"
+    frame_str = "\033[H" + "\n".join(formatted_rows) + "\033[J"
     sys.stdout.write(frame_str)
     sys.stdout.flush()
 
 # =============================================================================
 # TITLE SCREEN & DIFFICULTY SELECTION
 # =============================================================================
-def render_title_screen():
+def render_title_screen(cursor_idx=0):
     rows = []
     rows.append(make_border_line("=", border_color="\033[1;31m"))
     rows.append(make_left_box_row("", border_color="\033[1;31m", pad_left=0))
@@ -192,35 +198,62 @@ def render_title_screen():
     rows.append(make_left_box_row("\033[1;35m[COMBAT]   : Confront roaming beasts 'M' in turn-based Pokémon-style limb combat!\033[0m", border_color="\033[1;31m"))
     rows.append(make_border_line("=", border_color="\033[1;31m"))
     rows.append("")
-    rows.append("   \033[1;32m[1] START EXPEDITION (EMBARK SOLO)\033[0m        \033[1;31m[0] ABANDON HOPE (QUIT)\033[0m")
+
+    p1 = "▶" if cursor_idx == 0 else " "
+    c1 = "\033[1;32m" if cursor_idx == 0 else "\033[90m"
+    p2 = "▶" if cursor_idx == 1 else " "
+    c2 = "\033[1;31m" if cursor_idx == 1 else "\033[90m"
+
+    rows.append(f"   {c1}{p1} [1] START EXPEDITION (EMBARK SOLO)\033[0m")
+    rows.append(f"   {c2}{p2} [2] ABANDON HOPE (QUIT)\033[0m")
     rows.append("")
     rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
-    rows.append("  [CONTROLS]: Press [1] or Enter to start  |  Press [0] or [Q] to quit")
+    rows.append("  [CONTROLS]: [W/S] or [Up/Down] Navigate  |  [Enter] Confirm Selection  |  [Q] Quit")
     rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
     atomic_blit(rows)
 
 def run_title_screen():
-    sys.stdout.write("\033[2J\033[H\033[?25l")
-    sys.stdout.flush()
-
+    clear_screen()
+    cursor_idx = 0
     while True:
-        render_title_screen()
+        render_title_screen(cursor_idx)
         if os.name == 'nt' and sys.stdin.isatty():
             ch = msvcrt.getch()
             while msvcrt.kbhit():
                 msvcrt.getch()
-            if ch in (b'1', b'\r', b'\n', b' '):
-                return True
+            if ch in (b'\x00', b'\xe0'):
+                ext = msvcrt.getch()
+                if ext in (b'H', b'P'):
+                    cursor_idx = 1 - cursor_idx
+            elif ch in (b'w', b'W', b's', b'S'):
+                cursor_idx = 1 - cursor_idx
+            elif ch == b'1':
+                cursor_idx = 0
+            elif ch == b'2':
+                cursor_idx = 1
+            elif ch in (b'\r', b'\n', b' '):
+                clear_screen()
+                return (cursor_idx == 0)
             elif ch in (b'0', b'q', b'Q', b'\x1b', b'\x03'):
+                clear_screen()
                 return False
         else:
             raw = sys.stdin.readline()
             if not raw:
+                clear_screen()
                 return False
             line = raw.strip().lower()
-            if line in ('1', '', 'start', 'c'):
-                return True
+            if line in ('w', 's', 'up', 'down'):
+                cursor_idx = 1 - cursor_idx
+            elif line == '1':
+                cursor_idx = 0
+            elif line == '2':
+                cursor_idx = 1
+            elif line in ('', 'enter', 'start', 'c'):
+                clear_screen()
+                return (cursor_idx == 0)
             elif line in ('0', 'q', 'quit'):
+                clear_screen()
                 return False
 
 def render_difficulty_screen(cursor_idx):
@@ -248,11 +281,12 @@ def render_difficulty_screen(cursor_idx):
     rows.append("      - Intended only for master explorers where every limb loss is permanent.")
     rows.append("")
     rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
-    rows.append("  [CONTROLS]: [W/S] or [Up/Down] Navigate  |  [Enter/1/2] Confirm Difficulty  |  [Q] Return")
+    rows.append("  [CONTROLS]: [W/S] or [Up/Down] Navigate  |  [Enter] Confirm Difficulty  |  [Q] Return")
     rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
     atomic_blit(rows)
 
 def run_difficulty_screen():
+    clear_screen()
     cursor_idx = 0
     while True:
         render_difficulty_screen(cursor_idx)
@@ -267,24 +301,80 @@ def run_difficulty_screen():
             elif ch in (b'w', b'W', b's', b'S'):
                 cursor_idx = 1 - cursor_idx
             elif ch == b'1':
-                return False # Normal
+                cursor_idx = 0
             elif ch == b'2':
-                return True  # Hardcore
+                cursor_idx = 1
             elif ch in (b'\r', b'\n', b' '):
+                clear_screen()
                 return (cursor_idx == 1)
             elif ch in (b'q', b'Q', b'\x1b'):
+                clear_screen()
                 return None
         else:
             raw = sys.stdin.readline()
             if not raw:
+                clear_screen()
                 return False
             line = raw.strip().lower()
-            if line in ('1', 'normal', ''):
-                return False
-            elif line in ('2', 'hard', 'hardcore'):
-                return True
+            if line in ('w', 's', 'up', 'down'):
+                cursor_idx = 1 - cursor_idx
+            elif line == '1':
+                cursor_idx = 0
+            elif line == '2':
+                cursor_idx = 1
+            elif line in ('', 'enter', 'normal', 'hard', 'hardcore'):
+                clear_screen()
+                return (cursor_idx == 1)
             elif line in ('q', 'quit'):
+                clear_screen()
                 return None
+
+# =============================================================================
+# ON-DEMAND EXPEDITION SURVIVOR GUIDE BOOK [G]
+# =============================================================================
+def run_guide_modal():
+    clear_screen()
+    rows = []
+    rows.append(make_border_line("=", border_color="\033[1;36m"))
+    rows.append(make_centered_box_row("\033[1;37mFEAR & HUNGER: EXPEDITION SURVIVOR GUIDE BOOK\033[0m", border_color="\033[1;36m"))
+    rows.append(make_border_line("=", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("\033[1;33m[LABYRINTH TILES & HAZARDS]:\033[0m", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  \033[1;33m O\033[0m Explorer   : Your current position in the pitch-black catacombs.", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  \033[90m .\033[0m Pathway    : Stone dungeon corridor illuminated by your torchlight.", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  \033[42m  \033[0m Wall       : Solid masonry bedrock. Impassable barrier.", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  \033[45;1;37m M\033[0m Monster    : Roaming subterranean beast. Contact initiates combat arena.", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  \033[48;2;139;69;19;1;37m C\033[0m Chest      : Ancient vault. Contains supplies or lethal needle traps.", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  \033[41;1;37m #\033[0m Barricade  : Heavy rockfall debris. Smashed open upon forceful contact.", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  \033[45;1;37m §\033[0m Seal       : Arcane Hexen ward. Occultists dispel it; others suffer burns.", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  \033[43;1;30m =\033[0m Crevice    : Narrow rock crawlspace. Squeeze through carefully.", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  \033[46;1;30m G\033[0m Exit Gate  : Eastern escape portal. REQUIRES 3 RUNIC KEYS TO UNLOCK!", border_color="\033[1;36m"))
+    rows.append(make_border_line("-", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("\033[1;33m[SURVIVAL SUPPLIES & POUCH]:\033[0m", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  Poppy Flower   : +50 HP (+65 Cahara, +30 Hardcore). Staunches bleeding flesh.", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  Marijuana Herb : +120 HP (+75 Hardcore). Potent medicinal smoke.", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  Moldy Bread    : -40 Hunger. Relieves starvation to prevent HP deterioration.", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  Vintage Ale    : +35 Mind. Quells creeping madness, terror, and panic.", border_color="\033[1;36m"))
+    rows.append(make_border_line("-", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("\033[1;33m[CONTROLS]:\033[0m", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  [W/A/S/D] or Arrows : Navigate catacombs (expands torchlight).", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  [I]                 : Open vertical survival pouch ([W/S] Navigate, [Enter] Use).", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  [H]                 : Quick Heal with best available medicinal herb.", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  [G]                 : Toggle this Guide Book overlay.", border_color="\033[1;36m"))
+    rows.append(make_left_box_row("  [Q]                 : Surrender current expedition and quit.", border_color="\033[1;36m"))
+    rows.append(make_border_line("=", border_color="\033[1;36m"))
+    rows.append("  \033[1;37m[CONTROLS]: Press [G], [Enter], or [Esc] to close Guide and return to Map\033[0m")
+    rows.append(make_border_line("=", border_color="\033[1;36m"))
+    atomic_blit(rows)
+    if os.name == 'nt' and sys.stdin.isatty():
+        while True:
+            ch = msvcrt.getch()
+            while msvcrt.kbhit():
+                msvcrt.getch()
+            if ch in (b'g', b'G', b'\r', b'\n', b' ', b'\x1b', b'q', b'Q'):
+                break
+    else:
+        sys.stdin.readline()
+    clear_screen()
 
 # =============================================================================
 # INTERACTIVE MAP EXPLORATION WITH FOG OF WAR & ENCOUNTERS
@@ -292,21 +382,25 @@ def run_difficulty_screen():
 def run_master_game():
     # 1. Title Screen
     if not run_title_screen():
+        clear_screen()
         sys.stdout.write("\033[?25h\n[OK] Expedition abandoned before entering the darkness.\n")
         return
 
     # 2. Difficulty Select
     is_hardcore = run_difficulty_screen()
     if is_hardcore is None:
+        clear_screen()
         sys.stdout.write("\033[?25h\n[OK] Expedition aborted.\n")
         return
 
     # 3. Solo Explorer Selection (W/S vertical live model selector)
     selected_hero, sel_idx = combat_engine.run_solo_select_interactive()
     if selected_hero is None:
+        clear_screen()
         sys.stdout.write("\033[?25h\n[OK] Expedition cancelled.\n")
         return
 
+    clear_screen()
     solo_hero = copy.deepcopy(selected_hero)
     solo_hero["is_guarding"] = False
     solo_hero["buff"] = ""
@@ -344,29 +438,18 @@ def run_master_game():
                             new_revealed += 1
         return new_revealed
 
-    def count_explored():
-        return sum(row.count(True) for row in explored_mask)
-
     # Initial reveal around start (2, 2)
     reveal_around(player_x, player_y, radius=4)
 
     def render_map_view(pouch_open=False, pouch_cur=0):
         rows = []
-        exp_count = count_explored()
-        pct = (exp_count * 100.0) / TOTAL_TILES
-
-        # Progress bar (20 chars)
-        bar_fill = int(pct / 5.0)
-        bar_str = "█" * bar_fill + "░" * (20 - bar_fill)
-
         diff_tag = "\033[1;31m[TERROR & STARVATION]\033[0m" if is_hardcore else "\033[1;32m[FEAR & HUNGER]\033[0m"
         h_info = f"{solo_hero['name']} [{solo_hero['role']}] - HP:{solo_hero['hp']:3d}/{solo_hero['max_hp']:3d}"
 
         rows.append("\033[1;30m+====================================================================================================+\033[0m")
         rows.append(f"\033[1;30m| \033[1;37m     FEAR & HUNGER: TERMINAL LABYRINTH - SOLO EXPLORER EXPEDITION  {diff_tag:<32}\033[1;30m |\033[0m")
         rows.append("\033[1;30m+====================================================================================================+\033[0m")
-        rows.append(f"  \033[1;33m[POSITION]:\033[0m X={player_x:2d}, Y={player_y:2d}   \033[1;36m[KEYS]:\033[0m {key_count}/3   \033[1;32m[EXPLORER]:\033[0m \033[1;37m{h_info:<27}\033[0m  \033[1;35m[TRAIT]:\033[0m \033[1;33m{solo_hero['trait'][:20]}\033[0m")
-        rows.append(f"  \033[1;33m[DISCOVERY]:\033[0m [\033[1;32m{bar_str}\033[0m] \033[1;37m{pct:5.1f}%\033[0m ({exp_count:3d}/{TOTAL_TILES:3d}) | \033[1;36mSTEPS:\033[0m {step_count:<4d} | \033[1;31mFOES SLAIN:\033[0m {monsters_defeated}")
+        rows.append(f"  \033[1;32m[EXPLORER]:\033[0m \033[1;37m{h_info:<27}\033[0m \033[1;36m[KEYS]:\033[0m \033[1;37m{key_count}/3\033[0m  \033[1;33m[POS]:\033[0m \033[1;37m({player_x:2d},{player_y:2d})\033[0m  \033[1;35m[TRAIT]:\033[0m \033[1;33m{solo_hero['trait'][:20]:<20}\033[0m  \033[1;31m[SLAIN]:\033[0m \033[1;37m{monsters_defeated}\033[0m")
         rows.append("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
 
         # 20 rows of map area (14 spaces pad + 72 cols map + 14 spaces pad = 100 cols)
@@ -429,22 +512,27 @@ def run_master_game():
         rows.append("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
 
         if pouch_open:
-            p_items = [
-                f"[1] Poppy Flower x{inventory['poppy']} (+50 HP)",
-                f"[2] Marijuana Herb x{inventory['weed']} (+120 HP)",
-                f"[3] Moldy Bread x{inventory['bread']} (-40 Hunger)",
-                f"[4] Vintage Ale x{inventory['ale']} (+35 Mind)",
-                f"[C] Close Pouch"
+            rows.append("  \033[1;33m[SURVIVAL POUCH - SELECT ITEM TO ADMINISTER (W/S to navigate, Enter to use, [I/Esc] close)]:\033[0m")
+            pouch_options = [
+                (f"Poppy Flower    x{inventory['poppy']:<2}  (+50 HP)    - Staunches bleeding & heals flesh", inventory['poppy'] > 0),
+                (f"Marijuana Herb  x{inventory['weed']:<2}  (+120 HP)   - Potent ancient medicinal cure", inventory['weed'] > 0),
+                (f"Moldy Bread     x{inventory['bread']:<2}  (-40 Hngr)  - Relieves gnawing starvation", inventory['bread'] > 0),
+                (f"Vintage Ale     x{inventory['ale']:<2}  (+35 Mind)  - Restores shattered sanity", inventory['ale'] > 0),
+                (f"Close Pouch     (Return to Map Exploration)", True)
             ]
-            p_str = "  |  ".join(p_items)
-            rows.append(f"  \033[1;35m[SURVIVAL POUCH]:\033[0m \033[1;37m{fit_ansi(p_str, 80)}\033[0m")
+            for p_idx, (p_text, p_avail) in enumerate(pouch_options):
+                is_cur = (p_idx == pouch_cur)
+                prefix = "▶" if is_cur else " "
+                c_code = "\033[1;33m" if is_cur else ("\033[1;37m" if p_avail else "\033[90m")
+                rows.append(f"  {c_code}{prefix} [{p_idx+1}] {p_text}\033[0m")
+            rows.append("\033[1;30m+====================================================================================================+\033[0m")
+            rows.append("  \033[1;37m[CONTROLS]: [W/S] Navigate  |  [Enter] Administer Item  |  [I/Esc] Close Pouch\033[0m")
+            rows.append("\033[1;30m====================================================================================================\033[0m")
         else:
-            rows.append(f"  \033[1;36m[LOG]:\033[0m \033[1;37m{fit_ansi(recent_log, 88)}\033[0m")
-
-        rows.append("\033[1;30m+====================================================================================================+\033[0m")
-        rows.append("  \033[90mLEGEND:\033[0m \033[42m  \033[0m Wall  \033[90m .\033[0m Path  \033[1;33m O\033[0m Hero  \033[41;1;37m #\033[0m Rock  \033[45;1;37m §\033[0m Seal  \033[43;1;30m =\033[0m Crevice  \033[48;2;139;69;19;1;37m C\033[0m Chest  \033[46;1;30m G\033[0m Gate")
-        rows.append("  \033[90mCONTROLS:\033[0m \033[1;37m[W/A/S/D]\033[0m Move  |  \033[1;35m[I]\033[0m Pouch / Items  |  \033[1;32m[H]\033[0m Quick Heal  |  \033[1;31m[Q]\033[0m Quit")
-        rows.append("\033[1;30m====================================================================================================\033[0m")
+            rows.append(f"  \033[1;33m[EXPEDITION LOG]:\033[0m \033[1;37m{fit_ansi(recent_log, 78)}\033[0m")
+            rows.append("\033[1;30m+====================================================================================================+\033[0m")
+            rows.append("  \033[1;37m[CONTROLS]: [W/A/S/D] Move  |  [I] Pouch  |  [H] Quick Heal  |  [G] Guide  |  [Q] Quit\033[0m")
+            rows.append("\033[1;30m====================================================================================================\033[0m")
         atomic_blit(rows)
 
     def handle_map_move(dx, dy):
@@ -509,6 +597,7 @@ def run_master_game():
             })
 
             # Enter real Pokémon-style combat arena
+            clear_screen()
             outcome, updated_hero, updated_inv = combat_engine.run_solo_combat(
                 solo_hero,
                 monster_id=m_data["id"],
@@ -519,6 +608,7 @@ def run_master_game():
                 monster_def=m_data["def"],
                 inv=inventory
             )
+            clear_screen()
 
             # Sync updated state back
             solo_hero["hp"] = updated_hero["hp"]
@@ -569,8 +659,9 @@ def run_master_game():
 
     # Exploration Game Loop
     in_pouch = False
+    pouch_cur = 0
     while True:
-        render_map_view(pouch_open=in_pouch)
+        render_map_view(pouch_open=in_pouch, pouch_cur=pouch_cur)
 
         if os.name == 'nt' and sys.stdin.isatty():
             ch = msvcrt.getch()
@@ -578,41 +669,56 @@ def run_master_game():
                 msvcrt.getch()
 
             if in_pouch:
-                if ch == b'1':
-                    if inventory["poppy"] > 0:
-                        inventory["poppy"] -= 1
-                        heal = 65 if solo_hero["name"] == "CAHARA" else (30 if is_hardcore else 50)
-                        solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
-                        recent_log = f"[POUCH]: Applied Poppy Flower (+{heal} HP). Current HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
-                    else:
-                        recent_log = "[POUCH]: Out of Poppy Flowers!"
-                    in_pouch = False
-                elif ch == b'2':
-                    if inventory["weed"] > 0:
-                        inventory["weed"] -= 1
-                        heal = 75 if is_hardcore else 120
-                        solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
-                        recent_log = f"[POUCH]: Smoked Marijuana Herb (+{heal} HP). Current HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
-                    else:
-                        recent_log = "[POUCH]: Out of Marijuana Herbs!"
-                    in_pouch = False
-                elif ch == b'3':
-                    if inventory["bread"] > 0:
-                        inventory["bread"] -= 1
-                        solo_hero["hunger"] = max(0, solo_hero.get("hunger", 0) - 40)
-                        recent_log = f"[POUCH]: Ate Moldy Bread. Hunger relieved (-40 Hunger)."
-                    else:
-                        recent_log = "[POUCH]: Out of Bread!"
-                    in_pouch = False
-                elif ch == b'4':
-                    if inventory["ale"] > 0:
-                        inventory["ale"] -= 1
-                        solo_hero["mind"] = min(solo_hero["max_mind"], solo_hero.get("mind", 100) + 35)
-                        recent_log = f"[POUCH]: Drank Vintage Ale (+35 Mind). Terror cleansed!"
-                    else:
-                        recent_log = "[POUCH]: Out of Ale!"
-                    in_pouch = False
-                elif ch in (b'c', b'C', b'i', b'I', b'\x1b'):
+                if ch in (b'\x00', b'\xe0'):
+                    ext = msvcrt.getch()
+                    if ext == b'H':    # Up Arrow
+                        pouch_cur = (pouch_cur - 1) % 5
+                    elif ext == b'P':  # Down Arrow
+                        pouch_cur = (pouch_cur + 1) % 5
+                elif ch in (b'w', b'W'):
+                    pouch_cur = (pouch_cur - 1) % 5
+                elif ch in (b's', b'S'):
+                    pouch_cur = (pouch_cur + 1) % 5
+                elif ch in (b'1', b'2', b'3', b'4', b'5'):
+                    pouch_cur = int(ch.decode('ascii')) - 1
+                elif ch in (b'\r', b'\n', b' '):
+                    if pouch_cur == 0:
+                        if inventory["poppy"] > 0:
+                            inventory["poppy"] -= 1
+                            heal = 65 if solo_hero["name"] == "CAHARA" else (30 if is_hardcore else 50)
+                            solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
+                            recent_log = f"[POUCH]: Applied Poppy Flower (+{heal} HP). Current HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
+                            in_pouch = False
+                        else:
+                            recent_log = "[POUCH]: You have no Poppy Flowers remaining!"
+                    elif pouch_cur == 1:
+                        if inventory["weed"] > 0:
+                            inventory["weed"] -= 1
+                            heal = 75 if is_hardcore else 120
+                            solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
+                            recent_log = f"[POUCH]: Smoked Marijuana Herb (+{heal} HP). Current HP: {solo_hero['hp']}/{solo_hero['max_hp']}"
+                            in_pouch = False
+                        else:
+                            recent_log = "[POUCH]: You have no Marijuana Herbs remaining!"
+                    elif pouch_cur == 2:
+                        if inventory["bread"] > 0:
+                            inventory["bread"] -= 1
+                            solo_hero["hunger"] = max(0, solo_hero.get("hunger", 0) - 40)
+                            recent_log = f"[POUCH]: Ate Moldy Bread. Hunger relieved (-40 Hunger)."
+                            in_pouch = False
+                        else:
+                            recent_log = "[POUCH]: You have no Bread remaining!"
+                    elif pouch_cur == 3:
+                        if inventory["ale"] > 0:
+                            inventory["ale"] -= 1
+                            solo_hero["mind"] = min(solo_hero.get("max_mind", 100), solo_hero.get("mind", 100) + 35)
+                            recent_log = f"[POUCH]: Drank Vintage Ale (+35 Mind). Terror cleansed!"
+                            in_pouch = False
+                        else:
+                            recent_log = "[POUCH]: You have no Vintage Ale remaining!"
+                    elif pouch_cur == 4:
+                        in_pouch = False
+                elif ch in (b'c', b'C', b'i', b'I', b'\x1b', b'b', b'B'):
                     in_pouch = False
                 continue
 
@@ -636,6 +742,10 @@ def run_master_game():
                 res = handle_map_move(1, 0)
             elif ch in (b'i', b'I'):
                 in_pouch = True
+                pouch_cur = 0
+                continue
+            elif ch in (b'g', b'G'):
+                run_guide_modal()
                 continue
             elif ch in (b'h', b'H'):
                 # Quick heal
@@ -653,6 +763,7 @@ def run_master_game():
                     recent_log = "[QUICK HEAL]: No medicinal herbs in pouch!"
                 continue
             elif ch in (b'q', b'Q', b'\x03'):
+                clear_screen()
                 sys.stdout.write("\033[?25h\n[OK] Labyrinth Expedition suspended.\n")
                 break
 
@@ -663,6 +774,39 @@ def run_master_game():
             if not raw:
                 break
             line = raw.strip().lower()
+            res = None
+            if in_pouch:
+                if line in ('w', 'up'):
+                    pouch_cur = (pouch_cur - 1) % 5
+                elif line in ('s', 'down'):
+                    pouch_cur = (pouch_cur + 1) % 5
+                elif line in ('1', '2', '3', '4', '5'):
+                    pouch_cur = int(line) - 1
+                elif line in ('', 'enter', 'use'):
+                    if pouch_cur == 0 and inventory["poppy"] > 0:
+                        inventory["poppy"] -= 1
+                        heal = 65 if solo_hero["name"] == "CAHARA" else (30 if is_hardcore else 50)
+                        solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
+                        in_pouch = False
+                    elif pouch_cur == 1 and inventory["weed"] > 0:
+                        inventory["weed"] -= 1
+                        heal = 75 if is_hardcore else 120
+                        solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
+                        in_pouch = False
+                    elif pouch_cur == 2 and inventory["bread"] > 0:
+                        inventory["bread"] -= 1
+                        solo_hero["hunger"] = max(0, solo_hero.get("hunger", 0) - 40)
+                        in_pouch = False
+                    elif pouch_cur == 3 and inventory["ale"] > 0:
+                        inventory["ale"] -= 1
+                        solo_hero["mind"] = min(solo_hero.get("max_mind", 100), solo_hero.get("mind", 100) + 35)
+                        in_pouch = False
+                    elif pouch_cur == 4:
+                        in_pouch = False
+                elif line in ('i', 'c', 'close', 'esc'):
+                    in_pouch = False
+                continue
+
             if line == 'w':
                 res = handle_map_move(0, -1)
             elif line == 's':
@@ -672,7 +816,22 @@ def run_master_game():
             elif line == 'd':
                 res = handle_map_move(1, 0)
             elif line in ('i', 'pouch'):
-                in_pouch = not in_pouch
+                in_pouch = True
+                pouch_cur = 0
+                continue
+            elif line in ('g', 'guide'):
+                run_guide_modal()
+                continue
+            elif line in ('h', 'heal'):
+                if inventory["poppy"] > 0:
+                    inventory["poppy"] -= 1
+                    heal = 65 if solo_hero["name"] == "CAHARA" else (30 if is_hardcore else 50)
+                    solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
+                elif inventory["weed"] > 0:
+                    inventory["weed"] -= 1
+                    heal = 75 if is_hardcore else 120
+                    solo_hero["hp"] = min(solo_hero["max_hp"], solo_hero["hp"] + heal)
+                continue
             elif line == 'q':
                 break
             if res in ("VICTORY", "GAME_OVER", "QUIT"):
@@ -682,6 +841,7 @@ def run_master_game():
 # END-GAME SCREENS: VICTORY & GAME OVER
 # =============================================================================
 def show_victory_screen(hero, steps, slain, chests, is_hardcore):
+    clear_screen()
     rows = []
     rows.append(make_border_line("=", border_color="\033[1;33m"))
     rows.append("\033[1;33m|   ___      ___ ___  ________  _________  ________  ________      ___    ___                       |\033[0m")
@@ -713,8 +873,10 @@ def show_victory_screen(hero, steps, slain, chests, is_hardcore):
         msvcrt.getch()
     else:
         sys.stdin.readline()
+    clear_screen()
 
 def show_game_over_screen(hero, killer):
+    clear_screen()
     rows = []
     rows.append(make_border_line("=", border_color="\033[1;31m"))
     rows.append("\033[1;31m|   ________  ________  _____ ______   _______           ________  ___      ___ _______   ________   |\033[0m")
@@ -737,6 +899,7 @@ def show_game_over_screen(hero, killer):
         msvcrt.getch()
     else:
         sys.stdin.readline()
+    clear_screen()
 
 # =============================================================================
 # MAIN ENTRY POINT

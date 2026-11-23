@@ -37,7 +37,7 @@ if os.name == 'nt':
             kernel32.SetConsoleMode(hOut, mode.value | 0x0004)
         kernel32.SetConsoleOutputCP(65001)
         kernel32.SetConsoleCP(65001)
-        os.system('mode con: cols=104 lines=54 >nul 2>&1')
+        os.system('mode con: cols=100 lines=36 >nul 2>&1')
     except Exception:
         pass
     import msvcrt
@@ -598,10 +598,16 @@ def fit_100_cols(s):
         return fit_ansi(s, 100)
     return s
 
+def clear_screen():
+    if os.name == 'nt':
+        os.system('cls')
+    sys.stdout.write("\033[2J\033[3J\033[H\033[?25l")
+    sys.stdout.flush()
+
 def atomic_blit(screen_rows):
     """Blits entire screen atomically via cursor home to eliminate flicker 100%."""
     formatted = [fit_100_cols(r) for r in screen_rows]
-    frame_str = "\033[H" + "\n".join(formatted) + "\n\033[J"
+    frame_str = "\033[H" + "\n".join(formatted) + "\033[J"
     sys.stdout.write(frame_str)
     sys.stdout.flush()
 
@@ -687,9 +693,8 @@ def render_solo_select_screen(sel_idx):
 def run_solo_select_interactive():
     global active_hero, inventory
 
-    # Clear screen once on entry and hide cursor
-    sys.stdout.write("\033[2J\033[H\033[?25l")
-    sys.stdout.flush()
+    # Clear screen cleanly on entry and hide cursor
+    clear_screen()
 
     sel_idx = 0
     num_heroes = len(ALL_HEROES)
@@ -715,6 +720,7 @@ def run_solo_select_interactive():
                 sel_idx = (sel_idx + 1) % num_heroes
             elif ch in (b'\r', b'\n', b' '):
                 # Selected this hero!
+                clear_screen()
                 active_hero = copy.deepcopy(ALL_HEROES[sel_idx])
                 active_hero["buff"] = ""
                 active_hero["is_guarding"] = False
@@ -727,6 +733,7 @@ def run_solo_select_interactive():
                     inventory = {"poppy": 3, "weed": 2, "bread": 4, "ale": 2}
                 return active_hero, sel_idx
             elif ch in (b'q', b'Q', b'\x03'):
+                clear_screen()
                 sys.stdout.write("\033[?25h\n[OK] Exited Solo Selection.\n")
                 return None, -1
             elif ch in (b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8'):
@@ -734,14 +741,24 @@ def run_solo_select_interactive():
                 render_solo_select_screen(sel_idx)
         else:
             line = sys.stdin.readline().strip().lower()
-            if line in ('1', '2', '3', '4', '5', '6', '7', '8'):
+            if line in ('w', 'up'):
+                sel_idx = (sel_idx - 1) % num_heroes
+            elif line in ('s', 'down'):
+                sel_idx = (sel_idx + 1) % num_heroes
+            elif line in ('1', '2', '3', '4', '5', '6', '7', '8'):
                 sel_idx = int(line) - 1
+                render_solo_select_screen(sel_idx)
+            elif line in ('', 'enter', 'select', 'c'):
+                clear_screen()
                 active_hero = copy.deepcopy(ALL_HEROES[sel_idx])
                 if active_hero["name"] == "CAHARA":
                     inventory = {"poppy": 5, "weed": 3, "bread": 6, "ale": 3}
                 else:
                     inventory = {"poppy": 3, "weed": 2, "bread": 4, "ale": 2}
                 return active_hero, sel_idx
+            elif line in ('q', 'quit'):
+                clear_screen()
+                return None, -1
             elif line == 'w':
                 sel_idx = (sel_idx - 1) % num_heroes
             elif line == 's':
@@ -1593,14 +1610,14 @@ def enemy_turn():
 def run_interactive_loop():
     global current_menu, cursor_idx, combat_outcome
 
-    # Clear screen once on entry and hide cursor
-    sys.stdout.write("\033[2J\033[H\033[?25l")
-    sys.stdout.flush()
+    # Clear screen cleanly on entry and hide cursor
+    clear_screen()
 
     while True:
         if combat_outcome is not None:
             render_screen()
             time.sleep(1.0)
+            clear_screen()
             return combat_outcome, active_hero, inventory
 
         render_screen()
@@ -1629,13 +1646,14 @@ def run_interactive_loop():
                     current_menu = "MAIN"
                     cursor_idx = 0
             elif ch in (b'q', b'Q', b'\x03'):  # Quit
+                clear_screen()
                 sys.stdout.write("\033[?25h\n[OK] Exited Solo Combat Arena.\n")
                 return "QUIT", active_hero, inventory
             elif ch in (b'1', b'2', b'3', b'4', b'5', b'6'):
                 num = int(ch.decode('ascii')) - 1
                 if num < num_options:
                     cursor_idx = num
-                    handle_selection()
+                    # Number key only navigates cursor; Enter confirms action!
         else:
             raw = sys.stdin.readline()
             if not raw:
@@ -1645,11 +1663,17 @@ def run_interactive_loop():
                 cursor_idx = (cursor_idx - 1) % num_options
             elif line == 's':
                 cursor_idx = (cursor_idx + 1) % num_options
+            elif line in ('1', '2', '3', '4', '5', '6'):
+                num = int(line) - 1
+                if num < num_options:
+                    cursor_idx = num
             elif line in ('', 'c', 'enter'):
                 handle_selection()
             elif line in ('b', 'q'):
+                clear_screen()
                 return "QUIT", active_hero, inventory
 
+    clear_screen()
     return combat_outcome or "QUIT", active_hero, inventory
 
 def run_solo_combat(hero_obj, monster_id=8, monster_name="SHADOW SWORDSMAN", monster_archetype="ARMORED", monster_hp=95, monster_atk=24, monster_def=99, inv=None):
