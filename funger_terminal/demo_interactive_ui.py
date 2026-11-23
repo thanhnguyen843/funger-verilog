@@ -309,7 +309,7 @@ MONSTER_SPRITE_DECAPITATED = [
 ]
 
 def format_model_row(sp_line):
-    return " " * 6 + sp_line + " " * 7
+    return pad_str(" " * 6 + sp_line, 42)
 
 # =============================================================================
 # MASTER 8-HERO DATABASE (SOLO SURVIVORS: UNIVERSAL DAMAGE & ASYMMETRICAL AFFINITY)
@@ -860,25 +860,32 @@ def render_screen():
         make_card_row(f"  HP    : {m_hp_bar} \033[1;31m{monster['hp']:3d}/{monster['max_hp']:3d} ({m_pct:3d}%)\033[0m", c_mcard),
         make_card_row(trait_desc, c_mcard),
         make_card_row(m_status, c_mcard),
+        make_card_row(f"  POSTUR: {m_model_sub if m_model_sub else '\033[1;32m[NORMAL COMBAT POSTURE]\033[0m'}", c_mcard),
+        make_card_row(f"  COMBAT: \033[1;31mATK: {monster.get('atk', 20):2d} DMG\033[0m | \033[1;36mDEF: {monster.get('def', 10):2d}\033[0m", c_mcard),
         make_card_row("", c_mcard),
         m_border
     ]
 
     m_model_rows = [
-        pad_str("          \033[1;31m[ENEMY]\033[0m", 42)
+        pad_str(f"     \033[1;31m[ENEMY]\033[0m {m_model_sub}", 42)
     ]
-    for r in range(5):
-        sp = m_sprite[r] if r < len(m_sprite) else " " * 29
+    # Dynamic sprite windowing: strip leading empty lines so injured/crouched sprites show full body
+    v_start = 0
+    for idx, r in enumerate(m_sprite):
+        if ANSI_REGEX.sub('', r).strip():
+            v_start = idx
+            break
+    sprite_window = m_sprite[v_start : v_start + 8]
+    for r in range(8):
+        sp = sprite_window[r] if r < len(sprite_window) else " " * 24
         m_model_rows.append(format_model_row(sp))
-    sub_tag = f"       {m_model_sub}" if m_model_sub else ""
-    m_model_rows.append(pad_str(sub_tag, 42))
 
-    for r_idx in range(7):
+    for r_idx in range(9):
         screen_rows.append(f"{m_card_rows[r_idx]}    {m_model_rows[r_idx]}\033[0m")
 
     # -------------------------------------------------------------------------
-    # ZONE 2: SOLO HERO ZONE (12 ROWS, EXACT 100 COLS - FULL INTACT MODEL)
-    # Left: Hero Sprite Model (42 cols, FULL 12 ROWS!) | Gap: 4 | Right: Card (54 cols)
+    # ZONE 2: SOLO HERO ZONE (11 ROWS, EXACT 100 COLS - FULL INTACT MODEL)
+    # Left: Hero Sprite Model (42 cols, FULL 11 ROWS!) | Gap: 4 | Right: Card (54 cols)
     # -------------------------------------------------------------------------
     c_hcard = "\033[1;32m" if current_menu in ("POUCH", "TACTICS") else "\033[1;30m"
     h_border = f"{c_hcard}+" + "-" * 52 + f"+{c_hcard}\033[0m"
@@ -912,7 +919,6 @@ def render_screen():
         make_card_row(f"  ARMOR : \033[1;37m{hero['phys_resist_str'][:20]}\033[0m | \033[1;35m{int(hero['dodge_rate']*100)}% Dodge\033[0m", c_hcard),
         make_card_row(f"  MAG-R : \033[1;37m{hero['magic_resist_str'][:20]}\033[0m | \033[1;31mATK: {hero['atk']:2d} DMG\033[0m", c_hcard),
         make_card_row(f"  TRAIT : \033[1;33m{hero['trait'][:42]}\033[0m", c_hcard),
-        make_card_row(f"  BUFF  : \033[1;32m{hero['item_buff_str'][:42]}\033[0m", c_hcard),
         make_card_row(f"  SKILLS: \033[1;36m{hero['skills'][0]['label'][:18]}\033[0m / \033[1;36m{hero['skills'][1]['label'][:18]}\033[0m", c_hcard),
         make_card_row(h_status, c_hcard),
         make_card_row(stance_desc, c_hcard),
@@ -920,11 +926,11 @@ def render_screen():
     ]
 
     h_model_rows = []
-    for r in range(12):
+    for r in range(11):
         sp = h_sprite[r] if r < len(h_sprite) else " " * 29
         h_model_rows.append(format_model_row(sp))
 
-    for r_idx in range(12):
+    for r_idx in range(11):
         screen_rows.append(f"{h_model_rows[r_idx]}    {h_card_rows[r_idx]}\033[0m")
 
     # -------------------------------------------------------------------------
@@ -932,7 +938,7 @@ def render_screen():
     # -------------------------------------------------------------------------
     screen_rows.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
     log_text = f"\033[1;33m[LOG]\033[0m \033[1;37m{combat_log}\033[0m"
-    screen_rows.append(f"\033[1;30m| \033[0m{fit_ansi(log_text, 94)}\033[1;30m |\033[0m")
+    screen_rows.append(f"\033[1;30m| \033[0m{fit_ansi(log_text, 96)}\033[1;30m |\033[0m")
     screen_rows.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
 
     # -------------------------------------------------------------------------
@@ -959,12 +965,12 @@ def render_screen():
     # -------------------------------------------------------------------------
     # SECTION 5: FOOTER (3 ROWS, EXACT 100 COLS)
     # -------------------------------------------------------------------------
-    screen_rows.append("\033[1;30m" + "=" * 98 + "\033[0m")
+    screen_rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
     if current_menu == "MAIN":
         screen_rows.append("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S / 1-5]\033[0m Navigate  |  \033[1;37m[Enter/Space]\033[0m Select  |  \033[1;31m[Q]\033[0m Quit")
     else:
         screen_rows.append("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S / 1-6]\033[0m Navigate  |  \033[1;37m[Enter/Space]\033[0m Confirm  |  \033[1;33m[B/Esc]\033[0m Back")
-    screen_rows.append("\033[1;30m" + "=" * 98 + "\033[0m")
+    screen_rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
 
     atomic_blit(screen_rows)
 

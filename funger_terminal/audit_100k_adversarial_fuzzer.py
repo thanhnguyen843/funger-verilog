@@ -25,6 +25,14 @@ import re
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import demo_interactive_ui as dui
 
+LEAKED_ANSI_PATTERNS = [
+    re.compile(r'[0-9]{1,3};[0-9]{1,3}'),
+    re.compile(r';[0-9]{2,3}m'),
+    re.compile(r'[0-9]{1,3}m[▀▄]'),
+    re.compile(r'\[38;2;'),
+    re.compile(r'\[48;2;'),
+]
+
 ANSI_REGEX = re.compile(r'\x1b\[[0-9;]*[a-zA-Z]')
 def vlen(s):
     return len(ANSI_REGEX.sub('', s))
@@ -62,6 +70,7 @@ def run_100k_adversarial_audit(total_iterations=100000):
         "render_frame_audits": 0,
         "bad_width_frames": 0,
         "bad_height_frames": 0,
+        "corrupted_ansi_frames": 0,
     }
 
     # Suppress console stdout during fuzzing
@@ -74,7 +83,11 @@ def run_100k_adversarial_audit(total_iterations=100000):
         for r in formatted:
             if vlen(r) != 100:
                 stats["bad_width_frames"] += 1
-                break
+            vis = ANSI_REGEX.sub('', r)
+            for pat in LEAKED_ANSI_PATTERNS:
+                if pat.search(vis):
+                    stats["corrupted_ansi_frames"] += 1
+                    break
 
     dui.atomic_blit = mock_blit
 
@@ -252,14 +265,15 @@ def run_100k_adversarial_audit(total_iterations=100000):
     print(f"  Boundary Clamping Checks Pass : {stats['boundary_clamp_checks_passed']:,}")
     print(f"  Rendered Frame Audits Checked : {stats['render_frame_audits']:,}")
     print(f"  Frames with Invalid Width (!=100)  : {stats['bad_width_frames']}")
-    print(f"  Frames with Invalid Height (>32)   : {stats['bad_height_frames']}")
+    print(f"  Frames with Invalid Height (>35)   : {stats['bad_height_frames']}")
+    print(f"  Frames with Corrupted ANSI Leaks   : {stats['corrupted_ansi_frames']}")
     print("=" * 80)
 
-    if stats["crashes"] == 0 and stats["bad_width_frames"] == 0 and stats["bad_height_frames"] == 0:
-        print(">>> RESULT: 100% INDUSTRIAL ADVERSARIAL STRESS TEST PASSED! ZERO CRASHES! <<<")
+    if stats["crashes"] == 0 and stats["bad_width_frames"] == 0 and stats["bad_height_frames"] == 0 and stats["corrupted_ansi_frames"] == 0:
+        print(">>> RESULT: 100% INDUSTRIAL ADVERSARIAL STRESS TEST PASSED! ZERO CRASHES & ZERO ANSI CORRUPTION! <<<")
         return 0
     else:
-        print(f"[FAIL] Found {stats['crashes']} crashes, {stats['bad_width_frames']} bad width frames, {stats['bad_height_frames']} bad height frames!")
+        print(f"[FAIL] Found {stats['crashes']} crashes, {stats['bad_width_frames']} bad width frames, {stats['bad_height_frames']} bad height frames, {stats['corrupted_ansi_frames']} corrupted ANSI frames!")
         for err in stats["exceptions"][:5]:
             print("  ", err)
         return 1
