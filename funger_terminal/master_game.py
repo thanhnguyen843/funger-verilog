@@ -480,21 +480,29 @@ def run_master_game():
         diff_tag = "\033[1;31m[TERROR & STARVATION]\033[0m" if is_hardcore else "\033[1;32m[FEAR & HUNGER]\033[0m"
         h_info = f"{solo_hero['name']} [{solo_hero['role']}] - HP:{solo_hero['hp']:3d}/{solo_hero['max_hp']:3d}"
 
-        rows.append("\033[1;30m+====================================================================================================+\033[0m")
-        rows.append(f"\033[1;30m| \033[1;37m     FEAR & HUNGER: TERMINAL LABYRINTH - SOLO EXPLORER EXPEDITION  {diff_tag:<32}\033[1;30m |\033[0m")
-        rows.append("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
+        rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
+        title_inside = f"     FEAR & HUNGER: TERMINAL LABYRINTH - SOLO EXPLORER EXPEDITION          {diff_tag}"
+        rows.append(f"\033[1;30m|\033[0m{combat_engine.fit_ansi(title_inside, 98)}\033[1;30m|\033[0m")
+        rows.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
+
         h_name_role = f"{solo_hero['name']} [{solo_hero['role']}]"
         h_hp_str = f"HP: {solo_hero['hp']:3d}/{solo_hero['max_hp']:3d}"
         h_mind_str = f"MIND: {solo_hero.get('mind', 100):3d}/{solo_hero.get('max_mind', 100):3d}"
         h_hunger_str = f"HUNGER: {solo_hero.get('hunger', 0):2d}/100"
-        rows.append(f"  \033[1;32m[EXPLORER]:\033[0m \033[1;37m{h_name_role:<26}\033[0m  \033[1;32m{h_hp_str}\033[0m  |  \033[1;36m{h_mind_str}\033[0m  |  \033[1;33m{h_hunger_str}\033[0m")
+        content_exp = f"  \033[1;32m[EXPLORER]\033[0m   \033[1;37m{h_name_role:<24}\033[0m |  \033[1;32m{h_hp_str:<14}\033[0m |  \033[1;36m{h_mind_str:<15}\033[0m |  \033[1;33m{h_hunger_str:<15}\033[0m"
+        rows.append(f"\033[1;30m|\033[0m{combat_engine.fit_ansi(content_exp, 98)}\033[1;30m|\033[0m")
+
+        rows.append("\033[1;30m+" + (" -" * 49) + "+\033[0m")
+
         pos_str = f"POS: ({player_x:2d},{player_y:2d})"
         keys_str = f"KEYS: {key_count}/3"
-        slain_str = f"SLAIN: {monsters_defeated}"
+        slain_str = f"SLAIN: {monsters_defeated} FOES"
         steps_str = f"STEPS: {step_count:<4d}"
         trait_str = f"TRAIT: {solo_hero['trait']}"
-        rows.append(f"  \033[1;33m[EXPEDITION]:\033[0m \033[1;37m{pos_str:<12}\033[0m \033[1;36m{keys_str:<9}\033[0m \033[1;31m{slain_str:<9}\033[0m \033[1;37m{steps_str:<11}\033[0m |  \033[1;35m{trait_str[:38]}\033[0m")
-        rows.append("\033[1;30m+----------------------------------------------------------------------------------------------------+\033[0m")
+        content_quest = f"  \033[1;33m[EXPEDITION]\033[0m \033[1;37m{pos_str:<13}\033[0m |  \033[1;36m{keys_str:<11}\033[0m |  \033[1;31m{slain_str:<13}\033[0m |  \033[1;37m{steps_str:<12}\033[0m |  \033[1;35m{trait_str[:24]}\033[0m"
+        rows.append(f"\033[1;30m|\033[0m{combat_engine.fit_ansi(content_quest, 98)}\033[1;30m|\033[0m")
+
+        rows.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
 
         # 20 rows of map area (14 spaces pad + 72 cols map + 14 spaces pad = 100 cols)
         border_left_pad = "              "

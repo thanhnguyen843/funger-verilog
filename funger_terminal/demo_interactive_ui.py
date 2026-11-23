@@ -1653,6 +1653,101 @@ def handle_selection():
             cursor_idx = 0
 
 # =============================================================================
+# COIN FLIP OF FATE (FEAR & HUNGER SIGNATURE GAMBLE ENGINE)
+# =============================================================================
+def run_coin_flip_interactive(title="COIN FLIP OF FATE", threat_actor="MONSTER", attack_name="LETHAL CLEAVE"):
+    """
+    Fear & Hunger Coin Flip: Bet life on HEADS (Sylvian) or TAILS (Gro-goroth).
+    Returns True if player correctly predicts the coin face, False otherwise.
+    """
+    if not (os.name == 'nt' and sys.stdin.isatty()):
+        # Headless / Automated test environment fallback (50% true RNG)
+        user_bet = random.choice([0, 1])
+        landed = random.choice([0, 1])
+        return (user_bet == landed)
+
+    coin_choice = 0 # 0: Heads, 1: Tails
+
+    while True:
+        rows = []
+        rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
+        header_text = f"  !!! LETHAL THREAT DETECTED: {threat_actor:<18} PREPARES [{attack_name:<20}] !!!"
+        rows.append(f"\033[41;1;37m|{fit_ansi(header_text, 98)}|\033[0m")
+        sub_text = "  COIN FLIP OF FATE: PARRY COMPLETELY OR SUFFER CATASTROPHIC MUTILATION !"
+        rows.append(f"\033[41;1;37m|{fit_ansi(sub_text, 98)}|\033[0m")
+        rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
+        rows.append("")
+        rows.append("  \033[1;33mBET YOUR LIFE UPON THE COIN:\033[0m")
+        rows.append("")
+
+        if coin_choice == 0:
+            rows.append("  \033[1;30;43m ▶ [1] HEADS (SYLVIAN'S GRACE) \033[0m : \033[1;32mBlessing of love, restoration & preservation\033[0m \033[1;33m< [SELECTED]\033[0m")
+            rows.append("      [2] TAILS (GRO-GOROTH'S WRATH): \033[90mMight of ancient slaughter, carnage & destruction\033[0m")
+        else:
+            rows.append("      [1] HEADS (SYLVIAN'S GRACE)   : \033[90mBlessing of love, restoration & preservation\033[0m")
+            rows.append("  \033[1;30;43m ▶ [2] TAILS (GRO-GOROTH'S WRATH): \033[1;31mMight of ancient slaughter, carnage & destruction\033[0m \033[1;33m< [SELECTED]\033[0m")
+
+        rows.append("")
+        rows.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
+        rows.append("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S / 1-2]\033[0m Toggle Coin Face  |  \033[1;37m[Enter/Space]\033[0m Flip Coin of Fate")
+        rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
+
+        clear_screen()
+        for r in rows:
+            print(r)
+
+        ch = msvcrt.getch()
+        if ch in (b'\x00', b'\xe0'):
+            ch = msvcrt.getch()
+            if ch == b'H':  # Up
+                coin_choice = (coin_choice - 1) % 2
+            elif ch == b'P':  # Down
+                coin_choice = (coin_choice + 1) % 2
+        elif ch in (b'w', b'W'):
+            coin_choice = (coin_choice - 1) % 2
+        elif ch in (b's', b'S'):
+            coin_choice = (coin_choice + 1) % 2
+        elif ch == b'1':
+            coin_choice = 0
+            break
+        elif ch == b'2':
+            coin_choice = 1
+            break
+        elif ch in (b'\r', b'\n', b' '):
+            break
+
+    # 4-frame spinning coin animation
+    spin_frames = [
+        "     \033[1;33m[  (O) |  ]\033[0m",
+        "     \033[1;33m[  (O) /  ]\033[0m",
+        "     \033[1;33m[  (O) -  ]\033[0m",
+        "     \033[1;33m[  (O) \\  ]\033[0m"
+    ]
+    clear_screen()
+    print("\n  \033[1;33m>> THE COIN SPINS INTO THE DARK AIR...\033[0m")
+    for frame in spin_frames:
+        print(frame)
+        time.sleep(0.08)
+
+    landed = random.choice([0, 1])
+    landed_str = "HEADS (SYLVIAN'S GRACE)" if landed == 0 else "TAILS (GRO-GOROTH'S WRATH)"
+    is_success = (coin_choice == landed)
+
+    print(f"\n  \033[1;33m>> COIN LANDED ON: [ {landed_str} ] !\033[0m\n")
+    if is_success:
+        print("\033[1;32m+====================================================================================================+\033[0m")
+        print("\033[1;32m|  >>> [SUBLIME PARRY!]: YOU CALLED THE COIN! DEFLECTED LETHAL BLOW AND COUNTER-STRUCK! <<<          |\033[0m")
+        print("\033[1;32m+====================================================================================================+\033[0m")
+    else:
+        print("\033[1;31m+====================================================================================================+\033[0m")
+        print("\033[1;31m|  >>> [COIN FLIP FAILED!]: THE LETHAL BLOW SHATTERS FLESH AND DEFENSE WITH CRITICAL CARNAGE! <<<    |\033[0m")
+        print("\033[1;31m+====================================================================================================+\033[0m")
+
+    time.sleep(1.2)
+    clear_screen()
+    return is_success
+
+# =============================================================================
 # ENEMY TURN & DAMAGE RESOLUTION (SOLO SURVIVOR WITH DEFENSE AFFINITIES)
 # =============================================================================
 def enemy_turn():
@@ -1710,9 +1805,41 @@ def enemy_turn():
         combat_log += f" | {hero['name']} deftly dodges the incoming attack! (+0 DMG)"
         return
 
-    # 7. Incoming Damage calculation with character physical/magic multipliers
+    # 7. Check Lethal Coin Flip of Fate (Fear & Hunger Signature Defense)
+    is_lethal = False
+    lethal_atk_name = "LETHAL CLEAVE"
+    if monster.get("archetype") == "ARMORED":
+        lethal_atk_name = "CRUSHING CLEAVE"
+    elif monster.get("archetype") == "SPECTRAL":
+        lethal_atk_name = "SOUL DEVOUR"
+    elif monster.get("archetype") == "AMBUSHER":
+        lethal_atk_name = "THROAT SLICE"
+    elif monster.get("archetype") == "TERROR":
+        lethal_atk_name = "TERROR MUTILATION"
+
+    # Bosses 35% chance, normal foes 15% chance if arms intact
+    arms_intact = not (monster.get("debuff_arm_r") and monster.get("debuff_arm_l"))
+    if arms_intact and ((monster.get("is_boss") and random.random() < 0.35) or (random.random() < 0.15 and not hero["is_guarding"])):
+        is_lethal = True
+
+    if is_lethal:
+        flip_win = run_coin_flip_interactive("LETHAL CLASH", monster["name"], lethal_atk_name)
+        if flip_win:
+            counter_dmg = 24
+            monster["hp"] = max(0, monster["hp"] - counter_dmg)
+            combat_log += f" | \033[1;32m[SUBLIME PARRY!]\033[0m {hero['name']} CALLED THE COIN! Deflected {lethal_atk_name} (+0 DMG) & counter-struck for {counter_dmg} DMG!"
+            if monster["hp"] == 0:
+                combat_log += " Foe neutralized! VICTORY!"
+                combat_outcome = "VICTORY"
+            return
+        else:
+            combat_log += f" | \033[1;31m[COIN FLIP FAILED!]\033[0m {monster['name']}'s {lethal_atk_name} lands with brutal impact!"
+
+    # 8. Incoming Damage calculation with character physical/magic multipliers
     base_atk = monster["atk"]
-    if monster.get("archetype") == "AMBUSHER" and not hero["is_guarding"]:
+    if is_lethal:
+        base_atk = int(base_atk * 1.5)
+    elif monster.get("archetype") == "AMBUSHER" and not hero["is_guarding"]:
         base_atk = int(base_atk * 1.5)
 
     if hero["name"] == "THE GIRL":
