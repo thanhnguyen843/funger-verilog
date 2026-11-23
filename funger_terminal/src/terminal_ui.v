@@ -24,6 +24,9 @@ module terminal_ui;
     monster_rom   u_mon_db(.monster_id(6'd1), .is_elite(1'b0), .base_hp(), .base_atk(), .base_def(), .spawn_weight(), .is_default_elite());
     character_rom u_char_db(.char_id(4'd1), .is_hard_mode(1'b0), .char_hp(), .char_atk(), .char_def(), .char_name(), .char_class());
 
+    // Persistent Map Exploration Memory (720 bits, 1 bit per cell)
+    reg [719:0] explored_mask = 720'd0;
+
     // Sprite models for Chest and Key
     reg  [5:0] c_row_t, c_col_t, c_row_b, c_col_b;
     wire [23:0] c_rgb_t, c_rgb_b;
@@ -233,7 +236,22 @@ module terminal_ui;
         integer x, y, tile_dist;
         reg [2:0] raw_t;
         integer dx_gate, dy_gate;
+        integer ex_dx, ex_dy, ex_tx, ex_ty;
+        integer cell_idx;
         begin
+            // Thắp sáng các ô xung quanh vị trí người chơi
+            for (ex_dy = -4; ex_dy <= 4; ex_dy = ex_dy + 1) begin
+                for (ex_dx = -4; ex_dx <= 4; ex_dx = ex_dx + 1) begin
+                    if ((ex_dx*ex_dx + ex_dy*ex_dy) <= 16) begin
+                        ex_tx = px + ex_dx;
+                        ex_ty = py + ex_dy;
+                        if (ex_tx >= 0 && ex_tx < `MAP_WIDTH && ex_ty >= 0 && ex_ty < `MAP_HEIGHT) begin
+                            explored_mask[ex_ty * `MAP_WIDTH + ex_tx] = 1'b1;
+                        end
+                    end
+                end
+            end
+
             $write("\033[2J\033[H"); // Clean screen reset: No ghost text from previous combat screens
             $display("\033[1;32m==================================================================================\033[0m\033[K");
             $display("\033[1;32m  LABYRINTH [TERROR & STARVATION] | POS:[%2d,%2d] | STEPS:%-3d\033[0m\033[K",
@@ -243,12 +261,13 @@ module terminal_ui;
             for (y = 0; y < `MAP_HEIGHT; y = y + 1) begin
                 $write("  ");
                 for (x = 0; x < `MAP_WIDTH; x = x + 1) begin
+                    cell_idx = y * `MAP_WIDTH + x;
                     tile_dist = (x > px ? x - px : px - x) + (y > py ? y - py : py - y);
                     if (x == px && y == py) begin
                         $write("\033[1;33;40m O\033[0m");
-                    end else if (tile_dist > 7) begin
-                        // Fog of War: Distant cells dimmed to dark dot
-                        $write("\033[90m .\033[0m");
+                    end else if (!explored_mask[cell_idx]) begin
+                        // Fog of War: Ô chưa từng bước đến sẽ tối đen
+                        $write("  ");
                     end else begin
                         raw_t = u_map.get_tile(x, y);
                         case (raw_t)
@@ -418,7 +437,21 @@ module terminal_ui;
         reg is_cleared;
         integer tile_dist;
         integer dx_gate, dy_gate;
+        integer ex_dx, ex_dy, ex_tx, ex_ty;
         begin
+            // Thắp sáng các ô xung quanh vị trí người chơi (bán kính đuốc ~4 ô)
+            for (ex_dy = -4; ex_dy <= 4; ex_dy = ex_dy + 1) begin
+                for (ex_dx = -4; ex_dx <= 4; ex_dx = ex_dx + 1) begin
+                    if ((ex_dx*ex_dx + ex_dy*ex_dy) <= 16) begin
+                        ex_tx = px + ex_dx;
+                        ex_ty = py + ex_dy;
+                        if (ex_tx >= 0 && ex_tx < `MAP_WIDTH && ex_ty >= 0 && ex_ty < `MAP_HEIGHT) begin
+                            explored_mask[ex_ty * `MAP_WIDTH + ex_tx] = 1'b1;
+                        end
+                    end
+                end
+            end
+
             $write("\033[2J\033[H"); // Clean screen reset: No ghost text from previous combat screens
             $display("\033[1;32m==================================================================================\033[0m\033[K");
             if (is_hard_mode)
@@ -439,9 +472,9 @@ module terminal_ui;
                     if (x == px && y == py) begin
                         // Player representation: Vibrant Yellow 'O'
                         $write("\033[1;33;40m O\033[0m");
-                    end else if (tile_dist > 7) begin
-                        // Fog of War: Distant cells dimmed to dark gray dot
-                        $write("\033[90m .\033[0m");
+                    end else if (!explored_mask[cell_idx]) begin
+                        // Fog of War: Ô chưa từng bước đến sẽ tối đen hoàn toàn
+                        $write("  ");
                     end else begin
                         raw_t = u_map.get_tile(x, y);
 
