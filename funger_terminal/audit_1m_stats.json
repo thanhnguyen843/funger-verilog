@@ -1,0 +1,20 @@
+{
+  "total_expeditions": 1000000,
+  "normal_mode_runs": 500000,
+  "hardcore_mode_runs": 500000,
+  "total_footsteps_walked": 7589216,
+  "wall_collision_deflections": 592094,
+  "out_of_bounds_attacks_deflected": 118296,
+  "single_bit_flip_attacks_absorbed": 1000000,
+  "starvation_resource_attacks_blocked": 278119,
+  "total_monsters_fought": 2864126,
+  "zero_duplicate_violations": 0,
+  "total_chests_opened": 1634665,
+  "total_mimics_ambushed": 408166,
+  "total_runic_keys_looted": 423666,
+  "totem_auto_revives": 417623,
+  "total_victories": 100634,
+  "total_defeats": 899366,
+  "system_crashes": 0,
+  "bit_corruption_leaks": 0
+}
