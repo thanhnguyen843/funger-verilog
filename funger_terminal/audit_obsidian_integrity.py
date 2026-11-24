@@ -78,6 +78,10 @@ def audit_obsidian():
         print("\n[!] Broken Links:")
         for r, m, t in broken_links:
             print(f"    {r} -> [[{m}]]")
+    if fence_errors:
+        print("\n[!] Unbalanced Code Fences:")
+        for r, c in fence_errors:
+            print(f"    {r} -> {c} fences")
     if table_errors:
         print("\n[!] Table Alignment Errors:")
         for r, l, m in table_errors:
