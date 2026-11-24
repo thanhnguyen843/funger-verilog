@@ -786,14 +786,18 @@ def render_screen():
     screen_rows = []
 
     # -------------------------------------------------------------------------
-    # MAIN HEADER (3 ROWS, EXACT 100 COLS)
+    # MAIN HEADER (EXACT 100 COLS)
     # -------------------------------------------------------------------------
-    screen_rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
     title_str = f"FEAR & HUNGER: SOLO SURVIVOR COMBAT ARENA - {hero['name']} [{hero['role']}]"
-    pad_left = (96 - display_width(title_str)) // 2
-    pad_right = 96 - display_width(title_str) - pad_left
-    screen_rows.append(f"\033[1;30m| \033[1;37m{' ' * pad_left}{title_str}{' ' * pad_right}\033[1;30m |\033[0m")
-    screen_rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
+    if current_menu == "POUCH":
+        rem_len = max(0, 94 - display_width(title_str))
+        screen_rows.append(f"\033[1;30m+[ \033[1;37m{title_str}\033[1;30m ]" + "-" * rem_len + "+\033[0m")
+    else:
+        screen_rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
+        pad_left = (96 - display_width(title_str)) // 2
+        pad_right = 96 - display_width(title_str) - pad_left
+        screen_rows.append(f"\033[1;30m| \033[1;37m{' ' * pad_left}{title_str}{' ' * pad_right}\033[1;30m |\033[0m")
+        screen_rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
 
     # -------------------------------------------------------------------------
     # ZONE 1: OPPONENT ZONE (7 ROWS, EXACT 100 COLS)
@@ -862,9 +866,10 @@ def render_screen():
         make_card_row(m_status, c_mcard),
         make_card_row(f"  POSTUR: {m_model_sub if m_model_sub else '\033[1;32m[NORMAL COMBAT POSTURE]\033[0m'}", c_mcard),
         make_card_row(f"  COMBAT: \033[1;31mATK: {monster.get('atk', 20):2d} DMG\033[0m | \033[1;36mDEF: {monster.get('def', 10):2d}\033[0m", c_mcard),
-        make_card_row("", c_mcard),
-        m_border
     ]
+    if current_menu not in ("POUCH", "TARGET_LIMB"):
+        m_card_rows.append(make_card_row("", c_mcard))
+    m_card_rows.append(m_border)
 
     m_model_rows = [
         pad_str(f"     \033[1;31m[ENEMY]\033[0m {m_model_sub}", 42)
@@ -875,12 +880,14 @@ def render_screen():
         if ANSI_REGEX.sub('', r).strip():
             v_start = idx
             break
-    sprite_window = m_sprite[v_start : v_start + 8]
-    for r in range(8):
+    sprite_limit = 7 if current_menu in ("POUCH", "TARGET_LIMB") else 8
+    sprite_window = m_sprite[v_start : v_start + sprite_limit]
+    for r in range(sprite_limit):
         sp = sprite_window[r] if r < len(sprite_window) else " " * 24
         m_model_rows.append(format_model_row(sp))
 
-    for r_idx in range(9):
+    z1_height = 8 if current_menu in ("POUCH", "TARGET_LIMB") else 9
+    for r_idx in range(z1_height):
         screen_rows.append(f"{m_card_rows[r_idx]}    {m_model_rows[r_idx]}\033[0m")
 
     # -------------------------------------------------------------------------

@@ -108,10 +108,105 @@ ITEM_CATALOG = [
     }
 ]
 
+def build_hero_dossier_lines(hero, items=None):
+    """
+    Tạo 3 dòng hiển thị hồ sơ sinh tồn, năng lực chiến đấu & tình trạng thân thể.
+    Đảm bảo 100% visible length <= 98 ký tự, không bao giờ bị cắt cụt.
+    """
+    if not hero:
+        return [
+            "  \033[1;37m[THÁM HIỂM] CHẾ ĐỘ QUẢN LÝ TÚI ĐỒ SINH TỒN TIÊU CHUẨN\033[0m",
+            "  \033[90mKhông có thông tin nhân vật kích hoạt.\033[0m",
+            "  \033[90mNhấn [I/Q/Esc] để quay lại màn hình chính.\033[0m"
+        ]
+
+    # --- Line 1: Vitals (HP, Mind, Hunger, Tox, Keys) ---
+    hp = hero.get("hp", 100)
+    max_hp = hero.get("max_hp", 100)
+    hp_c = "\033[1;32m" if hp > max_hp * 0.5 else ("\033[1;33m" if hp > max_hp * 0.25 else "\033[1;31m")
+
+    mind = hero.get("mind", 100)
+    max_mind = hero.get("max_mind", 100)
+    mind_c = "\033[1;36m" if mind > 30 else "\033[1;31m"
+
+    hunger = hero.get("hunger", 0)
+    hunger_c = "\033[1;31m" if hunger >= 80 else ("\033[1;33m" if hunger >= 50 else "\033[1;32m")
+
+    tox = hero.get("toxicity", 0)
+    max_tox = hero.get("max_toxicity", 100)
+    tox_c = "\033[1;31m" if tox >= max_tox * 0.8 else ("\033[1;33m" if tox >= max_tox * 0.5 else "\033[1;32m")
+
+    key_num = 0
+    if items:
+        for it in items:
+            if it["id"] == "key":
+                key_num = it.get("qty", 0)
+
+    h_name = hero.get("name", "HERO")
+    line1 = (
+        f"  \033[1;30;42m [SINH MỆNH] \033[0m \033[1;37m{h_name:<10}\033[0m | "
+        f"{hp_c}HP: {hp:3d}/{max_hp:3d}\033[0m | "
+        f"{mind_c}MND: {mind:3d}/{max_mind:3d}\033[0m | "
+        f"{hunger_c}ĐÓI: {hunger:2d}/100\033[0m | "
+        f"{tox_c}ĐỘC: {tox:2d}/{max_tox}%\033[0m | "
+        f"\033[1;35mCHÌA: {key_num}/3\033[0m"
+    )
+
+    # --- Line 2: Combat Attributes & Trait ---
+    atk = hero.get("atk", 30)
+    def_v = hero.get("def", 15)
+    dodge = int(hero.get("dodge_rate", 0.1) * 100)
+    cap = hero.get("bag_cap", 5)
+    trait = hero.get("trait", "None")
+    if len(trait) > 24:
+        trait = trait[:22] + ".."
+
+    line2 = (
+        f"  \033[1;30;43m [NĂNG LỰC]  \033[0m "
+        f"\033[1;31mATK: {atk:2d} DMG\033[0m | "
+        f"\033[1;34mDEF: {def_v:2d}\033[0m | "
+        f"\033[1;32mNÉ: {dodge:2d}%\033[0m | "
+        f"\033[1;35mBALO: {cap:2d} Ô\033[0m | "
+        f"\033[1;33mĐẶC TÍNH: {trait}\033[0m"
+    )
+
+    # --- Line 3: Limbs & Status Effects ---
+    limbs = hero.get("severed_limbs", {})
+    head_st = "✓" if limbs.get("head", 100) > 0 else "\033[1;31m✗\033[0m"
+    torso_st = "✓" if limbs.get("torso", 100) > 0 else "\033[1;31m✗\033[0m"
+    arm_r_st = "\033[1;32m✓\033[0m" if limbs.get("arm_r", 100) > 0 else "\033[1;31m✗\033[0m"
+    arm_l_st = "\033[1;32m✓\033[0m" if limbs.get("arm_l", 100) > 0 else "\033[1;31m✗\033[0m"
+    legs_st = "\033[1;32m✓\033[0m" if (limbs.get("leg_r", 100) > 0 and limbs.get("leg_l", 100) > 0) else "\033[1;31m✗\033[0m"
+
+    limb_str = f"Đầu:{head_st} Thân:{torso_st} Tay.P:{arm_r_st} Tay.T:{arm_l_st} Chân:{legs_st}"
+
+    debuffs = hero.get("debuffs", [])
+    if "bleeding" in debuffs or "Bleeding (-4 HP/turn)" in debuffs:
+        status_str = "\033[1;31mChảy máu (-4 HP/bước) [Dùng Poppy!]\033[0m"
+    elif "poison" in debuffs or "Poisoned (-6 HP/turn)" in debuffs:
+        status_str = "\033[1;35mNhiễm độc hoại tử [Dùng Vial!]\033[0m"
+    elif hunger >= 80:
+        status_str = "\033[1;31mKiệt sức vì đói [Cần ăn lương khô!]\033[0m"
+    elif mind <= 20:
+        status_str = "\033[1;35mHoảng loạn tột độ [Cần uống Rượu Ale!]\033[0m"
+    elif tox >= max_tox:
+        status_str = "\033[1;31mNgộ độc dạ dày [Đang nôn mửa!]\033[0m"
+    else:
+        status_str = "\033[1;32mKhỏe mạnh, lành lặn\033[0m"
+
+    line3 = (
+        f"  \033[1;37;41m [THỂ TRẠNG] \033[0m "
+        f"\033[1;36mTỨ CHI:\033[0m [{limb_str}] | "
+        f"\033[1;37mHIỆU ỨNG:\033[0m {status_str}"
+    )
+
+    return [line1, line2, line3]
+
 def render_pouch_screen(items, sel_idx, status_msg="", hero=None):
     """
     Kết xuất giao diện Túi đồ hàng dọc chuẩn xác 100 cột, thẳng hàng, sạch đẹp.
-    Tổng số dòng: Đúng 21 dòng (an toàn tuyệt đối trên mọi độ phân giải terminal).
+    Hiển thị đầy đủ Hồ sơ sinh tồn, Năng lực & Thể trạng nhân vật.
+    Tổng số dòng: Đúng 23 dòng (an toàn tuyệt đối trên mọi độ phân giải terminal).
     """
     rows = []
     rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
@@ -119,21 +214,11 @@ def render_pouch_screen(items, sel_idx, status_msg="", hero=None):
     rows.append("\033[1;30m|\033[1;33m" + fit_exact(title, 98) + "\033[1;30m|\033[0m")
     rows.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
 
-    # Dòng chỉ số Explorer
-    if hero:
-        h_name = f"{hero.get('name', 'HERO')} [{hero.get('role', 'Explorer')}]"
-        h_hp = f"HP: {hero.get('hp', 100):3d}/{hero.get('max_hp', 100):3d}"
-        h_mind = f"MIND: {hero.get('mind', 100):3d}/{hero.get('max_mind', 100):3d}"
-        h_hunger = f"HUNGER: {hero.get('hunger', 0):2d}/100"
-        key_num = 0
-        for it in items:
-            if it["id"] == "key":
-                key_num = it.get("qty", 0)
-        h_keys = f"KEYS: {key_num}/3"
-        status_line = f"  \033[1;32m[THÁM HIỂM]\033[0m \033[1;37m{h_name:<24}\033[0m | \033[1;32m{h_hp}\033[0m | \033[1;36m{h_mind}\033[0m | \033[1;33m{h_hunger}\033[0m | \033[1;35m{h_keys}\033[0m"
-    else:
-        status_line = "  \033[1;37mCHẾ ĐỘ QUẢN LÝ TÚI ĐỒ SINH TỒN TIÊU CHUẨN\033[0m"
-    rows.append("\033[1;30m|\033[0m" + fit_exact(status_line, 98) + "\033[1;30m|\033[0m")
+    # Hồ sơ Thể trạng & Chỉ số Nhân vật (3 dòng chi tiết)
+    dossier_lines = build_hero_dossier_lines(hero, items)
+    for dl in dossier_lines:
+        rows.append("\033[1;30m|\033[0m" + fit_exact(dl, 98) + "\033[1;30m|\033[0m")
+
     rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
     rows.append("\033[1;30m|" + (" " * 98) + "|\033[0m")
 
@@ -269,43 +354,81 @@ def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardc
                             if "severed_limbs" in hero:
                                 hero["severed_limbs"] = {"head": 100, "torso": 100, "arm_r": 100, "arm_l": 100, "leg_r": 100, "leg_l": 100}
                             hero["hp"] = hero.get("max_hp", 100)
+                            hero["toxicity"] = 0
                         status_msg = f"\033[1;33m★ [TOTEM OF UNDYING]: Tái sinh toàn bộ tứ chi bị đứt! Sinh lực hồi phục 100% ({hero.get('hp', 100)}/{hero.get('max_hp', 100)})!\033[0m"
 
                     elif cur_it["id"] == "poppy":
-                        heal = 65 if (hero and hero.get("name") == "CAHARA") else (30 if is_hardcore else 50)
-                        if hero is not None:
-                            hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + heal)
-                            if "bleeding" in hero.get("debuffs", []):
-                                hero["debuffs"].remove("bleeding")
-                            if "Bleeding (-4 HP/turn)" in hero.get("debuffs", []):
-                                hero["debuffs"].remove("Bleeding (-4 HP/turn)")
-                        status_msg = f"\033[1;32m● [HOA ANH TÚC]: Đã đắp dược liệu! Hồi phục +{heal} HP & cầm máu hoàn toàn! ({hero.get('hp', 0)}/{hero.get('max_hp', 100)})\033[0m"
+                        max_t = hero.get("max_toxicity", 100) if hero else 100
+                        if hero and hero.get("name") == "NAS'HRAH":
+                            status_msg = "\033[1;33m● [HOA ANH TÚC]: NAS'HRAH cười khẩy: 'Ta không cần cỏ rác của người phàm!' (0 HP).\033[0m"
+                        elif hero and hero.get("toxicity", 0) >= max_t:
+                            hero["hp"] = max(1, hero.get("hp", 1) - 5)
+                            status_msg = f"\033[1;31m✖ [NGỘ ĐỘC]: Dạ dày {hero.get('name')} nôn mửa (0 HP, -5 HP độc tố)!\033[0m"
+                        else:
+                            heal = 65 if (hero and hero.get("name") == "CAHARA") else (30 if is_hardcore else 50)
+                            if hero is not None:
+                                hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + heal)
+                                added_tox = 0 if hero.get("name") == "MOONLESS" else (15 if hero.get("name") == "RAGNVALDR" else 35)
+                                hero["toxicity"] = min(max_t, hero.get("toxicity", 0) + added_tox)
+                                if "bleeding" in hero.get("debuffs", []):
+                                    hero["debuffs"].remove("bleeding")
+                                if "Bleeding (-4 HP/turn)" in hero.get("debuffs", []):
+                                    hero["debuffs"].remove("Bleeding (-4 HP/turn)")
+                            status_msg = f"\033[1;32m● [HOA ANH TÚC]: Đã đắp dược liệu! Hồi phục +{heal} HP & cầm máu hoàn toàn! ({hero.get('hp', 0)}/{hero.get('max_hp', 100)} HP, {hero.get('toxicity', 0)}/{max_t}% Độc)\033[0m"
 
                     elif cur_it["id"] == "weed":
-                        heal = 75 if is_hardcore else 120
-                        if hero is not None:
-                            hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + heal)
-                        status_msg = f"\033[1;32m● [THẢO DƯỢC]: Hít khói dược thảo! Hồi phục +{heal} HP & làm dịu cơn đau! ({hero.get('hp', 0)}/{hero.get('max_hp', 100)})\033[0m"
+                        max_t = hero.get("max_toxicity", 100) if hero else 100
+                        if hero and hero.get("name") == "NAS'HRAH":
+                            status_msg = "\033[1;33m● [THẢO DƯỢC]: NAS'HRAH cười khẩy: 'Dược thảo phàm trần vô dụng với ta!' (0 HP).\033[0m"
+                        elif hero and hero.get("toxicity", 0) >= max_t:
+                            hero["hp"] = max(1, hero.get("hp", 1) - 5)
+                            status_msg = f"\033[1;31m✖ [NGỘ ĐỘC]: {hero.get('name')} quá liều thảo dược (0 HP, -5 HP độc tố)!\033[0m"
+                        else:
+                            heal = 150 if (hero and hero.get("name") == "CAHARA") else (75 if is_hardcore else 120)
+                            if hero is not None:
+                                hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + heal)
+                                added_tox = 0 if hero.get("name") == "MOONLESS" else (25 if hero.get("name") == "RAGNVALDR" else 50)
+                                hero["toxicity"] = min(max_t, hero.get("toxicity", 0) + added_tox)
+                            status_msg = f"\033[1;32m● [THẢO DƯỢC]: Hít khói dược thảo! Hồi phục +{heal} HP & làm dịu cơn đau! ({hero.get('hp', 0)}/{hero.get('max_hp', 100)} HP, {hero.get('toxicity', 0)}/{max_t}% Độc)\033[0m"
 
                     elif cur_it["id"] == "bread":
-                        if hero is not None:
-                            hero["hunger"] = max(0, hero.get("hunger", 0) - 40)
-                        status_msg = f"\033[1;33m● [BÁNH MÌ MỐC]: Đã ăn lương khô! Cơn đói khát giảm -40 điểm! (Hiện tại: {hero.get('hunger', 0)}/100)\033[0m"
+                        if hero and hero.get("name") == "NAS'HRAH":
+                            status_msg = "\033[1;33m● [BÁNH MÌ]: NAS'HRAH không cần ăn lương khô của người phàm!\033[0m"
+                        elif hero and hero.get("name") == "RAGNVALDR":
+                            hero["hunger"] = max(0, hero.get("hunger", 0) - 20)
+                            status_msg = f"\033[1;33m● [BÁNH MÌ]: Ragnvaldr nuốt vội bánh mì (-20 Đói - Cần thịt sống!). Hiện tại: {hero.get('hunger', 0)}/100 Đói\033[0m"
+                        elif hero and hero.get("name") == "CAHARA":
+                            hero["hunger"] = max(0, hero.get("hunger", 0) - 50)
+                            status_msg = f"\033[1;32m● [BÁNH MÌ]: Cahara thưởng thức bánh mì ngon lành (-50 Đói). Hiện tại: {hero.get('hunger', 0)}/100 Đói\033[0m"
+                        else:
+                            if hero is not None:
+                                hero["hunger"] = max(0, hero.get("hunger", 0) - 40)
+                            status_msg = f"\033[1;33m● [BÁNH MÌ MỐC]: Đã ăn lương khô! Cơn đói khát giảm -40 điểm! (Hiện tại: {hero.get('hunger', 0)}/100 Đói)\033[0m"
 
                     elif cur_it["id"] == "meat":
-                        if hero is not None:
-                            hero["hunger"] = max(0, hero.get("hunger", 0) - 60)
-                            hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + 20)
-                        status_msg = f"\033[1;33m● [THỊT SẤY KHÔ]: Đã ăn thịt sấy muối! Giảm -60 Đói & hồi phục +20 HP! ({hero.get('hp', 0)} HP, {hero.get('hunger', 0)}/100 Đói)\033[0m"
+                        if hero and hero.get("name") == "NAS'HRAH":
+                            status_msg = "\033[1;33m● [THỊT SẤY KHÔ]: NAS'HRAH không màng đến xác thịt phàm trần!\033[0m"
+                        else:
+                            heal = 40 if (hero and hero.get("name") in ("RAGNVALDR", "MOONLESS")) else 20
+                            if hero is not None:
+                                hero["hunger"] = max(0, hero.get("hunger", 0) - 60)
+                                hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + heal)
+                            status_msg = f"\033[1;33m● [THỊT SẤY KHÔ]: Đã ăn thịt sấy muối! Giảm -60 Đói & hồi phục +{heal} HP! ({hero.get('hp', 0)} HP, {hero.get('hunger', 0)}/100 Đói)\033[0m"
 
                     elif cur_it["id"] == "vial":
-                        if hero is not None:
+                        if hero and hero.get("name") == "NAS'HRAH":
+                            hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + 15)
                             hero["mind"] = min(hero.get("max_mind", 100), hero.get("mind", 100) + 35)
-                            if "debuffs" in hero:
-                                for deb in ["infection", "poison", "gangrene", "bleeding", "Bleeding (-4 HP/turn)"]:
-                                    if deb in hero["debuffs"]:
-                                        hero["debuffs"].remove(deb)
-                        status_msg = f"\033[1;36m● [BÌNH CỒN / RƯỢU CỔ]: Rót cồn sát trùng! Xóa bỏ hoại tử/độc tố và hồi +35 Mind! ({hero.get('mind', 100)}/{hero.get('max_mind', 100)})\033[0m"
+                            status_msg = f"\033[1;36m● [CỒN THUỐC]: Nas'hrah hấp thu năng lượng cồn cổ (+15 HP, +35 Mind)! ({hero.get('mind', 100)}/{hero.get('max_mind', 100)})\033[0m"
+                        else:
+                            if hero is not None:
+                                hero["mind"] = min(hero.get("max_mind", 100), hero.get("mind", 100) + 35)
+                                hero["toxicity"] = max(0, hero.get("toxicity", 0) - 25)
+                                if "debuffs" in hero:
+                                    for deb in ["infection", "poison", "gangrene", "bleeding", "Bleeding (-4 HP/turn)"]:
+                                        if deb in hero["debuffs"]:
+                                            hero["debuffs"].remove(deb)
+                            status_msg = f"\033[1;36m● [CỒN THUỐC / RƯỢU CỔ]: Rót cồn sát trùng! Xóa bỏ hoại tử/độc tố và hồi +35 Mind! ({hero.get('mind', 100)}/{hero.get('max_mind', 100)})\033[0m"
 
                 else:
                     status_msg = f"\033[1;31m✖ [HẾT VẬT PHẨM]: Bạn không còn {cur_it['name']} trong túi đồ!\033[0m"
