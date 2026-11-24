@@ -27,6 +27,12 @@
    - [Bảo vật độc nhất: Totem of Flesh Restoration](#bảo-vật-độc-nhất-totem-of-flesh-restoration)
    - [Các hình phạt chấn thương theo thời gian (Bleeding, Agony Mind Loss, Gangrene)](#các-hình-phạt-chấn-thương-theo-thời-gian-bleeding-agony-mind-loss-gangrene)
 5. [CÁC QUY TẮC BẤT BIẾN CHO NHÀ PHÁT TRIỂN (DEVELOPMENT INVARIANTS)](#5-các-quy-tắc-bất-biến-cho-nhà-phát-triển-development-invariants)
+6. [TIẾN HÓA MỚI: TÚI ĐỒ DUAL SPLIT-BOX VÀ CHUẨN HÓA TIẾNG ANH NGẮN GỌN](#6-tiến-hóa-mới-túi-đồ-dual-split-box-và-chuẩn-hóa-tiếng-anh-ngắn-gọn)
+   - [Bất cập của Giao diện Túi đồ cũ (Danh sách đơn điệu không thấy Hero)](#bất-cập-của-giao-diện-túi-đồ-cũ-danh-sách-đơn-điệu-không-thấy-hero)
+   - [Thiết kế Hộp Kép Đối Xứng (Dual Split-Box Showcase Architecture)](#thiết-kế-hộp-kép-đối-xứng-dual-split-box-showcase-architecture)
+   - [Thanh đo Đồ họa Trực quan (Visual Gauge Bars: HP, Mind, Hunger, Tox)](#thanh-đo-đồ-họa-trực-quan-visual-gauge-bars-hp-mind-hunger-tox)
+   - [Chuẩn hóa Tiếng Anh Ngắn gọn (Concise English Localization & Anti-Truncation)](#chuẩn-hóa-tiếng-anh-ngắn-gọn-concise-english-localization--anti-truncation)
+   - [Đồng nhất Điểm Khởi Chạy Duy nhất (`PLAY_GAME.bat`)](#đồng-nhất-điểm-khởi-chạy-duy-nhất-play_gamebat)
 
 ---
 
@@ -223,6 +229,46 @@ Khi mất tứ chi hoặc gãy xương mà chưa dùng Totem, nhân vật sẽ p
 
 5. **Không Nhồi Nhét Quá Tải (Split Monolithic Lines):**
    - Khi một dòng chứa từ 4 thông số trở lên (như Tên, Class, HP, Keys, Trait...), bắt buộc phải tách đôi thành 2 dòng có phân cấp thị giác rõ ràng, ngăn chặn hoàn toàn nguy cơ tràn dòng và cắt cụt văn bản.
+
+---
+
+### 6. TIẾN HÓA MỚI: TÚI ĐỒ DUAL SPLIT-BOX VÀ CHUẨN HÓA TIẾNG ANH NGẮN GỌN
+
+#### Bất cập của Giao diện Túi đồ cũ (Danh sách đơn điệu không thấy Hero)
+- Trong phiên bản trước (như ảnh chụp từ người dùng), khi mở túi đồ sinh tồn (`[I] Pouch`), màn hình chỉ hiển thị một danh sách 8 dòng vật phẩm dạng văn bản đơn giản kèm theo 1 dòng thông số ngắn `[THÁM HIỂM] CAHARA [Mercenary Rogue] | HP: 120/120 | MIND: 63/100 | HUNGER: 80/100 | KEYS: 2/3`.
+- **Nhược điểm:**
+  1. Người chơi hoàn toàn không quan sát được hình ảnh nhân vật của mình, không thấy rõ hình thái chấn thương (lành lặn hay đứt tay/chân), mất đi tính trực quan nhập vai.
+  2. Các chỉ số sinh tồn chỉ hiển thị dưới dạng con số thuần túy, không có thanh đo đồ họa (visual gauge bars) để nhận biết nhanh tình trạng nguy kịch.
+  3. Văn bản tiếng Việt dài dễ chạm viền 100 cột và gây khó khăn khi phối hợp trong môi trường quốc tế / open-source.
+
+#### Thiết kế Hộp Kép Đối Xứng (Dual Split-Box Showcase Architecture)
+- Để giải quyết triệt để, hệ thống đã tái cấu trúc hàm `build_hero_showcase_boxes()` và `render_pouch_screen()` trong `funger_terminal/demo_grid_inventory.py`:
+  - **Khung Trái (46 Cột - Hero Model Showcase):**
+    - Đặt mô hình pixel-art 24-bit TrueColor của chính nhân vật đang điều khiển, được căn giữa hoàn hảo (`dui.center_text()`).
+    - Phản ánh đúng 3 trạng thái thực tế: Lành lặn (`normal`), Mutilation đứt chi rỉ máu (`injured`), hoặc Gục ngã (`dead`).
+  - **Khung Phải (47 Cột - Vitals, Gauges & Limb Status):**
+    - Tên, chức nghiệp và trạng thái thể lực.
+    - 4 thanh đo màu trực quan có tỷ lệ phần trăm:
+      - `HP      :` Thanh xanh lá / đỏ nguy cấp (`[██████████------] 120/120`)
+      - `MIND    :` Thanh xanh dương nhạt (`[████████----------]  63/100`)
+      - `HUNGER  :` Thanh vàng cảnh báo đói (`[████████████------]  80/100`)
+      - `TOXICITY:` Thanh tím báo độc / hoại tử (`[------------------]   0/100`)
+    - Chi tiết độ bền 4 chi vật lý: `[HEAD: OK]`, `[TORSO: OK]`, `[ARMS: 2/2]`, `[LEGS: 2/2]`.
+    - Đặc tính độc quyền (`TRAIT: Steal & Dual Daggers`).
+
+#### Chuẩn hóa Tiếng Anh Ngắn gọn (Concise English Localization & Anti-Truncation)
+- Toàn bộ menu túi đồ sinh tồn, túi đồ tác chiến (Combat Pouch), danh mục vật phẩm và thông báo đã được bản địa hóa sang tiếng Anh ngắn gọn, súc tích:
+  - `[RELIC]`: `Auto-revive on death, full HP & restore limbs` ($\le 45$ ký tự).
+  - `[HERB]`: `Restores +120 HP & soothes severe pain` ($\le 45$ ký tự).
+  - `[RATION]`: `Relieves -40 Hunger (staves off starvation)` ($\le 45$ ký tự).
+  - `[TINCTURE]`: `Restores +35 Mind, purges poison & necrosis` ($\le 45$ ký tự).
+  - `[KEY]`: `Unlocks Eastern Labyrinth Gate (needs 3 keys)` ($\le 45$ ký tự).
+- Độ dài mô tả được khống chế nghiêm ngặt dưới 45 ký tự, đảm bảo khi kết hợp với nhãn vật phẩm và số lượng trong khung 98 cột nội dung, tỷ lệ cắt cụt văn bản (truncation rate) đạt chính xác **0.0%**.
+
+#### Đồng nhất Điểm Khởi Chạy Duy nhất (`PLAY_GAME.bat`)
+- Toàn bộ các file `.bat` tạm thời và thử nghiệm riêng lẻ (`SHOW_HERO_MODELS.bat`, `SHOW_MONSTER_MODELS.bat`, `TEST_GRID_HERO_SELECT.bat`, `TEST_GRID_INVENTORY.bat`) đã được loại bỏ hoàn toàn khỏi kho mã nguồn.
+- Giữ lại duy nhất **1 file khởi chạy chuẩn:** `PLAY_GAME.bat` tại thư mục gốc của dự án.
+- Tự động cấu hình chuẩn `cols=100 lines=36`, kích hoạt VirtualTerminalLevel cho Windows Terminal, tự biên dịch và kiểm tra Verilog RTL nếu có `iverilog`, và khởi động mượt mà bằng Python runtime hoặc VVP hardware simulator.
 
 ---
 *Tài liệu được biên soạn và chuẩn hóa bởi Antigravity Engine - Retro Game Verilog Lab.*
