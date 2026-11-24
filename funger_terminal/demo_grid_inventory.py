@@ -108,77 +108,90 @@ ITEM_CATALOG = [
     }
 ]
 
-def build_hero_dossier_lines(hero, items=None):
+def build_hero_showcase_boxes(hero, items=None):
     """
-    Tạo 3 dòng hiển thị hồ sơ sinh tồn, năng lực chiến đấu & tình trạng thân thể.
-    Đảm bảo 100% visible length <= 98 ký tự, không bao giờ bị cắt cụt.
+    Kết xuất khối hiển thị đôi (Split Box) chuẩn xác 100 cột:
+    - Bên trái: Khung Model nhân vật (36 cột).
+    - Khoảng cách: 2 cột khoảng trống ('  ').
+    - Bên phải: Khung Hồ sơ & Các chỉ số dạng Thanh máu (Health/Mind/Hunger/Toxicity Bars) (62 cột).
+    Tổng chiều cao: Đúng 13 dòng.
     """
-    if not hero:
-        return [
-            "  \033[1;37m[THÁM HIỂM] CHẾ ĐỘ QUẢN LÝ TÚI ĐỒ SINH TỒN TIÊU CHUẨN\033[0m",
-            "  \033[90mKhông có thông tin nhân vật kích hoạt.\033[0m",
-            "  \033[90mNhấn [I/Q/Esc] để quay lại màn hình chính.\033[0m"
-        ]
+    c_border = "\033[1;30m"
+    c_reset = "\033[0m"
 
-    # --- Line 1: Vitals (HP, Mind, Hunger, Tox, Keys) ---
+    if not hero:
+        b_top = f"{c_border}+" + "-" * 98 + f"+{c_reset}"
+        blank_row = f"{c_border}|" + (" " * 98) + f"|{c_reset}"
+        no_info = f"{c_border}|  \033[90mKhông có thông tin nhân vật kích hoạt.\033[0m" + (" " * 56) + f"{c_border}|{c_reset}"
+        rows = [b_top]
+        for _ in range(11):
+            rows.append(blank_row if _ != 5 else no_info)
+        rows.append(b_top)
+        return rows
+
+    h_name = hero.get("name", "HERO")
+    role = hero.get("role", "Explorer")
+    h_sprite = dui.HERO_SPRITES.get(h_name, dui.FALLBACK_SPRITES.get(h_name, [" " * 29] * 12))
+
+    # --- Left Model Box (36 cols) ---
+    b_top_left = f"{c_border}+" + "-" * 34 + f"+{c_reset}"
+    b_bot_left = f"{c_border}+" + "-" * 34 + f"+{c_reset}"
+
+    model_rows = []
+    for r in range(11):
+        sp = h_sprite[r] if r < len(h_sprite) else " " * 29
+        sp_fmt = dui.format_model_row(sp)
+        sp_pad = dui.fit_ansi(sp_fmt, 32)
+        model_rows.append(f"{c_border}| {c_reset}{sp_pad}{c_border} |{c_reset}")
+
+    # --- Right Stats & Bars Box (62 cols) ---
+    b_top_right = f"{c_border}+" + "-" * 60 + f"+{c_reset}"
+    b_bot_right = f"{c_border}+" + "-" * 60 + f"+{c_reset}"
+
     hp = hero.get("hp", 100)
     max_hp = hero.get("max_hp", 100)
-    hp_c = "\033[1;32m" if hp > max_hp * 0.5 else ("\033[1;33m" if hp > max_hp * 0.25 else "\033[1;31m")
+    hp_pct = int(hp / max(1, max_hp) * 100)
+    hp_bar = dui.make_bar(hp, max_hp, 14, "32" if hp_pct > 50 else ("33" if hp_pct > 25 else "31"))
+    hp_tag = "\033[1;32m[Khỏe]\033[0m" if hp_pct > 70 else ("\033[1;33m[Bị thương]\033[0m" if hp_pct > 30 else "\033[1;31m[Nguy kịch]\033[0m")
 
     mind = hero.get("mind", 100)
     max_mind = hero.get("max_mind", 100)
-    mind_c = "\033[1;36m" if mind > 30 else "\033[1;31m"
+    mind_pct = int(mind / max(1, max_mind) * 100)
+    mind_bar = dui.make_bar(mind, max_mind, 14, "36" if mind_pct > 30 else "31")
+    mind_tag = "\033[1;36m[Tỉnh táo]\033[0m" if mind_pct > 50 else ("\033[1;33m[Bất an]\033[0m" if mind_pct > 20 else "\033[1;35m[Hoảng loạn]\033[0m")
 
     hunger = hero.get("hunger", 0)
-    hunger_c = "\033[1;31m" if hunger >= 80 else ("\033[1;33m" if hunger >= 50 else "\033[1;32m")
+    hunger_bar = dui.make_bar(hunger, 100, 14, "31" if hunger >= 80 else ("33" if hunger >= 50 else "32"))
+    hunger_tag = "\033[1;31m[Kiệt sức]\033[0m" if hunger >= 80 else ("\033[1;33m[Cảnh báo đói]\033[0m" if hunger >= 50 else "\033[1;32m[No đủ]\033[0m")
 
     tox = hero.get("toxicity", 0)
     max_tox = hero.get("max_toxicity", 100)
-    tox_c = "\033[1;31m" if tox >= max_tox * 0.8 else ("\033[1;33m" if tox >= max_tox * 0.5 else "\033[1;32m")
+    tox_pct = int(tox / max(1, max_tox) * 100)
+    tox_bar = dui.make_bar(tox, max_tox, 14, "31" if tox_pct >= 80 else ("33" if tox_pct >= 50 else "35"))
+    tox_tag = "\033[1;31m[Ngộ độc!]\033[0m" if tox >= max_tox else ("\033[1;33m[Nhiễm độc]\033[0m" if tox_pct >= 50 else "\033[90m[An toàn]\033[0m")
 
-    key_num = 0
-    if items:
-        for it in items:
-            if it["id"] == "key":
-                key_num = it.get("qty", 0)
-
-    h_name = hero.get("name", "HERO")
-    line1 = (
-        f"  \033[1;30;42m [SINH MỆNH] \033[0m \033[1;37m{h_name:<10}\033[0m | "
-        f"{hp_c}HP: {hp:3d}/{max_hp:3d}\033[0m | "
-        f"{mind_c}MND: {mind:3d}/{max_mind:3d}\033[0m | "
-        f"{hunger_c}ĐÓI: {hunger:2d}/100\033[0m | "
-        f"{tox_c}ĐỘC: {tox:2d}/{max_tox}%\033[0m | "
-        f"\033[1;35mCHÌA: {key_num}/3\033[0m"
-    )
-
-    # --- Line 2: Combat Attributes & Trait ---
     atk = hero.get("atk", 30)
     def_v = hero.get("def", 15)
     dodge = int(hero.get("dodge_rate", 0.1) * 100)
     cap = hero.get("bag_cap", 5)
-    trait = hero.get("trait", "None")
-    if len(trait) > 24:
-        trait = trait[:22] + ".."
 
-    line2 = (
-        f"  \033[1;30;43m [NĂNG LỰC]  \033[0m "
-        f"\033[1;31mATK: {atk:2d} DMG\033[0m | "
-        f"\033[1;34mDEF: {def_v:2d}\033[0m | "
-        f"\033[1;32mNÉ: {dodge:2d}%\033[0m | "
-        f"\033[1;35mBALO: {cap:2d} Ô\033[0m | "
-        f"\033[1;33mĐẶC TÍNH: {trait}\033[0m"
-    )
+    key_num = 0
+    if items:
+        for it in items:
+            if it.get("id") == "key":
+                key_num = it.get("qty", 0)
 
-    # --- Line 3: Limbs & Status Effects ---
     limbs = hero.get("severed_limbs", {})
     head_st = "✓" if limbs.get("head", 100) > 0 else "\033[1;31m✗\033[0m"
     torso_st = "✓" if limbs.get("torso", 100) > 0 else "\033[1;31m✗\033[0m"
     arm_r_st = "\033[1;32m✓\033[0m" if limbs.get("arm_r", 100) > 0 else "\033[1;31m✗\033[0m"
     arm_l_st = "\033[1;32m✓\033[0m" if limbs.get("arm_l", 100) > 0 else "\033[1;31m✗\033[0m"
     legs_st = "\033[1;32m✓\033[0m" if (limbs.get("leg_r", 100) > 0 and limbs.get("leg_l", 100) > 0) else "\033[1;31m✗\033[0m"
-
     limb_str = f"Đầu:{head_st} Thân:{torso_st} Tay.P:{arm_r_st} Tay.T:{arm_l_st} Chân:{legs_st}"
+
+    trait = hero.get("trait", "None")
+    if len(trait) > 36:
+        trait = trait[:34] + ".."
 
     debuffs = hero.get("debuffs", [])
     if "bleeding" in debuffs or "Bleeding (-4 HP/turn)" in debuffs:
@@ -194,35 +207,57 @@ def build_hero_dossier_lines(hero, items=None):
     else:
         status_str = "\033[1;32mKhỏe mạnh, lành lặn\033[0m"
 
-    line3 = (
-        f"  \033[1;37;41m [THỂ TRẠNG] \033[0m "
-        f"\033[1;36mTỨ CHI:\033[0m [{limb_str}] | "
-        f"\033[1;37mHIỆU ỨNG:\033[0m {status_str}"
-    )
+    stats_lines = [
+        f"\033[1;32mHERO  : \033[1;37m{h_name:<11} \033[90m[{role}]\033[0m",
+        f"HP    : {hp_bar} \033[1;32m{hp:3d}/{max_hp:3d}\033[0m ({hp_pct:3d}%) {hp_tag}",
+        f"MIND  : {mind_bar} \033[1;36m{mind:3d}/{max_mind:3d}\033[0m ({mind_pct:3d}%) {mind_tag}",
+        f"ĐÓI   : {hunger_bar} \033[1;33m{hunger:3d}/100\033[0m ({hunger:2d}%) {hunger_tag}",
+        f"ĐỘC   : {tox_bar} \033[1;35m{tox:3d}/{max_tox}%\033[0m ({tox_pct:2d}%) {tox_tag}",
+        f"\033[1;37mN.LỰC : \033[1;31mATK: {atk:2d} DMG\033[0m | \033[1;34mDEF: {def_v:2d}\033[0m | \033[1;32mNÉ: {dodge:2d}%\033[0m | \033[1;35mBALO: {cap:2d} Ô\033[0m",
+        f"\033[1;36mCHÌA  : CỔNG ĐÔNG [ {key_num}/3 Runic Keys ]\033[0m",
+        f"\033[1;36mTỨ CHI: \033[0m[{limb_str}\033[0m]",
+        f"\033[1;33mTRAIT : \033[0m{trait}",
+        f"\033[1;37mH.ỨNG : \033[0m{status_str}",
+        f"\033[90mTRANG BỊ: Vũ khí cận chiến & Túi thám hiểm sinh tồn\033[0m"
+    ]
 
-    return [line1, line2, line3]
+    stats_rows = []
+    for sl in stats_lines:
+        sl_pad = dui.fit_ansi(sl, 58)
+        stats_rows.append(f"{c_border}| {c_reset}{sl_pad}{c_border} |{c_reset}")
+
+    combined = []
+    combined.append(f"{b_top_left}  {b_top_right}")
+    for r in range(11):
+        combined.append(f"{model_rows[r]}  {stats_rows[r]}")
+    combined.append(f"{b_bot_left}  {b_bot_right}")
+
+    return combined
 
 def render_pouch_screen(items, sel_idx, status_msg="", hero=None):
     """
     Kết xuất giao diện Túi đồ hàng dọc chuẩn xác 100 cột, thẳng hàng, sạch đẹp.
-    Hiển thị đầy đủ Hồ sơ sinh tồn, Năng lực & Thể trạng nhân vật.
-    Tổng số dòng: Đúng 23 dòng (an toàn tuyệt đối trên mọi độ phân giải terminal).
+    Hiển thị Khối đôi: Model nhân vật (trái) + Thanh máu & Chỉ số sinh tồn (phải).
+    Phía dưới là danh mục 8 vật phẩm túi đồ sinh tồn.
+    Tổng số dòng: Đúng 27 dòng (an toàn tuyệt đối trên mọi độ phân giải terminal, <= 35 dòng).
     """
-    rows = []
-    rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
-    title = "                    TÚI ĐỒ SINH TỒN - SURVIVAL POUCH & INVENTORY SUPPLIES"
-    rows.append("\033[1;30m|\033[1;33m" + fit_exact(title, 98) + "\033[1;30m|\033[0m")
-    rows.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
+    c_border = "\033[1;30m"
+    c_reset = "\033[0m"
+    screen_rows = []
 
-    # Hồ sơ Thể trạng & Chỉ số Nhân vật (3 dòng chi tiết)
-    dossier_lines = build_hero_dossier_lines(hero, items)
-    for dl in dossier_lines:
-        rows.append("\033[1;30m|\033[0m" + fit_exact(dl, 98) + "\033[1;30m|\033[0m")
+    # 1. Top Banner (1 dòng)
+    h_name = hero.get("name", "HERO") if hero else "HERO"
+    role = hero.get("role", "Explorer") if hero else "Explorer"
+    title_text = f"TÚI ĐỒ SINH TỒN & HỒ SƠ THÁM HIỂM - {h_name} [{role}]"
+    rem_len = max(0, 93 - dui.display_width(title_text))
+    screen_rows.append(f"{c_border}+=[ \033[1;33m{title_text}{c_border} ]" + "=" * rem_len + f"+{c_reset}")
 
-    rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
-    rows.append("\033[1;30m|" + (" " * 98) + "|\033[0m")
+    # 2. Khối đôi: Model bên trái & Thanh máu bên phải (13 dòng)
+    showcase_rows = build_hero_showcase_boxes(hero, items)
+    screen_rows.extend(showcase_rows)
 
-    # Hiển thị 8 mục hàng dọc thẳng hàng
+    # 3. Phân cách & 8 mục vật phẩm hàng dọc (9 dòng)
+    screen_rows.append(f"{c_border}+" + "-" * 98 + f"+{c_reset}")
     for idx, it in enumerate(items):
         is_cur = (idx == sel_idx)
         cur_icon = "▶" if is_cur else " "
@@ -230,45 +265,42 @@ def render_pouch_screen(items, sel_idx, status_msg="", hero=None):
         name_str = it["name"]
         tag_str = it.get("tag", "")
         desc_str = it.get("desc", "")
+        qty_val = it.get("qty", 0)
 
         if it["id"] == "close":
             qty_str = "      "
             avail = True
         else:
-            qty_str = f"[x {it.get('qty', 0)}]"
-            avail = (it.get("qty", 0) > 0)
+            qty_str = f"[x {qty_val}]"
+            avail = (qty_val > 0)
 
-        # Định dạng màu sắc
         if is_cur:
-            color = "\033[1;33m"  # Vàng sáng nổi bật khi chọn
+            color = "\033[1;33m"
             cur_color = "\033[1;33m"
         elif avail:
-            color = "\033[1;37m"  # Trắng rõ nét khi còn hàng
+            color = "\033[1;37m"
             cur_color = "\033[90m"
         else:
-            color = "\033[90m"    # Xám khi hết hàng
+            color = "\033[90m"
             cur_color = "\033[90m"
 
-        line = f"  {cur_color}{cur_icon}\033[0m {color}{num_str:<4} {name_str:<18} {qty_str:<7} {tag_str:<13} {desc_str}\033[0m"
-        rows.append("\033[1;30m|\033[0m" + fit_exact(line, 98) + "\033[1;30m|\033[0m")
+        line = f"  {cur_color}{cur_icon}{c_reset} {color}{num_str:<4} {name_str:<18} {qty_str:<7} {tag_str:<13} {desc_str}{c_reset}"
+        screen_rows.append(f"{c_border}|{c_reset}" + dui.fit_ansi(line, 98) + f"{c_border}|{c_reset}")
 
-    rows.append("\033[1;30m|" + (" " * 98) + "|\033[0m")
-    rows.append("\033[1;30m+" + "-" * 98 + "+\033[0m")
-
-    # Dòng thông báo kết quả hành động
+    # 4. Hộp thông báo trạng thái hành động (2 dòng)
+    screen_rows.append(f"{c_border}+" + "-" * 98 + f"+{c_reset}")
     if status_msg:
         notif = f"  {status_msg}"
     else:
-        notif = "  \033[1;36m● [HƯỚNG DẪN]: Dùng [W/S] hoặc phím số [1..8] để chọn, nhấn [Enter] để sử dụng.\033[0m"
-    rows.append("\033[1;30m|\033[0m" + fit_exact(notif, 98) + "\033[1;30m|\033[0m")
-    rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
+        notif = "  \033[90mChọn một vật phẩm và nhấn [Enter] để sử dụng, hoặc nhấn [8/I/Esc] để quay lại.\033[0m"
+    screen_rows.append(f"{c_border}|{c_reset}" + dui.fit_ansi(notif, 98) + f"{c_border}|{c_reset}")
 
-    # Dòng phím tắt điều khiển
-    ctrl = "  \033[1;37m[W/S / Mũi tên]\033[0m Lên/Xuống  |  \033[1;37m[1..8]\033[0m Chọn nhanh  |  \033[1;32m[Enter]\033[0m Sử dụng  |  \033[1;31m[I/Esc/Q]\033[0m Đóng túi"
-    rows.append("\033[1;30m|\033[0m" + fit_exact(ctrl, 98) + "\033[1;30m|\033[0m")
-    rows.append("\033[1;30m+" + "=" * 98 + "+\033[0m")
+    # 5. Thanh điều khiển chân trang (2 dòng)
+    screen_rows.append(f"{c_border}+" + "=" * 98 + f"+{c_reset}")
+    footer = "  \033[90m[ĐIỀU KHIỂN]:\033[0m \033[1;37m[W/S / Mũi tên]\033[0m Chọn  |  \033[1;37m[1..8]\033[0m Phím tắt  |  \033[1;32m[Enter]\033[0m Dùng  |  \033[1;31m[I/Esc/Q]\033[0m Đóng"
+    screen_rows.append(f"{c_border}|{c_reset}" + dui.fit_ansi(footer, 98) + f"{c_border}|{c_reset}")
 
-    return rows
+    return screen_rows
 
 def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardcore=False):
     """
