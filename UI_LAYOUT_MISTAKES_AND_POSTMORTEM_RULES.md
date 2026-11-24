@@ -146,7 +146,7 @@ Trong quá trình phát triển nhanh, việc bổ sung liên tiếp các tính 
   - Trong khi đó, mô hình pixel của các nhân vật rộng từ 26 đến 29 cột (ví dụ: Cahara cầm song dao rộng 29 cột, Le'Garde cầm kiếm dài rộng 28 cột).
   - Kết quả: Vũ khí và tay chân của các nhân vật bị cắt cụt, mô hình bị ép lùn xuống chỉ còn 8-9 dòng khiến mất mũ và ủng. Người dùng đánh giá: *"Ma trận 4 đang bị lỗi làm méo mó và mất số lượng"*.
 
-#### Hiện thực hóa 3 Phương án Bố cục Tuyệt đối Không Mất Chi Tiết (`demo_grid_hero_select.py` & `TEST_GRID_HERO_SELECT.bat`)
+#### Hiện thực hóa 3 Phương án Bố cục Tuyệt đối Không Mất Chi Tiết (`demo_grid_hero_select.py` & `PLAY_GAME.bat`)
 Để người chơi tự do lựa chọn trải nghiệm phù hợp nhất, hệ thống đã tích hợp cùng lúc **3 Giao diện Song song**, chuyển đổi tức thì bằng phím **`[TAB]`**:
 
 ```
@@ -168,7 +168,7 @@ Trong quá trình phát triển nhanh, việc bổ sung liên tiếp các tính 
    - Bên trái (30 cột): Menu cuộn dọc hiển thị danh sách 8 nhân vật với con trỏ sáng `▶`.
    - Bên phải (67 cột): "Sân khấu" chính vinh danh hero đang chọn, hiển thị mô hình kích thước cực đại cùng toàn bộ bảng kháng phép, kháng vật lý, và lời bình phẩm sinh tồn độc quyền.
 
-3. **Phương án 3: Bản Dàn Hàng 3 Cột Khổ Lớn (`panorama_3col`):**
+3. **Phương án 3: Bản Dàn Hàng 3 Cột Khổ LỚN (`panorama_3col`):**
    - Chia màn hình thành **3 thẻ lớn (32 cột mỗi thẻ)** trải ngang (3 trang).
    - Mô hình giữ nguyên 100% 29 cột.
    - **Quy tắc cải tiến:** Không dồn 4 chỉ số vào 1 dòng như trước. Tách thành 3 dòng riêng biệt bên dưới chân mô hình:
@@ -181,12 +181,12 @@ Trong quá trình phát triển nhanh, việc bổ sung liên tiếp các tính 
 
 ### 4. HỆ THỐNG TÚI ĐỒ Ô LƯỚI & CƠ CHẾ TOTEM OF RESTORATION
 
-#### Túi đồ ô lưới 3x2 với Pixel Icon (`demo_grid_inventory.py` & `TEST_GRID_INVENTORY.bat`)
+#### Túi đồ ô lưới 3x2 với Pixel Icon (`demo_grid_inventory.py`)
 Thay thế hoàn toàn dải túi đồ hàng ngang lỗi thời bằng ma trận 6 ô chiến thuật:
 - **Hàng 1 (Vật phẩm y tế & Thần vật):**
   - Ô 1: **TOTEM OF FLESH** (Cổ Thần Bảo Vật Sylvian - Màu Hổ Phách).
   - Ô 2: **POPPY FLOWER** (Hoa Anh Túc - Hồi máu & Cầm máu).
-  - Ô 3: **MARIJUANA HERB** (Thảo Dược - Thuốc an thần giảm đau đớn).
+  - Ô 3: **MEDICINAL HERB** (Thảo Dược Y Tế - Thuốc an thần giảm đau đớn).
 - **Hàng 2 (Lương thực & Nẹp xương):**
   - Ô 4: **MOLDY BREAD** (Bánh Mì Mốc - Giải cơn đói).
   - Ô 5: **VINTAGE ALE** (Rượu Cổ - Phục hồi Mind, chống điên loạn).

@@ -10,10 +10,10 @@ A complete **Turn-Based Tactical Roguelike Dungeon Crawler** co-designed at the 
 Upon starting an expedition, players choose between two distinct difficulty levels:
 1. **Mode 1: "Fear & Hunger" (Normal / Standard Expeditions)**:
    - **Empowered Explorer Combat Stats**: Player character **ATK and DEF are boosted by 1.5x** and **Max HP is boosted by +25%** (`base_hp + (base_hp >> 2)`).
-   - **Generous Healing Potencies**: **Poppy Flower** restores **+50 HP**, and **Marijuana Herb** restores **+120 HP**.
+   - **Generous Healing Potencies**: **Poppy Flower** restores **+50 HP**, and **Medicinal Herb** restores **+120 HP**.
 2. **Mode 2: "Terror & Starvation" (Hardcore Mode)**:
    - **Baseline Explorer Combat Stats**: Player character stats revert to raw **1.0x baseline values**.
-   - **Scarce Healing Potencies**: **Poppy Flower** restores only **+30 HP**, and **Marijuana Herb** restores only **+70 HP**.
+   - **Scarce Healing Potencies**: **Poppy Flower** restores only **+30 HP**, and **Medicinal Herb** restores only **+70 HP**.
 
 ### 1.2 Playable Explorers (Fear & Hunger Roster)
 - **8 Distinct Characters** loaded with dedicated pixel-art ROMs:
