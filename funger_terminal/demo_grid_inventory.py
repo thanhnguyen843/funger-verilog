@@ -48,73 +48,73 @@ def fit_exact(s, width):
         return clean + "\033[0m" + " " * (width - w)
     return s + " " * (width - cur)
 
-# BẢNG VẬT PHẨM CHUẨN HÓA CỦA GAME (7 VẬT PHẨM CHÍNH THỨC + NÚT ĐÓNG)
+# STANDARDIZED SURVIVAL SATCHEL CATALOG (7 ITEMS + CLOSE BUTTON)
 ITEM_CATALOG = [
     {
         "id": "totem",
         "name": "TOTEM OF UNDYING",
-        "tag": "[CỔ VẬT]",
+        "tag": "[RELIC]",
         "qty": 1,
-        "desc": "Hồi sinh khi chết, đầy HP & mọc lại tứ chi"
+        "desc": "Auto-revive on death, full HP & restore limbs"
     },
     {
         "id": "poppy",
         "name": "POPPY FLOWER",
-        "tag": "[DƯỢC LIỆU]",
+        "tag": "[HERB]",
         "qty": 3,
-        "desc": "Hồi +50 HP & cầm máu"
+        "desc": "Restores +50 HP & completely stems bleeding"
     },
     {
         "id": "weed",
         "name": "MEDICINAL HERB",
-        "tag": "[THẢO DƯỢC]",
+        "tag": "[HERB]",
         "qty": 2,
-        "desc": "Hồi +120 HP, giảm đau nhức"
+        "desc": "Restores +120 HP medicine, soothes agony"
     },
     {
         "id": "bread",
         "name": "MOLDY BREAD",
-        "tag": "[LƯƠNG KHÔ]",
+        "tag": "[RATION]",
         "qty": 4,
-        "desc": "Giảm -40 Đói (chống kiệt sức)"
+        "desc": "Relieves -40 Hunger (staves off starvation)"
     },
     {
         "id": "meat",
         "name": "DRIED MEAT",
-        "tag": "[LƯƠNG KHÔ]",
+        "tag": "[RATION]",
         "qty": 2,
-        "desc": "Giảm -60 Đói & hồi +20 HP"
+        "desc": "Relieves -60 Hunger & restores +20 HP jerky"
     },
     {
         "id": "vial",
         "name": "ALCHEMICAL VIAL",
-        "tag": "[CỒN THUỐC]",
+        "tag": "[TINCTURE]",
         "qty": 2,
-        "desc": "Hồi +35 Mind, tẩy độc & hoại tử"
+        "desc": "Restores +35 Mind, purges poison & necrosis"
     },
     {
         "id": "key",
         "name": "RUNIC KEY",
-        "tag": "[CHÌA KHÓA]",
+        "tag": "[KEY]",
         "qty": 0,
-        "desc": "Chìa khóa Cổng Đông (cần 3 chìa)"
+        "desc": "Eastern Gate Key (collect 3 keys to escape)"
     },
     {
         "id": "close",
-        "name": "[ ĐÓNG TÚI ĐỒ ]",
-        "tag": "[QUAY LẠI]",
+        "name": "[ CLOSE POUCH ]",
+        "tag": "[RETURN]",
         "qty": 0,
-        "desc": "Quay lại"
+        "desc": "Return to dungeon exploration"
     }
 ]
 
 def build_hero_showcase_boxes(hero, items=None):
     """
-    Kết xuất khối hiển thị đôi (Split Box) chuẩn xác 100 cột:
-    - Bên trái: Khung Model nhân vật (36 cột).
-    - Khoảng cách: 2 cột khoảng trống ('  ').
-    - Bên phải: Khung Hồ sơ & Các chỉ số dạng Thanh máu (Health/Mind/Hunger/Toxicity Bars) (62 cột).
-    Tổng chiều cao: Đúng 13 dòng.
+    Render 100-column dual split-box showcase:
+    - Left side : Character Model Sprite Frame (36 columns).
+    - Gap       : 2 spaces ('  ').
+    - Right side: Character Vitals & Health/Mind/Hunger/Tox Bars (62 columns).
+    Total Height: Exactly 13 rows.
     """
     c_border = "\033[1;30m"
     c_reset = "\033[0m"
@@ -122,7 +122,7 @@ def build_hero_showcase_boxes(hero, items=None):
     if not hero:
         b_top = f"{c_border}+" + "-" * 98 + f"+{c_reset}"
         blank_row = f"{c_border}|" + (" " * 98) + f"|{c_reset}"
-        no_info = f"{c_border}|  \033[90mKhông có thông tin nhân vật kích hoạt.\033[0m" + (" " * 56) + f"{c_border}|{c_reset}"
+        no_info = f"{c_border}|  \033[90mNo active character dossier available.\033[0m" + (" " * 59) + f"{c_border}|{c_reset}"
         rows = [b_top]
         for _ in range(11):
             rows.append(blank_row if _ != 5 else no_info)
@@ -152,23 +152,23 @@ def build_hero_showcase_boxes(hero, items=None):
     max_hp = hero.get("max_hp", 100)
     hp_pct = int(hp / max(1, max_hp) * 100)
     hp_bar = dui.make_bar(hp, max_hp, 14, "32" if hp_pct > 50 else ("33" if hp_pct > 25 else "31"))
-    hp_tag = "\033[1;32m[Khỏe]\033[0m" if hp_pct > 70 else ("\033[1;33m[Bị thương]\033[0m" if hp_pct > 30 else "\033[1;31m[Nguy kịch]\033[0m")
+    hp_tag = "\033[1;32m[Healthy]\033[0m" if hp_pct > 70 else ("\033[1;33m[Wounded]\033[0m" if hp_pct > 30 else "\033[1;31m[Critical]\033[0m")
 
     mind = hero.get("mind", 100)
     max_mind = hero.get("max_mind", 100)
     mind_pct = int(mind / max(1, max_mind) * 100)
     mind_bar = dui.make_bar(mind, max_mind, 14, "36" if mind_pct > 30 else "31")
-    mind_tag = "\033[1;36m[Tỉnh táo]\033[0m" if mind_pct > 50 else ("\033[1;33m[Bất an]\033[0m" if mind_pct > 20 else "\033[1;35m[Hoảng loạn]\033[0m")
+    mind_tag = "\033[1;36m[Lucid]\033[0m" if mind_pct > 50 else ("\033[1;33m[Uneasy]\033[0m" if mind_pct > 20 else "\033[1;35m[Panicked]\033[0m")
 
     hunger = hero.get("hunger", 0)
     hunger_bar = dui.make_bar(hunger, 100, 14, "31" if hunger >= 80 else ("33" if hunger >= 50 else "32"))
-    hunger_tag = "\033[1;31m[Kiệt sức]\033[0m" if hunger >= 80 else ("\033[1;33m[Cảnh báo đói]\033[0m" if hunger >= 50 else "\033[1;32m[No đủ]\033[0m")
+    hunger_tag = "\033[1;31m[Starving]\033[0m" if hunger >= 80 else ("\033[1;33m[Hungry]\033[0m" if hunger >= 50 else "\033[1;32m[Satiated]\033[0m")
 
     tox = hero.get("toxicity", 0)
     max_tox = hero.get("max_toxicity", 100)
     tox_pct = int(tox / max(1, max_tox) * 100)
     tox_bar = dui.make_bar(tox, max_tox, 14, "31" if tox_pct >= 80 else ("33" if tox_pct >= 50 else "35"))
-    tox_tag = "\033[1;31m[Ngộ độc!]\033[0m" if tox >= max_tox else ("\033[1;33m[Nhiễm độc]\033[0m" if tox_pct >= 50 else "\033[90m[An toàn]\033[0m")
+    tox_tag = "\033[1;31m[Overdose!]\033[0m" if tox >= max_tox else ("\033[1;33m[Poisoned]\033[0m" if tox_pct >= 50 else "\033[90m[Clean]\033[0m")
 
     atk = hero.get("atk", 30)
     def_v = hero.get("def", 15)
@@ -187,7 +187,7 @@ def build_hero_showcase_boxes(hero, items=None):
     arm_r_st = "\033[1;32m✓\033[0m" if limbs.get("arm_r", 100) > 0 else "\033[1;31m✗\033[0m"
     arm_l_st = "\033[1;32m✓\033[0m" if limbs.get("arm_l", 100) > 0 else "\033[1;31m✗\033[0m"
     legs_st = "\033[1;32m✓\033[0m" if (limbs.get("leg_r", 100) > 0 and limbs.get("leg_l", 100) > 0) else "\033[1;31m✗\033[0m"
-    limb_str = f"Đầu:{head_st} Thân:{torso_st} Tay.P:{arm_r_st} Tay.T:{arm_l_st} Chân:{legs_st}"
+    limb_str = f"Head:{head_st} Torso:{torso_st} R.Arm:{arm_r_st} L.Arm:{arm_l_st} Legs:{legs_st}"
 
     trait = hero.get("trait", "None")
     if len(trait) > 36:
@@ -195,30 +195,30 @@ def build_hero_showcase_boxes(hero, items=None):
 
     debuffs = hero.get("debuffs", [])
     if "bleeding" in debuffs or "Bleeding (-4 HP/turn)" in debuffs:
-        status_str = "\033[1;31mChảy máu (-4 HP/bước) [Dùng Poppy!]\033[0m"
+        status_str = "\033[1;31mBleeding (-4 HP/step) [Apply Poppy!]\033[0m"
     elif "poison" in debuffs or "Poisoned (-6 HP/turn)" in debuffs:
-        status_str = "\033[1;35mNhiễm độc hoại tử [Dùng Vial!]\033[0m"
+        status_str = "\033[1;35mNecrotic Poisoning [Apply Vial!]\033[0m"
     elif hunger >= 80:
-        status_str = "\033[1;31mKiệt sức vì đói [Cần ăn lương khô!]\033[0m"
+        status_str = "\033[1;31mStarvation Collapse [Eat Rations!]\033[0m"
     elif mind <= 20:
-        status_str = "\033[1;35mHoảng loạn tột độ [Cần uống Rượu Ale!]\033[0m"
+        status_str = "\033[1;35mSheer Terror & Panic [Drink Ale!]\033[0m"
     elif tox >= max_tox:
-        status_str = "\033[1;31mNgộ độc dạ dày [Đang nôn mửa!]\033[0m"
+        status_str = "\033[1;31mStomach Overdose [Violently Vomiting!]\033[0m"
     else:
-        status_str = "\033[1;32mKhỏe mạnh, lành lặn\033[0m"
+        status_str = "\033[1;32mHealthy & Combat Ready\033[0m"
 
     stats_lines = [
         f"\033[1;32mHERO  : \033[1;37m{h_name:<11} \033[90m[{role}]\033[0m",
         f"HP    : {hp_bar} \033[1;32m{hp:3d}/{max_hp:3d}\033[0m ({hp_pct:3d}%) {hp_tag}",
         f"MIND  : {mind_bar} \033[1;36m{mind:3d}/{max_mind:3d}\033[0m ({mind_pct:3d}%) {mind_tag}",
-        f"ĐÓI   : {hunger_bar} \033[1;33m{hunger:3d}/100\033[0m ({hunger:2d}%) {hunger_tag}",
-        f"ĐỘC   : {tox_bar} \033[1;35m{tox:3d}/{max_tox}%\033[0m ({tox_pct:2d}%) {tox_tag}",
-        f"\033[1;37mN.LỰC : \033[1;31mATK: {atk:2d} DMG\033[0m | \033[1;34mDEF: {def_v:2d}\033[0m | \033[1;32mNÉ: {dodge:2d}%\033[0m | \033[1;35mBALO: {cap:2d} Ô\033[0m",
-        f"\033[1;36mCHÌA  : CỔNG ĐÔNG [ {key_num}/3 Runic Keys ]\033[0m",
-        f"\033[1;36mTỨ CHI: \033[0m[{limb_str}\033[0m]",
+        f"HUNGER: {hunger_bar} \033[1;33m{hunger:3d}/100\033[0m ({hunger:2d}%) {hunger_tag}",
+        f"TOXIC : {tox_bar} \033[1;35m{tox:3d}/{max_tox}%\033[0m ({tox_pct:2d}%) {tox_tag}",
+        f"\033[1;37mSTATS : \033[1;31mATK: {atk:2d} DMG\033[0m | \033[1;34mDEF: {def_v:2d}\033[0m | \033[1;32mEVADE: {dodge:2d}%\033[0m | \033[1;35mBAG: {cap:2d} SLOTS\033[0m",
+        f"\033[1;36mKEYS  : EAST GATE [ {key_num}/3 Runic Keys Found ]\033[0m",
+        f"\033[1;36mLIMBS : \033[0m[{limb_str}\033[0m]",
         f"\033[1;33mTRAIT : \033[0m{trait}",
-        f"\033[1;37mH.ỨNG : \033[0m{status_str}",
-        f"\033[90mTRANG BỊ: Vũ khí cận chiến & Túi thám hiểm sinh tồn\033[0m"
+        f"\033[1;37mSTATUS: \033[0m{status_str}",
+        f"\033[90mEQUIP : Melee Arsenal & Survival Satchel\033[0m"
     ]
 
     stats_rows = []
@@ -236,27 +236,27 @@ def build_hero_showcase_boxes(hero, items=None):
 
 def render_pouch_screen(items, sel_idx, status_msg="", hero=None):
     """
-    Kết xuất giao diện Túi đồ hàng dọc chuẩn xác 100 cột, thẳng hàng, sạch đẹp.
-    Hiển thị Khối đôi: Model nhân vật (trái) + Thanh máu & Chỉ số sinh tồn (phải).
-    Phía dưới là danh mục 8 vật phẩm túi đồ sinh tồn.
-    Tổng số dòng: Đúng 27 dòng (an toàn tuyệt đối trên mọi độ phân giải terminal, <= 35 dòng).
+    Render 100-column vertical pouch screen with Dual Split-Box Showcase:
+    - Top half   : Character Sprite Model (Left) & Vitals / Health Bars (Right).
+    - Bottom half: 8 Standard Survival Satchel Items.
+    Total Height : Exactly 27 rows (safe below 35-line budget).
     """
     c_border = "\033[1;30m"
     c_reset = "\033[0m"
     screen_rows = []
 
-    # 1. Top Banner (1 dòng)
+    # 1. Top Banner (1 row)
     h_name = hero.get("name", "HERO") if hero else "HERO"
     role = hero.get("role", "Explorer") if hero else "Explorer"
-    title_text = f"TÚI ĐỒ SINH TỒN & HỒ SƠ THÁM HIỂM - {h_name} [{role}]"
+    title_text = f"SURVIVAL POUCH & EXPEDITION DOSSIER - {h_name} [{role}]"
     rem_len = max(0, 93 - dui.display_width(title_text))
     screen_rows.append(f"{c_border}+=[ \033[1;33m{title_text}{c_border} ]" + "=" * rem_len + f"+{c_reset}")
 
-    # 2. Khối đôi: Model bên trái & Thanh máu bên phải (13 dòng)
+    # 2. Dual Split-Box Showcase: Model on Left & Health Bars on Right (13 rows)
     showcase_rows = build_hero_showcase_boxes(hero, items)
     screen_rows.extend(showcase_rows)
 
-    # 3. Phân cách & 8 mục vật phẩm hàng dọc (9 dòng)
+    # 3. Items Divider & 8 Item Rows (9 rows)
     screen_rows.append(f"{c_border}+" + "-" * 98 + f"+{c_reset}")
     for idx, it in enumerate(items):
         is_cur = (idx == sel_idx)
@@ -287,17 +287,20 @@ def render_pouch_screen(items, sel_idx, status_msg="", hero=None):
         line = f"  {cur_color}{cur_icon}{c_reset} {color}{num_str:<4} {name_str:<18} {qty_str:<7} {tag_str:<13} {desc_str}{c_reset}"
         screen_rows.append(f"{c_border}|{c_reset}" + dui.fit_ansi(line, 98) + f"{c_border}|{c_reset}")
 
-    # 4. Hộp thông báo trạng thái hành động (2 dòng)
+    # 4. Status Notification Box (2 rows)
     screen_rows.append(f"{c_border}+" + "-" * 98 + f"+{c_reset}")
     if status_msg:
         notif = f"  {status_msg}"
     else:
-        notif = "  \033[90mChọn một vật phẩm và nhấn [Enter] để sử dụng, hoặc nhấn [8/I/Esc] để quay lại.\033[0m"
+        notif = "  \033[90mSelect an item with [W/S / 1-8] and press [Enter] to administer, or [I/Esc/Q] to close.\033[0m"
     screen_rows.append(f"{c_border}|{c_reset}" + dui.fit_ansi(notif, 98) + f"{c_border}|{c_reset}")
 
-    # 5. Thanh điều khiển chân trang (2 dòng)
+    # 5. Controls Footer (2 rows)
     screen_rows.append(f"{c_border}+" + "=" * 98 + f"+{c_reset}")
-    footer = "  \033[90m[ĐIỀU KHIỂN]:\033[0m \033[1;37m[W/S / Mũi tên]\033[0m Chọn  |  \033[1;37m[1..8]\033[0m Phím tắt  |  \033[1;32m[Enter]\033[0m Dùng  |  \033[1;31m[I/Esc/Q]\033[0m Đóng"
+    footer = "  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S / Arrows]\033[0m Navigate  |  \033[1;37m[1..8]\033[0m Quick-Slot  |  \033[1;32m[Enter]\033[0m Administer  |  \033[1;31m[I/Esc/Q]\033[0m Close Satchel"
+    screen_rows.append(f"{c_border}|{c_reset}" + dui.fit_ansi(footer, 98) + f"{c_border}|{c_reset}")
+
+    return screen_rows
     screen_rows.append(f"{c_border}|{c_reset}" + dui.fit_ansi(footer, 98) + f"{c_border}|{c_reset}")
 
     return screen_rows
@@ -367,7 +370,7 @@ def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardc
 
                 if cur_it.get("qty", 0) > 0:
                     if cur_it["id"] == "key":
-                        status_msg = f"\033[1;36m● [CHÌA KHÓA]: Có {cur_it['qty']}/3 Runic Key. Cần mang đến Cổng Thoát Hiểm Phía Đông!\033[0m"
+                        status_msg = f"\033[1;36m● [RUNIC KEY]: Possess {cur_it['qty']}/3 Runic Keys. Bring them to Eastern Gate!\033[0m"
                         continue
 
                     cur_it["qty"] -= 1
@@ -387,15 +390,15 @@ def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardc
                                 hero["severed_limbs"] = {"head": 100, "torso": 100, "arm_r": 100, "arm_l": 100, "leg_r": 100, "leg_l": 100}
                             hero["hp"] = hero.get("max_hp", 100)
                             hero["toxicity"] = 0
-                        status_msg = f"\033[1;33m★ [TOTEM OF UNDYING]: Tái sinh toàn bộ tứ chi bị đứt! Sinh lực hồi phục 100% ({hero.get('hp', 100)}/{hero.get('max_hp', 100)})!\033[0m"
+                        status_msg = f"\033[1;33m★ [TOTEM OF UNDYING]: All severed limbs fully restored! HP 100% healed ({hero.get('hp', 100)}/{hero.get('max_hp', 100)})!\033[0m"
 
                     elif cur_it["id"] == "poppy":
                         max_t = hero.get("max_toxicity", 100) if hero else 100
                         if hero and hero.get("name") == "NAS'HRAH":
-                            status_msg = "\033[1;33m● [HOA ANH TÚC]: NAS'HRAH cười khẩy: 'Ta không cần cỏ rác của người phàm!' (0 HP).\033[0m"
+                            status_msg = "\033[1;33m● [WHITE POPPY]: NAS'HRAH scoffs: 'I care nothing for mortal weeds!' (0 HP).\033[0m"
                         elif hero and hero.get("toxicity", 0) >= max_t:
                             hero["hp"] = max(1, hero.get("hp", 1) - 5)
-                            status_msg = f"\033[1;31m✖ [NGỘ ĐỘC]: Dạ dày {hero.get('name')} nôn mửa (0 HP, -5 HP độc tố)!\033[0m"
+                            status_msg = f"\033[1;31m✖ [OVERDOSE]: Stomach violently convulsing (0 HP, -5 HP toxin)!\033[0m"
                         else:
                             heal = 65 if (hero and hero.get("name") == "CAHARA") else (30 if is_hardcore else 50)
                             if hero is not None:
@@ -406,52 +409,52 @@ def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardc
                                     hero["debuffs"].remove("bleeding")
                                 if "Bleeding (-4 HP/turn)" in hero.get("debuffs", []):
                                     hero["debuffs"].remove("Bleeding (-4 HP/turn)")
-                            status_msg = f"\033[1;32m● [HOA ANH TÚC]: Đã đắp dược liệu! Hồi phục +{heal} HP & cầm máu hoàn toàn! ({hero.get('hp', 0)}/{hero.get('max_hp', 100)} HP, {hero.get('toxicity', 0)}/{max_t}% Độc)\033[0m"
+                            status_msg = f"\033[1;32m● [WHITE POPPY]: Poultice applied! Restored +{heal} HP & stopped bleeding! ({hero.get('hp', 0)}/{hero.get('max_hp', 100)} HP, {hero.get('toxicity', 0)}/{max_t}% Tox)\033[0m"
 
                     elif cur_it["id"] == "weed":
                         max_t = hero.get("max_toxicity", 100) if hero else 100
                         if hero and hero.get("name") == "NAS'HRAH":
-                            status_msg = "\033[1;33m● [THẢO DƯỢC]: NAS'HRAH cười khẩy: 'Dược thảo phàm trần vô dụng với ta!' (0 HP).\033[0m"
+                            status_msg = "\033[1;33m● [MEDICINAL HERB]: NAS'HRAH sneers: 'Mortal remedies have no power over me!' (0 HP).\033[0m"
                         elif hero and hero.get("toxicity", 0) >= max_t:
                             hero["hp"] = max(1, hero.get("hp", 1) - 5)
-                            status_msg = f"\033[1;31m✖ [NGỘ ĐỘC]: {hero.get('name')} quá liều thảo dược (0 HP, -5 HP độc tố)!\033[0m"
+                            status_msg = f"\033[1;31m✖ [OVERDOSE]: {hero.get('name')} overdoses on medicinal fumes (0 HP, -5 HP toxin)!\033[0m"
                         else:
                             heal = 150 if (hero and hero.get("name") == "CAHARA") else (75 if is_hardcore else 120)
                             if hero is not None:
                                 hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + heal)
                                 added_tox = 0 if hero.get("name") == "MOONLESS" else (25 if hero.get("name") == "RAGNVALDR" else 50)
                                 hero["toxicity"] = min(max_t, hero.get("toxicity", 0) + added_tox)
-                            status_msg = f"\033[1;32m● [THẢO DƯỢC]: Hít khói dược thảo! Hồi phục +{heal} HP & làm dịu cơn đau! ({hero.get('hp', 0)}/{hero.get('max_hp', 100)} HP, {hero.get('toxicity', 0)}/{max_t}% Độc)\033[0m"
+                            status_msg = f"\033[1;32m● [MEDICINAL HERB]: Inhaled herbal fumes! Restored +{heal} HP & dulled pain! ({hero.get('hp', 0)}/{hero.get('max_hp', 100)} HP, {hero.get('toxicity', 0)}/{max_t}% Tox)\033[0m"
 
                     elif cur_it["id"] == "bread":
                         if hero and hero.get("name") == "NAS'HRAH":
-                            status_msg = "\033[1;33m● [BÁNH MÌ]: NAS'HRAH không cần ăn lương khô của người phàm!\033[0m"
+                            status_msg = "\033[1;33m● [MOLDY BREAD]: NAS'HRAH has no need for mortal crumbs!\033[0m"
                         elif hero and hero.get("name") == "RAGNVALDR":
                             hero["hunger"] = max(0, hero.get("hunger", 0) - 20)
-                            status_msg = f"\033[1;33m● [BÁNH MÌ]: Ragnvaldr nuốt vội bánh mì (-20 Đói - Cần thịt sống!). Hiện tại: {hero.get('hunger', 0)}/100 Đói\033[0m"
+                            status_msg = f"\033[1;33m● [MOLDY BREAD]: Ragnvaldr swallows stale bread (-20 Hunger - Craves raw meat!). ({hero.get('hunger', 0)}/100 Hunger)\033[0m"
                         elif hero and hero.get("name") == "CAHARA":
                             hero["hunger"] = max(0, hero.get("hunger", 0) - 50)
-                            status_msg = f"\033[1;32m● [BÁNH MÌ]: Cahara thưởng thức bánh mì ngon lành (-50 Đói). Hiện tại: {hero.get('hunger', 0)}/100 Đói\033[0m"
+                            status_msg = f"\033[1;32m● [MOLDY BREAD]: Cahara savors the breadcrumbs (-50 Hunger). ({hero.get('hunger', 0)}/100 Hunger)\033[0m"
                         else:
                             if hero is not None:
                                 hero["hunger"] = max(0, hero.get("hunger", 0) - 40)
-                            status_msg = f"\033[1;33m● [BÁNH MÌ MỐC]: Đã ăn lương khô! Cơn đói khát giảm -40 điểm! (Hiện tại: {hero.get('hunger', 0)}/100 Đói)\033[0m"
+                            status_msg = f"\033[1;33m● [MOLDY BREAD]: Rations consumed! Hunger reduced by -40! ({hero.get('hunger', 0)}/100 Hunger)\033[0m"
 
                     elif cur_it["id"] == "meat":
                         if hero and hero.get("name") == "NAS'HRAH":
-                            status_msg = "\033[1;33m● [THỊT SẤY KHÔ]: NAS'HRAH không màng đến xác thịt phàm trần!\033[0m"
+                            status_msg = "\033[1;33m● [DRIED MEAT]: NAS'HRAH refuses mortal flesh!\033[0m"
                         else:
                             heal = 40 if (hero and hero.get("name") in ("RAGNVALDR", "MOONLESS")) else 20
                             if hero is not None:
                                 hero["hunger"] = max(0, hero.get("hunger", 0) - 60)
                                 hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + heal)
-                            status_msg = f"\033[1;33m● [THỊT SẤY KHÔ]: Đã ăn thịt sấy muối! Giảm -60 Đói & hồi phục +{heal} HP! ({hero.get('hp', 0)} HP, {hero.get('hunger', 0)}/100 Đói)\033[0m"
+                            status_msg = f"\033[1;33m● [DRIED MEAT]: Salted meat chewed! Relieved -60 Hunger & restored +{heal} HP! ({hero.get('hp', 0)} HP, {hero.get('hunger', 0)}/100 Hunger)\033[0m"
 
                     elif cur_it["id"] == "vial":
                         if hero and hero.get("name") == "NAS'HRAH":
                             hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + 15)
                             hero["mind"] = min(hero.get("max_mind", 100), hero.get("mind", 100) + 35)
-                            status_msg = f"\033[1;36m● [CỒN THUỐC]: Nas'hrah hấp thu năng lượng cồn cổ (+15 HP, +35 Mind)! ({hero.get('mind', 100)}/{hero.get('max_mind', 100)})\033[0m"
+                            status_msg = f"\033[1;36m● [ALCHEMICAL VIAL]: Nas'hrah absorbs ancient spirits (+15 HP, +35 Mind)! ({hero.get('mind', 100)}/{hero.get('max_mind', 100)})\033[0m"
                         else:
                             if hero is not None:
                                 hero["mind"] = min(hero.get("max_mind", 100), hero.get("mind", 100) + 35)
@@ -460,10 +463,10 @@ def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardc
                                     for deb in ["infection", "poison", "gangrene", "bleeding", "Bleeding (-4 HP/turn)"]:
                                         if deb in hero["debuffs"]:
                                             hero["debuffs"].remove(deb)
-                            status_msg = f"\033[1;36m● [CỒN THUỐC / RƯỢU CỔ]: Rót cồn sát trùng! Xóa bỏ hoại tử/độc tố và hồi +35 Mind! ({hero.get('mind', 100)}/{hero.get('max_mind', 100)})\033[0m"
+                            status_msg = f"\033[1;36m● [ALCHEMICAL VIAL]: Antiseptic poured! Cleansed necrosis/toxins & restored +35 Mind! ({hero.get('mind', 100)}/{hero.get('max_mind', 100)})\033[0m"
 
                 else:
-                    status_msg = f"\033[1;31m✖ [HẾT VẬT PHẨM]: Bạn không còn {cur_it['name']} trong túi đồ!\033[0m"
+                    status_msg = f"\033[1;31m✖ [DEPLETED]: No {cur_it['name']} remaining in your satchel!\033[0m"
 
             # Đóng túi đồ [Q] / [Esc] / [I]
             elif ch in (b'q', b'Q', b'\x1b', b'i', b'I'):

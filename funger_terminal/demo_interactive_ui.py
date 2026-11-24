@@ -1009,7 +1009,7 @@ def render_screen():
     if current_menu == "MAIN":
         screen_rows.append("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S / 1-5]\033[0m Navigate  |  \033[1;37m[Enter/Space]\033[0m Select  |  \033[1;31m[Q]\033[0m Quit")
     elif current_menu == "POUCH":
-        screen_rows.append("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S / 1-8]\033[0m Di chuyển  |  \033[1;32m[Enter/Space]\033[0m Sử dụng  |  \033[1;33m[B/Esc/8]\033[0m Quay lại")
+        screen_rows.append("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S / 1-8]\033[0m Navigate  |  \033[1;32m[Enter/Space]\033[0m Administer  |  \033[1;33m[B/Esc/8]\033[0m Return")
     else:
         screen_rows.append("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S / 1-6]\033[0m Navigate  |  \033[1;37m[Enter/Space]\033[0m Confirm  |  \033[1;33m[B/Esc]\033[0m Back")
     screen_rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
@@ -1063,62 +1063,62 @@ def get_current_menu_data():
             {
                 "id": "totem",
                 "label": "TOTEM OF UNDYING",
-                "tag": "[CỔ VẬT]",
+                "tag": "[RELIC]",
                 "qty": inventory.get("totem", 0),
-                "desc": "Hồi sinh khi chết, đầy HP & mọc lại tứ chi"
+                "desc": "Auto-revive on death, full HP & restore limbs"
             },
             {
                 "id": "poppy",
                 "label": "POPPY FLOWER",
-                "tag": "[DƯỢC LIỆU]",
+                "tag": "[HERB]",
                 "qty": inventory.get("poppy", 0),
-                "desc": "Hồi +50 HP & cầm máu"
+                "desc": "Restores +50 HP & completely stems bleeding"
             },
             {
                 "id": "weed",
                 "label": "MEDICINAL HERB",
-                "tag": "[THẢO DƯỢC]",
+                "tag": "[HERB]",
                 "qty": inventory.get("weed", 0),
-                "desc": "Hồi +120 HP, giảm đau nhức"
+                "desc": "Restores +120 HP medicine, soothes agony"
             },
             {
                 "id": "bread",
                 "label": "MOLDY BREAD",
-                "tag": "[LƯƠNG KHÔ]",
+                "tag": "[RATION]",
                 "qty": inventory.get("bread", 0),
-                "desc": "Giảm -40 Đói (chống kiệt sức)"
+                "desc": "Relieves -40 Hunger (staves off starvation)"
             },
             {
                 "id": "meat",
                 "label": "DRIED MEAT",
-                "tag": "[LƯƠNG KHÔ]",
+                "tag": "[RATION]",
                 "qty": inventory.get("meat", 0),
-                "desc": "Giảm -60 Đói & hồi +20 HP"
+                "desc": "Relieves -60 Hunger & restores +20 HP jerky"
             },
             {
                 "id": "vial",
                 "label": "ALCHEMICAL VIAL",
-                "tag": "[CỒN THUỐC]",
+                "tag": "[TINCTURE]",
                 "qty": inventory.get("vial", inventory.get("ale", 0)),
-                "desc": "Hồi +35 Mind, tẩy độc & hoại tử"
+                "desc": "Restores +35 Mind, purges poison & necrosis"
             },
             {
                 "id": "key",
                 "label": "RUNIC KEY",
-                "tag": "[CHÌA KHÓA]",
+                "tag": "[KEY]",
                 "qty": inventory.get("key", 0),
-                "desc": "Chìa khóa Cổng Đông (cần 3 chìa)"
+                "desc": "Eastern Gate Key (collect 3 keys to escape)"
             },
             {
                 "id": "close",
-                "label": "[ ĐÓNG TÚI ĐỒ ]",
-                "tag": "[QUAY LẠI]",
+                "label": "[ CLOSE POUCH ]",
+                "tag": "[RETURN]",
                 "qty": 0,
-                "desc": "Quay lại"
+                "desc": "Return to combat commands"
             }
         ]
         return {
-            "title": "TÚI ĐỒ SINH TỒN - SURVIVAL POUCH & INVENTORY SUPPLIES",
+            "title": f"ITEM POUCH & SURVIVAL SUPPLIES (Capacity: {cap} Slots)",
             "options": p_opts
         }
     elif current_menu == "TACTICS":
@@ -1646,13 +1646,13 @@ def handle_selection():
         chosen_opt = chosen.get("label", "")
         max_t = hero.get("max_toxicity", 100)
 
-        if item_id == "close" or "BACK" in chosen_opt or "ĐÓNG" in chosen_opt:
+        if item_id == "close" or "BACK" in chosen_opt or "CLOSE" in chosen_opt or "ĐÓNG" in chosen_opt:
             current_menu = "MAIN"
             cursor_idx = 0
             return
 
         elif item_id == "key":
-            combat_log = f"\033[1;36m● [CHÌA KHÓA]: Có {inventory.get('key', 0)}/3 Runic Key. Cần mang đến Cổng Đông!\033[0m"
+            combat_log = f"\033[1;36m● [RUNIC KEY]: Have {inventory.get('key', 0)}/3 Runic Keys. Bring to Eastern Gate!\033[0m"
             return
 
         elif item_id == "totem":
@@ -1663,10 +1663,10 @@ def handle_selection():
                     hero["debuffs"].clear()
                 if "severed_limbs" in hero:
                     hero["severed_limbs"] = {"head": 100, "torso": 100, "arm_r": 100, "arm_l": 100, "leg_r": 100, "leg_l": 100}
-                combat_log = f"\033[1;33m★ [TOTEM OF UNDYING]! Tái sinh toàn bộ tứ chi & hồi 100% HP cho {hero['name']}!\033[0m"
+                combat_log = f"\033[1;33m★ [TOTEM OF UNDYING]! All limbs restored & 100% HP healed for {hero['name']}!\033[0m"
                 enemy_turn()
             else:
-                combat_log = "\033[1;31m[HẾT VẬT PHẨM]: Không còn Totem of Undying trong túi đồ!\033[0m"
+                combat_log = "\033[1;31m[DEPLETED]: No Totem of Undying in pouch!\033[0m"
             current_menu = "MAIN"
             cursor_idx = 0
 
@@ -1674,10 +1674,10 @@ def handle_selection():
             if inventory.get("poppy", 0) > 0:
                 inventory["poppy"] -= 1
                 if hero["name"] == "NAS'HRAH":
-                    combat_log = "NAS'HRAH cười khẩy: 'Ta không cần cỏ rác của người phàm!' (0 HP)."
+                    combat_log = "NAS'HRAH scoffs: 'I care nothing for mortal weeds!' (0 HP)."
                 elif hero.get("toxicity", 0) >= max_t:
                     hero["hp"] = max(1, hero["hp"] - 5)
-                    combat_log = f"NGỘ ĐỘC! Dạ dày {hero['name']} nôn mửa (0 HP, -5 HP độc tố)!"
+                    combat_log = f"OVERDOSE! {hero['name']}'s stomach convulsing (0 HP, -5 HP toxin)!"
                 else:
                     heal_amt = 65 if hero["name"] == "CAHARA" else 50
                     hero["hp"] = min(hero["max_hp"], hero["hp"] + heal_amt)
@@ -1687,10 +1687,10 @@ def handle_selection():
                         hero["debuffs"].remove("bleeding")
                     if "Bleeding (-4 HP/turn)" in hero.get("debuffs", []):
                         hero["debuffs"].remove("Bleeding (-4 HP/turn)")
-                    combat_log = f"● [HOA ANH TÚC]: {hero['name']} đắp dược liệu (+{heal_amt} HP, cầm máu hoàn toàn)."
+                    combat_log = f"● [WHITE POPPY]: {hero['name']} applies poultice (+{heal_amt} HP, stopped bleeding)."
                 enemy_turn()
             else:
-                combat_log = "\033[1;31m[HẾT VẬT PHẨM]: Không còn Poppy Flower trong túi đồ!\033[0m"
+                combat_log = "\033[1;31m[DEPLETED]: No Poppy Flower in pouch!\033[0m"
             current_menu = "MAIN"
             cursor_idx = 0
 
@@ -1698,19 +1698,19 @@ def handle_selection():
             if inventory.get("weed", 0) > 0:
                 inventory["weed"] -= 1
                 if hero["name"] == "NAS'HRAH":
-                    combat_log = "NAS'HRAH cười khẩy: 'Dược thảo phàm trần vô dụng với ta!' (0 HP)."
+                    combat_log = "NAS'HRAH sneers: 'Mortal remedies have no power over me!' (0 HP)."
                 elif hero.get("toxicity", 0) >= max_t:
                     hero["hp"] = max(1, hero["hp"] - 5)
-                    combat_log = f"NGỘ ĐỘC! {hero['name']} quá liều thảo dược (0 HP, -5 HP độc tố)!"
+                    combat_log = f"OVERDOSE! {hero['name']} overdoses on medicinal herbs (0 HP, -5 HP toxin)!"
                 else:
                     heal_amt = 150 if hero["name"] == "CAHARA" else 120
                     hero["hp"] = min(hero["max_hp"], hero["hp"] + heal_amt)
                     added_tox = 0 if hero["name"] == "MOONLESS" else (25 if hero["name"] == "RAGNVALDR" else 50)
                     hero["toxicity"] = min(max_t, hero.get("toxicity", 0) + added_tox)
-                    combat_log = f"● [THẢO DƯỢC]: {hero['name']} hít khói dược thảo (+{heal_amt} HP, giảm đau nhức)."
+                    combat_log = f"● [MEDICINAL HERB]: {hero['name']} inhales fumes (+{heal_amt} HP, soothes agony)."
                 enemy_turn()
             else:
-                combat_log = "\033[1;31m[HẾT VẬT PHẨM]: Không còn Medicinal Herb trong túi đồ!\033[0m"
+                combat_log = "\033[1;31m[DEPLETED]: No Medicinal Herb in pouch!\033[0m"
             current_menu = "MAIN"
             cursor_idx = 0
 
@@ -1718,19 +1718,19 @@ def handle_selection():
             if inventory.get("bread", 0) > 0:
                 inventory["bread"] -= 1
                 if hero["name"] == "NAS'HRAH":
-                    combat_log = "NAS'HRAH không cần ăn lương khô của người phàm!"
+                    combat_log = "NAS'HRAH has no need for mortal crumbs!"
                 elif hero["name"] == "RAGNVALDR":
                     hero["hunger"] = max(0, hero.get("hunger", 0) - 20)
-                    combat_log = "Ragnvaldr nuốt vội bánh mì (-20 Đói - Cần thịt sống!)."
+                    combat_log = "Ragnvaldr swallows stale bread (-20 Hunger - Craves raw meat!)."
                 elif hero["name"] == "CAHARA":
                     hero["hunger"] = max(0, hero.get("hunger", 0) - 50)
-                    combat_log = "Cahara thưởng thức bánh mì ngon lành (-50 Đói)."
+                    combat_log = "Cahara savors the breadcrumbs (-50 Hunger)."
                 else:
                     hero["hunger"] = max(0, hero.get("hunger", 0) - 40)
-                    combat_log = f"● [BÁNH MÌ]: {hero['name']} ăn bánh mì (-40 Đói)."
+                    combat_log = f"● [MOLDY BREAD]: {hero['name']} eats rations (-40 Hunger)."
                 enemy_turn()
             else:
-                combat_log = "\033[1;31m[HẾT VẬT PHẨM]: Không còn Moldy Bread trong túi đồ!\033[0m"
+                combat_log = "\033[1;31m[DEPLETED]: No Moldy Bread in pouch!\033[0m"
             current_menu = "MAIN"
             cursor_idx = 0
 
@@ -1739,10 +1739,10 @@ def handle_selection():
                 inventory["meat"] -= 1
                 hero["hunger"] = max(0, hero.get("hunger", 0) - 60)
                 hero["hp"] = min(hero["max_hp"], hero["hp"] + 20)
-                combat_log = f"● [THỊT SẤY]: {hero['name']} ăn thịt sấy muối (+20 HP, -60 Đói)."
+                combat_log = f"● [DRIED MEAT]: {hero['name']} chews salted meat (+20 HP, -60 Hunger)."
                 enemy_turn()
             else:
-                combat_log = "\033[1;31m[HẾT VẬT PHẨM]: Không còn Dried Meat trong túi đồ!\033[0m"
+                combat_log = "\033[1;31m[DEPLETED]: No Dried Meat in pouch!\033[0m"
             current_menu = "MAIN"
             cursor_idx = 0
 
@@ -1756,10 +1756,10 @@ def handle_selection():
                     for deb in ["infection", "poison", "gangrene", "bleeding", "Bleeding (-4 HP/turn)"]:
                         if deb in hero["debuffs"]:
                             hero["debuffs"].remove(deb)
-                combat_log = f"● [CỒN THUỐC]: {hero['name']} dùng cồn sát trùng (+35 Mind, tẩy độc & hoại tử)."
+                combat_log = f"● [ALCHEMICAL VIAL]: {hero['name']} uses tincture (+35 Mind, purged necrosis & poison)."
                 enemy_turn()
             else:
-                combat_log = "\033[1;31m[HẾT VẬT PHẨM]: Không còn Alchemical Vial trong túi đồ!\033[0m"
+                combat_log = "\033[1;31m[DEPLETED]: No Alchemical Vial in pouch!\033[0m"
             current_menu = "MAIN"
             cursor_idx = 0
 
