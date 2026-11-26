@@ -44,6 +44,7 @@ module tb_damage_alu;
         .limb_target    (limb_target),
         .is_lethal_mode (is_lethal_mode),
         .enemy_disarmed (enemy_disarmed),
+        .enemy_archetype(`ARCHETYPE_NORMAL),
         .p1_damage      (p1_damage),
         .p2_damage      (p2_damage),
         .p1_flee_penalty(p1_flee_penalty)

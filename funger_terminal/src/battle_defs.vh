@@ -50,7 +50,8 @@
 // Healing Items, Food, Mind Restoratives & Dungeon Keys (4-bit)
 `define ITEM_NONE           4'd0
 `define ITEM_POPPY          4'd1   // Poppy Flower (+30/+50 HP)
-`define ITEM_MARIJUANA      4'd2   // Marijuana Herb (+70/+120 HP, +20 Mind)
+`define ITEM_MARIJUANA      4'd2   // Medicinal Herb (+70/+120 HP, +20 Mind)
+`define ITEM_MEDICINAL      `ITEM_MARIJUANA // Sanitized canonical alias
 `define ITEM_KEY            4'd3   // Dungeon Key (3 needed for Gate)
 `define ITEM_BREAD          4'd4   // Moldy Bread (-40 Hunger)
 `define ITEM_MEAT           4'd5   // Dried Meat (-60 Hunger, +15 HP)

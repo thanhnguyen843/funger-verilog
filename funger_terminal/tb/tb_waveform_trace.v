@@ -50,6 +50,7 @@ module tb_waveform_trace;
         .limb_target    (limb),
         .is_lethal_mode (lethal),
         .enemy_disarmed (disarmed),
+        .enemy_archetype(2'd0),
         .p1_damage      (p1_dmg),
         .p2_damage      (p2_dmg),
         .p1_flee_penalty(flee_pen)

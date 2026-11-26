@@ -270,7 +270,7 @@ def render_difficulty_screen(cursor_idx):
     rows.append(f"  {c1}{p1} [1] FEAR & HUNGER (Normal Mode - Standard Survival)\033[0m")
     rows.append("      - Explorer Combat Stats  : \033[1;32mEmpowered Survival Training\033[0m (Fair combat odds)")
     rows.append("      - Poppy Flower Healing   : \033[1;32m+50 HP\033[0m per application")
-    rows.append("      - Marijuana Herb Healing : \033[1;32m+120 HP\033[0m potent medicinal cure")
+    rows.append("      - Medicinal Herb Healing : \033[1;32m+120 HP\033[0m potent medicinal cure")
     rows.append("      - Recommended for tacticians seeking fair odds against subterranean horrors.")
     rows.append("")
 
@@ -279,7 +279,7 @@ def render_difficulty_screen(cursor_idx):
     rows.append(f"  {c2}{p2} [2] TERROR & STARVATION (Hardcore Mode - Ruthless Reality)\033[0m")
     rows.append("      - Explorer Combat Stats  : \033[1;31mPure Baseline Vulnerability\033[0m (Beasts strike to maim)")
     rows.append("      - Poppy Flower Healing   : \033[1;31m+30 HP\033[0m degraded potency")
-    rows.append("      - Marijuana Herb Healing : \033[1;31m+75 HP\033[0m scarce medicinal value")
+    rows.append("      - Medicinal Herb Healing : \033[1;31m+75 HP\033[0m scarce medicinal value")
     rows.append("      - Intended only for master explorers where every limb loss is permanent.")
     rows.append("")
     rows.append("\033[1;30m" + "=" * 100 + "\033[0m")
@@ -362,7 +362,7 @@ def run_guide_modal():
     rows.append(make_border_line("-", border_color="\033[1;32m"))
     rows.append(make_left_box_row("\033[1;32m[SURVIVAL SUPPLIES & MEDICINE]\033[0m", border_color="\033[1;32m"))
     rows.append(make_left_box_row("  Poppy Flower   : +50 HP (+65 Cahara, +30 Hardcore). Staunches bleeding flesh.", border_color="\033[1;32m"))
-    rows.append(make_left_box_row("  Marijuana Herb : +120 HP (+75 Hardcore). Potent medicinal smoke.", border_color="\033[1;32m"))
+    rows.append(make_left_box_row("  Medicinal Herb : +120 HP (+75 Hardcore). Potent medicinal fumes.", border_color="\033[1;32m"))
     rows.append(make_left_box_row("  Moldy Bread    : -40 Hunger. Relieves starvation to prevent HP deterioration.", border_color="\033[1;32m"))
     rows.append(make_left_box_row("  Vintage Ale    : +35 Mind. Quells creeping madness, terror, and panic.", border_color="\033[1;32m"))
     rows.append(make_border_line("-", border_color="\033[1;32m"))
@@ -584,7 +584,7 @@ def run_master_game():
         rows.append(f"  \033[1;33m[EXPEDITION LOG]:\033[0m \033[1;37m{fit_ansi(recent_log, 78)}\033[0m")
         rows.append("")
         rows.append("\033[1;30m+====================================================================================================+\033[0m")
-        rows.append("  \033[1;37m[CONTROLS]: [W/A/S/D] Di chuyển  |  [I] Túi đồ  |  \033[1;33m★ [G] HƯỚNG DẪN (GUIDE)\033[0m  \033[1;37m|  [Q] Thoát\033[0m")
+        rows.append("  \033[1;37m[CONTROLS]: [W/A/S/D] Move  |  [I] Pouch  |  \033[1;33m★ [G] SURVIVAL GUIDE\033[0m  \033[1;37m|  [Q] Quit\033[0m")
         rows.append("\033[1;30m====================================================================================================\033[0m")
         atomic_blit(rows)
 
@@ -638,11 +638,13 @@ def run_master_game():
                     if solo_hero["hp"] <= trap_dmg:
                         if inventory.get("totem", 0) > 0:
                             inventory["totem"] -= 1
-                            solo_hero["hp"] = max(1, solo_hero["max_hp"] // 2)
+                            solo_hero["hp"] = solo_hero["max_hp"]
+                            solo_hero["toxicity"] = 0
                             key_count = min(3, key_count + 1)
                             if "debuffs" in solo_hero:
                                 solo_hero["debuffs"].clear()
-                            recent_log = f"\033[1;33m★ [TOTEM OF UNDYING DETONATES]! Lethal trap deflected! Restored to {solo_hero['hp']} HP! Got Key ({key_count}/3)!\033[0m"
+                            solo_hero["severed_limbs"] = {"head": 100, "torso": 100, "arm_r": 100, "arm_l": 100, "leg_r": 100, "leg_l": 100}
+                            recent_log = f"\033[1;33m★ [TOTEM OF UNDYING]: Trap negated! Full HP ({solo_hero['hp']}) & limbs restored! Got Key ({key_count}/3)!\033[0m"
                         else:
                             solo_hero["hp"] = 0
                             show_game_over_screen(solo_hero, "SPRING NEEDLE TRAP")
@@ -667,7 +669,8 @@ def run_master_game():
                         monster_hp=mimic_data["hp"],
                         monster_atk=mimic_data["atk"],
                         monster_def=mimic_data["def"],
-                        inv=inventory
+                        inv=inventory,
+                        is_hardcore=is_hardcore
                     )
                     clear_screen()
                     solo_hero["hp"] = updated_hero["hp"]
@@ -718,7 +721,8 @@ def run_master_game():
                 monster_hp=m_data["hp"],
                 monster_atk=m_data["atk"],
                 monster_def=m_data["def"],
-                inv=inventory
+                inv=inventory,
+                is_hardcore=is_hardcore
             )
             clear_screen()
 
@@ -775,11 +779,13 @@ def run_master_game():
                 if solo_hero["hp"] <= 10:
                     if inventory.get("totem", 0) > 0:
                         inventory["totem"] -= 1
-                        solo_hero["hp"] = max(1, solo_hero["max_hp"] // 2)
+                        solo_hero["hp"] = solo_hero["max_hp"]
                         solo_hero["hunger"] = 0
+                        solo_hero["toxicity"] = 0
                         if "debuffs" in solo_hero:
                             solo_hero["debuffs"].clear()
-                        recent_log = f"\033[1;33m★ [TOTEM OF UNDYING DETONATES]! Fatal starvation shock reversed! Restored to {solo_hero['hp']} HP!\033[0m"
+                        solo_hero["severed_limbs"] = {"head": 100, "torso": 100, "arm_r": 100, "arm_l": 100, "leg_r": 100, "leg_l": 100}
+                        recent_log = f"\033[1;33m★ [TOTEM OF UNDYING]: Starvation reversed! Full HP ({solo_hero['hp']}) & limbs restored!\033[0m"
                     else:
                         solo_hero["hp"] = 0
                         show_game_over_screen(solo_hero, "STARVATION & EXHAUSTION")
@@ -796,6 +802,7 @@ def run_master_game():
             ch = msvcrt.getch()
             while msvcrt.kbhit():
                 msvcrt.getch()
+            res = None
 
             if ch in (b'\x00', b'\xe0'):
                 ext = msvcrt.getch()

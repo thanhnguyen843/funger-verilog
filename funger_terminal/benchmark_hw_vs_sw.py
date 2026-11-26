@@ -101,11 +101,11 @@ def run_benchmark():
     print(f"\033[1;33m>>> ARCHITECTURAL SPEEDUP: Hardware is {latency_speedup:.1f}x FASTER than Software Execution! <<<\033[0m")
     print(f"\033[1;33m>>> ENERGY EFFICIENCY: Hardware uses {energy_efficiency:.1f}x LESS ENERGY per combat turn! <<<\033[0m\n")
 
-    # Save academic report in clone/
-    clone_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "clone"))
-    if not os.path.exists(clone_dir):
-        os.makedirs(clone_dir, exist_ok=True)
-    report_path = os.path.join(clone_dir, "HARDWARE_VS_SOFTWARE_BENCHMARK.md")
+    # Save academic report locally inside sim/ (never outside repo root)
+    sim_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "sim"))
+    if not os.path.exists(sim_dir):
+        os.makedirs(sim_dir, exist_ok=True)
+    report_path = os.path.join(sim_dir, "HARDWARE_VS_SOFTWARE_BENCHMARK.md")
 
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("# BÁO CÁO PHÂN TÍCH HIỆU NĂNG: PHẦN CỨNG (RTL) VS PHẦN MỀM (CPU)\n")

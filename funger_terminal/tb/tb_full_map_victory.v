@@ -32,23 +32,23 @@ module tb_full_map_victory;
     wire [7:0]  enemy_max_hp_out;
 
     wire [1:0]  active_pal_idx_out;
-    wire [3:0]  active_pal_id_out;
+    wire [4:0]  active_pal_id_out;
     wire [7:0]  active_pal_hp_out;
     wire [7:0]  active_pal_max_hp_out;
 
-    wire [3:0]  pal0_id_out;
+    wire [4:0]  pal0_id_out;
     wire [7:0]  pal0_hp_out;
     wire [7:0]  pal0_max_hp_out;
 
-    wire [3:0]  pal1_id_out;
+    wire [4:0]  pal1_id_out;
     wire [7:0]  pal1_hp_out;
     wire [7:0]  pal1_max_hp_out;
 
-    wire [3:0]  pal2_id_out;
+    wire [4:0]  pal2_id_out;
     wire [7:0]  pal2_hp_out;
     wire [7:0]  pal2_max_hp_out;
 
-    wire [3:0]  pal3_id_out;
+    wire [4:0]  pal3_id_out;
     wire [7:0]  pal3_hp_out;
     wire [7:0]  pal3_max_hp_out;
 

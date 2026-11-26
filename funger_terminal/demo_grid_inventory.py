@@ -301,9 +301,6 @@ def render_pouch_screen(items, sel_idx, status_msg="", hero=None):
     screen_rows.append(f"{c_border}|{c_reset}" + dui.fit_ansi(footer, 98) + f"{c_border}|{c_reset}")
 
     return screen_rows
-    screen_rows.append(f"{c_border}|{c_reset}" + dui.fit_ansi(footer, 98) + f"{c_border}|{c_reset}")
-
-    return screen_rows
 
 def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardcore=False):
     """
@@ -390,15 +387,15 @@ def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardc
                                 hero["severed_limbs"] = {"head": 100, "torso": 100, "arm_r": 100, "arm_l": 100, "leg_r": 100, "leg_l": 100}
                             hero["hp"] = hero.get("max_hp", 100)
                             hero["toxicity"] = 0
-                        status_msg = f"\033[1;33m★ [TOTEM OF UNDYING]: All severed limbs fully restored! HP 100% healed ({hero.get('hp', 100)}/{hero.get('max_hp', 100)})!\033[0m"
+                        status_msg = f"\033[1;33m★ [TOTEM]: Limbs regrown! Full HP ({hero.get('hp', 100)}/{hero.get('max_hp', 100)})!\033[0m"
 
                     elif cur_it["id"] == "poppy":
                         max_t = hero.get("max_toxicity", 100) if hero else 100
                         if hero and hero.get("name") == "NAS'HRAH":
-                            status_msg = "\033[1;33m● [WHITE POPPY]: NAS'HRAH scoffs: 'I care nothing for mortal weeds!' (0 HP).\033[0m"
+                            status_msg = "\033[1;33m● [POPPY]: NAS'HRAH scoffs: 'No mortal weeds!' (0 HP).\033[0m"
                         elif hero and hero.get("toxicity", 0) >= max_t:
                             hero["hp"] = max(1, hero.get("hp", 1) - 5)
-                            status_msg = f"\033[1;31m✖ [OVERDOSE]: Stomach violently convulsing (0 HP, -5 HP toxin)!\033[0m"
+                            status_msg = f"\033[1;31m✖ [OVERDOSE]: Stomach convulsing (0 HP, -5 HP toxin)!\033[0m"
                         else:
                             heal = 65 if (hero and hero.get("name") == "CAHARA") else (30 if is_hardcore else 50)
                             if hero is not None:
@@ -409,36 +406,36 @@ def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardc
                                     hero["debuffs"].remove("bleeding")
                                 if "Bleeding (-4 HP/turn)" in hero.get("debuffs", []):
                                     hero["debuffs"].remove("Bleeding (-4 HP/turn)")
-                            status_msg = f"\033[1;32m● [WHITE POPPY]: Poultice applied! Restored +{heal} HP & stopped bleeding! ({hero.get('hp', 0)}/{hero.get('max_hp', 100)} HP, {hero.get('toxicity', 0)}/{max_t}% Tox)\033[0m"
+                            status_msg = f"\033[1;32m● [POPPY]: +{heal} HP & stopped bleeding! ({hero.get('hp', 0)}/{hero.get('max_hp', 100)}, Tox {hero.get('toxicity', 0)}%)\033[0m"
 
                     elif cur_it["id"] == "weed":
                         max_t = hero.get("max_toxicity", 100) if hero else 100
                         if hero and hero.get("name") == "NAS'HRAH":
-                            status_msg = "\033[1;33m● [MEDICINAL HERB]: NAS'HRAH sneers: 'Mortal remedies have no power over me!' (0 HP).\033[0m"
+                            status_msg = "\033[1;33m● [MEDICINAL HERB]: NAS'HRAH rejects mortal herbs (0 HP).\033[0m"
                         elif hero and hero.get("toxicity", 0) >= max_t:
                             hero["hp"] = max(1, hero.get("hp", 1) - 5)
-                            status_msg = f"\033[1;31m✖ [OVERDOSE]: {hero.get('name')} overdoses on medicinal fumes (0 HP, -5 HP toxin)!\033[0m"
+                            status_msg = f"\033[1;31m✖ [OVERDOSE]: {hero.get('name')} overdoses (0 HP, -5 HP toxin)!\033[0m"
                         else:
                             heal = 150 if (hero and hero.get("name") == "CAHARA") else (75 if is_hardcore else 120)
                             if hero is not None:
                                 hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + heal)
                                 added_tox = 0 if hero.get("name") == "MOONLESS" else (25 if hero.get("name") == "RAGNVALDR" else 50)
                                 hero["toxicity"] = min(max_t, hero.get("toxicity", 0) + added_tox)
-                            status_msg = f"\033[1;32m● [MEDICINAL HERB]: Inhaled herbal fumes! Restored +{heal} HP & dulled pain! ({hero.get('hp', 0)}/{hero.get('max_hp', 100)} HP, {hero.get('toxicity', 0)}/{max_t}% Tox)\033[0m"
+                            status_msg = f"\033[1;32m● [MEDICINAL HERB]: +{heal} HP & soothes pain! ({hero.get('hp', 0)}/{hero.get('max_hp', 100)}, Tox {hero.get('toxicity', 0)}%)\033[0m"
 
                     elif cur_it["id"] == "bread":
                         if hero and hero.get("name") == "NAS'HRAH":
                             status_msg = "\033[1;33m● [MOLDY BREAD]: NAS'HRAH has no need for mortal crumbs!\033[0m"
                         elif hero and hero.get("name") == "RAGNVALDR":
                             hero["hunger"] = max(0, hero.get("hunger", 0) - 20)
-                            status_msg = f"\033[1;33m● [MOLDY BREAD]: Ragnvaldr swallows stale bread (-20 Hunger - Craves raw meat!). ({hero.get('hunger', 0)}/100 Hunger)\033[0m"
+                            status_msg = f"\033[1;33m● [MOLDY BREAD]: Ragnvaldr eats (-20 Hunger - Craves meat!). ({hero.get('hunger', 0)}/100)\033[0m"
                         elif hero and hero.get("name") == "CAHARA":
                             hero["hunger"] = max(0, hero.get("hunger", 0) - 50)
-                            status_msg = f"\033[1;32m● [MOLDY BREAD]: Cahara savors the breadcrumbs (-50 Hunger). ({hero.get('hunger', 0)}/100 Hunger)\033[0m"
+                            status_msg = f"\033[1;32m● [MOLDY BREAD]: Cahara eats rations (-50 Hunger). ({hero.get('hunger', 0)}/100)\033[0m"
                         else:
                             if hero is not None:
                                 hero["hunger"] = max(0, hero.get("hunger", 0) - 40)
-                            status_msg = f"\033[1;33m● [MOLDY BREAD]: Rations consumed! Hunger reduced by -40! ({hero.get('hunger', 0)}/100 Hunger)\033[0m"
+                            status_msg = f"\033[1;33m● [MOLDY BREAD]: Consumed! Hunger reduced by -40! ({hero.get('hunger', 0)}/100)\033[0m"
 
                     elif cur_it["id"] == "meat":
                         if hero and hero.get("name") == "NAS'HRAH":
@@ -448,13 +445,13 @@ def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardc
                             if hero is not None:
                                 hero["hunger"] = max(0, hero.get("hunger", 0) - 60)
                                 hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + heal)
-                            status_msg = f"\033[1;33m● [DRIED MEAT]: Salted meat chewed! Relieved -60 Hunger & restored +{heal} HP! ({hero.get('hp', 0)} HP, {hero.get('hunger', 0)}/100 Hunger)\033[0m"
+                            status_msg = f"\033[1;33m● [DRIED MEAT]: -60 Hunger & +{heal} HP! ({hero.get('hp', 0)} HP, Hunger {hero.get('hunger', 0)}/100)\033[0m"
 
                     elif cur_it["id"] == "vial":
                         if hero and hero.get("name") == "NAS'HRAH":
                             hero["hp"] = min(hero.get("max_hp", 100), hero.get("hp", 0) + 15)
                             hero["mind"] = min(hero.get("max_mind", 100), hero.get("mind", 100) + 35)
-                            status_msg = f"\033[1;36m● [ALCHEMICAL VIAL]: Nas'hrah absorbs ancient spirits (+15 HP, +35 Mind)! ({hero.get('mind', 100)}/{hero.get('max_mind', 100)})\033[0m"
+                            status_msg = f"\033[1;36m● [ALCHEMICAL VIAL]: Absorbs spirits (+15 HP, +35 Mind)! ({hero.get('mind', 100)}/{hero.get('max_mind', 100)})\033[0m"
                         else:
                             if hero is not None:
                                 hero["mind"] = min(hero.get("max_mind", 100), hero.get("mind", 100) + 35)
@@ -463,7 +460,7 @@ def run_pouch_interactive(initial_items=None, hero=None, inv_dict=None, is_hardc
                                     for deb in ["infection", "poison", "gangrene", "bleeding", "Bleeding (-4 HP/turn)"]:
                                         if deb in hero["debuffs"]:
                                             hero["debuffs"].remove(deb)
-                            status_msg = f"\033[1;36m● [ALCHEMICAL VIAL]: Antiseptic poured! Cleansed necrosis/toxins & restored +35 Mind! ({hero.get('mind', 100)}/{hero.get('max_mind', 100)})\033[0m"
+                            status_msg = f"\033[1;36m● [VIAL]: Cleansed toxins (-25% Tox) & +35 Mind! ({hero.get('mind', 100)}/{hero.get('max_mind', 100)})\033[0m"
 
                 else:
                     status_msg = f"\033[1;31m✖ [DEPLETED]: No {cur_it['name']} remaining in your satchel!\033[0m"

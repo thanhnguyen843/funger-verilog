@@ -2,9 +2,9 @@ name: Hardware Verification CI/CD
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "main", "develop", "feature/**" ]
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: [ "main", "develop", "feature/**" ]
 
 jobs:
   verify-hardware:
@@ -33,7 +33,12 @@ jobs:
         run: |
           cd funger_terminal
           mkdir -p sim
-          iverilog -g2012 -Isrc -o sim/tb_game_check.out tb/tb_game_check.v src/*.v
+          iverilog -Wall -g2012 -Isrc -o sim/tb_game_check.out tb/tb_game_check.v src/*.v
           vvp sim/tb_game_check.out
-          iverilog -g2012 -Isrc -o sim/tb_battle_auto.out tb/tb_battle_auto.v src/*.v
+          iverilog -Wall -g2012 -Isrc -o sim/tb_battle_auto.out tb/tb_battle_auto.v src/*.v
           vvp sim/tb_battle_auto.out
+          iverilog -Wall -g2012 -Isrc -o sim/tb_damage_alu.out tb/tb_damage_alu.v src/damage_alu.v
+          vvp sim/tb_damage_alu.out
+          iverilog -Wall -g2012 -Isrc -o sim/funger_play.out tb/tb_play.v src/*.v
+          python local_test_matrix.py
+          python audit_visual_screen_inspector.py

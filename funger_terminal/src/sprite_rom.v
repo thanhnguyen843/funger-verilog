@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module sprite_rom (
     input  wire [2:0]  sprite_id, // 0: Đùi gà, 1: Lọ thuốc, 2: Bánh mì, 3: Hoa, 4: Totem, 5: Lá
     input  wire [4:0]  x,         // Tọa độ cột (0 -> 19)

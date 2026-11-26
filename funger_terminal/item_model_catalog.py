@@ -8,7 +8,7 @@ Fear & Hunger: Terminal Labyrinth - Solo Explorer Architecture
 Tất cả 7 mô hình được xây dựng chuẩn xác theo yêu cầu người dùng:
   1. TOTEM OF UNDYING : Thần tượng Minecraft mắt ngọc lục bảo, thân vàng (Đã duyệt).
   2. POPPY FLOWER     : Hoa anh túc đỏ thẫm 8 cánh, đài hoa chalice & nhụy vàng (Làm lại chuẩn).
-  3. MARIJUANA HERB   : Lá thảo dược răng cưa 5 nhánh sắc sảo, màu xanh ngọc tươi sáng (Làm lại chuẩn).
+  3. MEDICINAL HERB   : Lá thảo dược răng cưa 5 nhánh sắc sảo, màu xanh ngọc tươi sáng (Làm lại chuẩn).
   4. MOLDY BREAD      : Ổ Baguette nướng giòn thanh thoát 3 khía vát xiên vàng ươm (Đã duyệt).
   5. DRIED MEAT       : Đùi thịt cầm tay rút xương đỏ hồng, đầu xương trắng ngà (Đã duyệt).
   6. ALCHEMICAL VIAL  : Bình thuốc cổ nút bần nhãn chú ấn Hexen thanh tẩy (Làm lại chuẩn).
@@ -100,7 +100,7 @@ poppy_sprite = [
 ]
 
 # -----------------------------------------------------------------------------
-# 3. MARIJUANA HERB (Thảo dược an thần) - LÀM LẠI: 5 CÁNH RĂNG CƯA SẮC NÉT
+# 3. MEDICINAL HERB (Thảo dược an thần) - LÀM LẠI: 5 CÁNH RĂNG CƯA SẮC NÉT
 # -----------------------------------------------------------------------------
 C_L1 = "\033[38;2;85;240;115m"   # Xanh ngọc lục bảo tươi sáng rực rỡ
 C_L2 = "\033[38;2;45;195;80m"    # Xanh thảo dược tươi tự nhiên
@@ -259,7 +259,7 @@ ITEM_CATALOG = [
     },
     {
         "id": "weed",
-        "name": "MARIJUANA HERB",
+        "name": "MEDICINAL HERB",
         "type": "THẢO DƯỢC AN THẦN",
         "qty": 2,
         "max_qty": 5,

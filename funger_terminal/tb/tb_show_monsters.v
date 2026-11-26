@@ -10,7 +10,7 @@
 module tb_show_monsters;
 
     // Databases & Routers
-    character_rom u_char_rom();
+    character_rom u_char_rom(.char_id(4'd1), .is_hard_mode(1'b0), .char_hp(), .char_atk(), .char_def(), .char_name(), .char_class());
     monster_rom   u_mon_rom(.monster_id(6'd1), .is_elite(1'b0), .base_hp(), .base_atk(), .base_def(), .spawn_weight(), .is_default_elite());
     sprite_router u_router();
 
@@ -199,7 +199,7 @@ module tb_show_monsters;
                         end
                     6:  begin
                             if (mid == 6'd23)
-                                $write("| \033[1;33mLoot Drops    : 20%% Key Drop  |  Poppy / Marijuana Chest Bounty        \033[0m|");
+                                $write("| \033[1;33mLoot Drops    : 20%% Key Drop  |  Poppy / Medicinal Chest Bounty        \033[0m|");
                             else if (def_elite)
                                 $write("| \033[1;33mLoot Drops    : 50%% Dungeon Key Drop  |  20%% Healing Poppy Flower      \033[0m|");
                             else

@@ -50,6 +50,52 @@ module terminal_ui;
         .row(k_row_b), .col(k_col_b), .color_rgb(k_rgb_b), .is_transparent(k_trans_b)
     );
 
+    // Tri-State Monster Morphology (Injured Amber Joints / Dead Ash Gray)
+    reg  [5:0] ms_id;
+    reg  [1:0] ms_state;
+    reg  [4:0] ms_row_t, ms_row_b, ms_col;
+    wire       ms_px_t, ms_px_b, ms_tr_t, ms_tr_b;
+    wire [4:0] ms_w, ms_h;
+    wire [7:0] ms_rt, ms_gt, ms_bt, ms_rb, ms_gb, ms_bb;
+
+    monster_state_model u_mon_st_t (
+        .monster_id(ms_id), .state(ms_state), .row(ms_row_t), .col(ms_col),
+        .pixel_val(ms_px_t), .is_transparent(ms_tr_t),
+        .width(ms_w), .height(ms_h),
+        .r(ms_rt), .g(ms_gt), .b(ms_bt)
+    );
+    monster_state_model u_mon_st_b (
+        .monster_id(ms_id), .state(ms_state), .row(ms_row_b), .col(ms_col),
+        .pixel_val(ms_px_b), .is_transparent(ms_tr_b),
+        .width(), .height(),
+        .r(ms_rb), .g(ms_gb), .b(ms_bb)
+    );
+
+    // Sample monster pixel (Full-color when Normal, Technical Amber/Ash when Injured/Dead)
+    task sample_monster_tristate_pixel;
+        input  [5:0]  mid;
+        input  [1:0]  mstate;
+        input  [5:0]  r_t, r_b, col;
+        output        t_t; output [23:0] rgb_t;
+        output        t_b; output [23:0] rgb_b;
+        begin
+            if (mstate == 2'd0) begin
+                u_router.sample_monster_pixel(mid, r_t, r_b, col, t_t, rgb_t, t_b, rgb_b);
+            end else begin
+                ms_id    = mid;
+                ms_state = mstate;
+                ms_row_t = r_t[4:0];
+                ms_row_b = r_b[4:0];
+                ms_col   = col[4:0];
+                #1;
+                t_t = ms_tr_t;
+                rgb_t = {ms_rt, ms_gt, ms_bt};
+                t_b = (r_b >= {1'b0, ms_h}) ? 1'b1 : ms_tr_b;
+                rgb_b = {ms_rb, ms_gb, ms_bb};
+            end
+        end
+    endtask
+
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
     // Half-block pixel printer helper (High-Resolution 24-bit TrueColor)
@@ -73,27 +119,41 @@ module terminal_ui;
     endtask
 
     // ------------------------------------------------------------------------
-    // 1. Title Screen (Based on new title.txt rendered in 3D-ASCII)
+    // 1. Title Screen (100-Col Boxed Dark Gothic Theme, Zero Yellow Glare)
     // ------------------------------------------------------------------------
     task render_title_screen;
         input title_cursor;
         begin
             $write("\033[H");
-            $display("\033[1;31m====================================================================================================\033[0m");
-            $display("\033[1;31m          ________  ___  ___      ________       ________      _______       ________               \033[0m");
-            $display("\033[1;31m         |\\  _____\\|\\  \\|\\  \\    |\\   ___  \\    |\\   ____\\    |\\  ___ \\     |\\   __  \\              \033[0m");
-            $display("\033[1;31m         \\ \\  \\__/ \\ \\  \\\\\\  \\   \\ \\  \\\\ \\  \\   \\ \\  \\___|    \\ \\   __/|    \\ \\  \\|\\  \\             \033[0m");
-            $display("\033[1;31m          \\ \\   __\\ \\ \\  \\\\\\  \\   \\ \\  \\\\ \\  \\   \\ \\  \\  ___   \\ \\  \\_|/__   \\ \\   _  _\\            \033[0m");
-            $display("\033[1;31m           \\ \\  \\_|  \\ \\  \\\\\\  \\   \\ \\  \\\\ \\  \\   \\ \\  \\|\\  \\   \\ \\  \\_|\\ \\   \\ \\  \\\\  \\|           \033[0m");
-            $display("\033[1;31m            \\ \\__\\    \\ \\_______\\   \\ \\__\\\\ \\__\\   \\ \\_______\\   \\ \\_______\\   \\ \\__\\\\ _\\           \033[0m");
-            $display("\033[1;31m             \\|__|     \\|_______|    \\|__| \\|__|    \\|_______|    \\|_______|    \\|__|\\|__|          \033[0m");
-            $display("\033[1;33m                        [   T  E  R  M  I  N  A  L     E  D  I  T  I  O  N   ]                      \033[0m");
-            $display("\033[1;31m====================================================================================================\033[0m");
-            $display("\033[1;33m   [OBJECTIVE]: Collect 3 Dungeon Keys to open the Cyan Exit Gate 'G' on right wall!                \033[0m");
-            $display("\033[1;36m   [CHESTS]: Open brown chests 'C' for loot (Poppy/Marijuana/Key) or face Mimic Horror!           \033[0m");
-            $display("\033[1;31m====================================================================================================\033[0m");
-            $display("   \033[1;32m[1] START EXPEDITION\033[0m    |    \033[1;31m[0] ABANDON HOPE (QUIT)\033[0m");
-            $display("\033[1;31m====================================================================================================\033[0m\n");
+            $display("\033[1;31m+==================================================================================================+\033[0m\033[K");
+            $display("\033[1;31m|                                                                                                  |\033[0m\033[K");
+            $display("\033[1;31m|         ________  ___  ___      ________       ________      _______       ________              |\033[0m\033[K");
+            $display("\033[1;31m|        |\\  _____\\|\\  \\|\\  \\    |\\   ___  \\    |\\   ____\\    |\\  ___ \\     |\\   __  \\             |\033[0m\033[K");
+            $display("\033[1;31m|        \\ \\  \\__/ \\ \\  \\\\\\  \\   \\ \\  \\\\ \\  \\   \\ \\  \\___|    \\ \\   __/|    \\ \\  \\|\\  \\            |\033[0m\033[K");
+            $display("\033[1;31m|         \\ \\   __\\ \\ \\  \\\\\\  \\   \\ \\  \\\\ \\  \\   \\ \\  \\  ___   \\ \\  \\_|/__   \\ \\   _  _\\           |\033[0m\033[K");
+            $display("\033[1;31m|          \\ \\  \\_|  \\ \\  \\\\\\  \\   \\ \\  \\\\ \\  \\   \\ \\  \\|\\  \\   \\ \\  \\_|\\ \\   \\ \\  \\\\  \\|          |\033[0m\033[K");
+            $display("\033[1;31m|           \\ \\__\\    \\ \\_______\\   \\ \\__\\\\ \\__\\   \\ \\_______\\   \\ \\_______\\   \\ \\__\\\\ _\\          |\033[0m\033[K");
+            $display("\033[1;31m|            \\|__|     \\|_______|    \\|__| \\|__|    \\|_______|    \\|_______|    \\|__|\\|__|         |\033[0m\033[K");
+            $display("\033[1;31m|                      \033[1;33m[   T  E  R  M  I  N  A  L     E  D  I  T  I  O  N   ]\033[1;31m                      |\033[0m\033[K");
+            $display("\033[1;31m|                                                                                                  |\033[0m\033[K");
+            $display("\033[1;31m+==================================================================================================+\033[0m\033[K");
+            $display("\033[1;31m|  \033[1;33m[OBJECTIVE]: Collect 3 Dungeon Keys to open the Cyan Exit Gate 'G' on the eastern perimeter!  \033[1;31m  |\033[0m\033[K");
+            $display("\033[1;31m|  \033[1;36m[CHESTS]   : Open chests 'C' for survival herbs or disarm lethal Mimic & needle traps!        \033[1;31m  |\033[0m\033[K");
+            $display("\033[1;31m|  \033[1;35m[COMBAT]   : Confront roaming beasts 'M' in turn-based Solo limb-targeting combat!            \033[1;31m  |\033[0m\033[K");
+            $display("\033[1;31m+==================================================================================================+\033[0m\033[K");
+            $display("\033[K");
+            if (title_cursor == 1'b0) begin
+                $display("   \033[1;32m\342\226\266 [1] START EXPEDITION (EMBARK SOLO)\033[0m\033[K");
+                $display("     \033[90m[2] ABANDON HOPE (QUIT)\033[0m\033[K");
+            end else begin
+                $display("     \033[90m[1] START EXPEDITION (EMBARK SOLO)\033[0m\033[K");
+                $display("   \033[1;31m\342\226\266 [2] ABANDON HOPE (QUIT)\033[0m\033[K");
+            end
+            $display("\033[K");
+            $display("\033[1;30m====================================================================================================\033[0m\033[K");
+            $display("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S or Arrows]\033[0m Navigate  |  \033[1;32m[Enter/Space]\033[0m Confirm  |  \033[1;37m[1/2/Q]\033[0m Quick Pick\033[K");
+            $write("\033[1;30m====================================================================================================\033[0m\033[K\033[J");
+            $fflush();
         end
     endtask
 
@@ -104,28 +164,40 @@ module terminal_ui;
         input diff_cursor;
         begin
             $write("\033[H");
-            $display("\033[1;35m====================================================================================================\033[0m");
-            $display("\033[1;35m                   SELECT EXPEDITION DIFFICULTY - CHOOSE YOUR PATH INTO DARKNESS                    \033[0m");
-            $display("\033[1;35m====================================================================================================\033[0m\n");
+            $display("\033[1;35m+==================================================================================================+\033[0m\033[K");
+            $display("\033[1;35m|              \033[1;37mSELECT EXPEDITION DIFFICULTY - CHOOSE YOUR PATH INTO DARKNESS\033[1;35m                       |\033[0m\033[K");
+            $display("\033[1;35m+==================================================================================================+\033[0m\033[K");
+            $display("\033[K");
 
-            $display("  \033[1;32m[1] FEAR & HUNGER (Normal Mode - Standard Expeditions)\033[0m");
-            $display("      - Explorer Combat Stats  : \033[1;32m1.5x ATK & DEF Boost\033[0m (Empowered to clash with horrors)");
-            $display("      - Poppy Flower Healing   : \033[1;32m+50 HP\033[0m per application");
-            $display("      - Marijuana Herb Healing : \033[1;32m+120 HP\033[0m potent medicinal cure");
-            $display("      - Recommended for tacticians seeking fair odds against the subterranean horrors.\n");
+            if (diff_cursor == 1'b0)
+                $display("  \033[1;32m\342\226\266 [1] FEAR & HUNGER (Normal Mode - Standard Survival)\033[0m\033[K");
+            else
+                $display("    \033[90m[1] FEAR & HUNGER (Normal Mode - Standard Survival)\033[0m\033[K");
+            $display("      - Explorer Combat Stats  : \033[1;32mEmpowered Survival Training\033[0m (Fair combat odds)\033[K");
+            $display("      - Poppy Flower Healing   : \033[1;32m+50 HP\033[0m per application\033[K");
+            $display("      - Medicinal Herb Healing : \033[1;32m+120 HP\033[0m potent medicinal cure\033[K");
+            $display("      - Recommended for tacticians seeking fair odds against subterranean horrors.\033[K");
+            $display("\033[K");
 
-            $display("  \033[1;31m[2] TERROR & STARVATION (Hard Mode - Classic Fear & Hunger Experience)\033[0m");
-            $display("      - Explorer Combat Stats  : \033[1;31m1.0x Baseline Stats\033[0m (Raw, grim, lethal confrontations)");
-            $display("      - Poppy Flower Healing   : \033[1;31m+30 HP\033[0m scarce emergency recovery");
-            $display("      - Marijuana Herb Healing : \033[1;31m+70 HP\033[0m rationed herbal relief");
-            $display("      - For hardcore survivors prepared to face despair, starvation, and sudden death.\n");
+            if (diff_cursor == 1'b1)
+                $display("  \033[1;31m\342\226\266 [2] TERROR & STARVATION (Hardcore Mode - Ruthless Reality)\033[0m\033[K");
+            else
+                $display("    \033[90m[2] TERROR & STARVATION (Hardcore Mode - Ruthless Reality)\033[0m\033[K");
+            $display("      - Explorer Combat Stats  : \033[1;31mPure Baseline Vulnerability\033[0m (Beasts strike to maim)\033[K");
+            $display("      - Poppy Flower Healing   : \033[1;31m+30 HP\033[0m degraded potency\033[K");
+            $display("      - Medicinal Herb Healing : \033[1;31m+75 HP\033[0m scarce medicinal value\033[K");
+            $display("      - Intended only for master explorers where every limb loss matters.\033[K");
+            $display("\033[K");
 
-            $display("\033[1;35m====================================================================================================\033[0m\n");
+            $display("\033[1;30m====================================================================================================\033[0m\033[K");
+            $display("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S or Arrows]\033[0m Switch  |  \033[1;32m[Enter/Space]\033[0m Confirm  |  \033[1;37m[1/2]\033[0m Quick Select\033[K");
+            $write("\033[1;30m====================================================================================================\033[0m\033[K\033[J");
+            $fflush();
         end
     endtask
 
     // ------------------------------------------------------------------------
-    // 2. Character Select Screen (Pick 4 of 8 - Name and Stats Only)
+    // 2. Legacy Character Select Screen (Retained for tb_game_check/showcase)
     // ------------------------------------------------------------------------
     task render_character_select_screen;
         input       is_hard_mode;
@@ -152,12 +224,25 @@ module terminal_ui;
             end
 
             $display("----+----------------+-----------------------------+-------+--------------+--------------");
-            $display("\033[1;33m [SQUAD RECRUITMENT PRESETS - PRESS 1, 2, 3 OR 4]:\033[0m");
-            $display("  \033[1;33m[1] Balanced Vanguard  : Cahara, D'arce, Enki, Ragnvaldr\033[0m");
-            $display("  \033[1;35m[2] Occult Sorcery     : Enki, Nas'hrah, The Girl, Cahara\033[0m");
-            $display("  \033[1;31m[3] Iron Mercenaries   : Ragnvaldr, Le'garde, D'arce, Cahara\033[0m");
-            $display("  \033[1;36m[4] Custom Expedition  : Pick any 4 Explorers by ID (1-8)\033[0m");
-            $display("----------------------------------------------------------------------------------\n");
+            $display("\033[1;33m [SQUAD RECRUITMENT PRESETS - W/S + ENTER OR PRESS 1-4]:\033[0m");
+            if (squad_cursor == 2'd0)
+                $display("  \033[1;32m\342\226\266 [1] Balanced Vanguard  : Cahara, D'arce, Enki, Ragnvaldr\033[0m");
+            else
+                $display("    \033[90m[1] Balanced Vanguard  : Cahara, D'arce, Enki, Ragnvaldr\033[0m");
+            if (squad_cursor == 2'd1)
+                $display("  \033[1;35m\342\226\266 [2] Occult Sorcery     : Enki, Nas'hrah, The Girl, Cahara\033[0m");
+            else
+                $display("    \033[90m[2] Occult Sorcery     : Enki, Nas'hrah, The Girl, Cahara\033[0m");
+            if (squad_cursor == 2'd2)
+                $display("  \033[1;31m\342\226\266 [3] Iron Mercenaries   : Ragnvaldr, Le'garde, D'arce, Cahara\033[0m");
+            else
+                $display("    \033[90m[3] Iron Mercenaries   : Ragnvaldr, Le'garde, D'arce, Cahara\033[0m");
+            if (squad_cursor == 2'd3)
+                $display("  \033[1;36m\342\226\266 [4] Custom Expedition  : Pick any 4 Explorers by ID (1-8)\033[0m");
+            else
+                $display("    \033[90m[4] Custom Expedition  : Pick any 4 Explorers by ID (1-8)\033[0m");
+            $display("----------------------------------------------------------------------------------");
+            $write("\033[J");
         end
     endtask
 
@@ -220,6 +305,7 @@ module terminal_ui;
             $display("------+--------------------------------+--------------------+------------+----------+-----------");
             $display("\033[1;33m [INSTRUCTION]: Select 3 different companion IDs (1-5) to join your expedition vanguard.\033[0m");
             $display("\033[1;36m====================================================================================================\033[0m\n");
+            $write("\033[J");
         end
     endtask
 
@@ -453,7 +539,6 @@ module terminal_ui;
             end
 
             $write("\033[H"); // Clean screen reset: No ghost text from previous combat screens
-            $display("\033[1;32m==================================================================================\033[0m\033[K");
             if (is_hard_mode)
                 $display("\033[1;31m  LABYRINTH [TERROR & STARVATION] | POS:[%2d,%2d] | STEPS:%-3d | KEYS:\033[1;33m%0d/3\033[1;31m\033[0m\033[K",
                          px, py, step_count, key_qty);
@@ -514,17 +599,14 @@ module terminal_ui;
             end
 
             $display("\033[1;37m----------------------------------------------------------------------------------\033[0m\033[K");
-            $display(" LEGEND: \033[42m  \033[0m Green Wall | \033[90m .\033[0m Path Grid | \033[1;33m O\033[0m Player | \033[45;1;37m M\033[0m Foe | \033[48;2;139;69;19;1;37m C\033[0m Chest | \033[46;1;30m G\033[0m Exit Gate\033[K");
-            $display("\033[1;37m----------------------------------------------------------------------------------\033[0m\033[K");
+            $display(" LEGEND: \033[42m  \033[0m Wall | \033[90m .\033[0m Path | \033[1;33m O\033[0m You | \033[45;1;37m M\033[0m Foe | \033[48;2;139;69;19;1;37m C\033[0m Chest | \033[46;1;30m G\033[0m Exit Gate\033[K");
             $display(" SQUAD: 1.%-7s %3d/%3d | 2.%-7s %3d/%3d | 3.%-7s %3d/%3d | 4.%-7s %3d/%3d\033[K",
                      c0_name, c0_hp, c0_max,
                      c1_name, c1_hp, c1_max,
                      c2_name, c2_hp, c2_max,
                      c3_name, c3_hp, c3_max);
-            $display(" POUCH: \033[38;2;242;34;84m[+] Poppy: %-2d (+%0d HP)\033[0m | \033[38;2;105;225;101m[*] Marijuana: %-2d (+%0d HP)\033[0m | \033[1;33m[K] Keys: %0d/3\033[0m\033[K",
+            $display(" POUCH: \033[38;2;242;34;84m[+] Poppy: %-2d (+%0d HP)\033[0m | \033[38;2;105;225;101m[*] Medicinal: %-2d (+%0d HP)\033[0m | \033[1;33m[K] Keys: %0d/3\033[0m\033[K",
                      poppy_qty, is_hard_mode ? 30 : 50, marijuana_qty, is_hard_mode ? 70 : 120, key_qty);
-            $display(" CONTROLS: [W/A/S/D]: Move  |  [I]: Inventory & Heal  |  [P]: Party Roster  |  [Q]: Quit\033[K");
-            $display("\033[1;32m==================================================================================\033[0m\033[K");
         end
     endtask
 
@@ -582,8 +664,8 @@ module terminal_ui;
             $display("|  \033[38;2;87;168;123m    (Flower)\033[0m  :                            |  Usable on Map & during Battles (Costs 1 Turn) |");
             $display("+----------------------------------------------------------------------------------------------+");
 
-            // 2. Marijuana Herb
-            $display("|  \033[38;2;105;225;101m[*] M-Herb  \033[0m   :  [2] \033[1;32mMarijuana Herb x%-2d\033[0m   |  Restores \033[1;32m+%3d HP\033[0m massive healing power        |",
+            // 2. Medicinal Herb
+            $display("|  \033[38;2;105;225;101m[*] M-Herb  \033[0m   :  [2] \033[1;32mMedicinal Herb x%-2d\033[0m   |  Restores \033[1;32m+%3d HP\033[0m massive healing power        |",
                      marijuana_qty, is_hard_mode ? 70 : 120);
             $display("|  \033[38;2;42;162;114m    (Herb)  \033[0m  :                            |  Usable on Map & during Battles (Costs 1 Turn) |");
             $display("+----------------------------------------------------------------------------------------------+");
@@ -639,10 +721,9 @@ module terminal_ui;
         reg         pt_l_trans, pb_l_trans, pt_r_trans, pb_r_trans;
         reg [23:0]  pt_l_rgb, pb_l_rgb, pt_r_rgb, pb_r_rgb;
         begin
-            $write("\033[H");
-            $display("\033[1;36m====================================================================================================\033[0m");
+            $write("\033[2J\033[H");
             $display("\033[1;36m                     EXPEDITION SQUAD LINEUP: 4 CHOSEN EXPLORERS & MODELS                           \033[0m");
-            $display("\033[1;36m====================================================================================================\033[0m\n");
+            $display("\033[1;36m====================================================================================================\033[0m");
 
             for (pair = 0; pair < 2; pair = pair + 1) begin
                 if (pair == 0) begin
@@ -689,8 +770,8 @@ module terminal_ui;
                 u_router.get_funger_dim(cur_id_l, pw_l, ph_l);
                 u_router.get_funger_dim(cur_id_r, pw_r, ph_r);
 
-                // 11 half-block lines = 22 pixel rows
-                for (lp = 0; lp < 11; lp = lp + 1) begin
+                // 9 half-block lines = 18 pixel rows (compact <= 29 total lines)
+                for (lp = 0; lp < 9; lp = lp + 1) begin
                     // Left character sprite (26 columns)
                     for (c = 0; c < 26; c = c + 1) begin
                         if (c < pw_l && lp * 2 < ph_l) begin
@@ -754,13 +835,14 @@ module terminal_ui;
                         $write("                  ");
                     end
 
-                    $write("\n");
+                    $write("\033[K\n");
                 end
 
-                $display(" ----------------------------------------------    ----------------------------------------------\n");
+                $display(" ----------------------------------------------    ----------------------------------------------\033[K");
             end
 
-            $display("\033[1;36m====================================================================================================\033[0m\n");
+            $display("\033[1;36m====================================================================================================\033[0m");
+            $write("\033[J");
         end
     endtask
 
@@ -774,9 +856,9 @@ module terminal_ui;
         integer lp, c;
         begin
             $write("\033[H");
-            $display("\033[1;33m==================================================================================\033[0m");
-            $display("\033[1;33m               ANCIENT LABYRINTH TREASURE VAULT OPENED !                          \033[0m");
-            $display("\033[1;33m==================================================================================\033[0m\n");
+            $display("\033[1;33m+==================================================================================================+\033[0m\033[K");
+            $display("\033[1;33m|                            \033[1;37mANCIENT LABYRINTH TREASURE VAULT OPENED !\033[1;33m                             |\033[0m\033[K");
+            $display("\033[1;33m+==================================================================================================+\033[0m\033[K");
 
             // Render Chest Sprite Model (20x23 pixels -> 12 terminal lines)
             for (lp = 0; lp < 12; lp = lp + 1) begin
@@ -817,7 +899,7 @@ module terminal_ui;
                         $write("    \033[44;1;37m|  >> ACQUIRED: %0dx %-38s|\033[0m", loot_qty, loot_name);
                 end else if (lp == 6) begin
                     if (is_mimic)
-                        $write("    \033[41;1;37m|  ENGAGING COMBAT! Draw your steel!                    |\033[0m");
+                        $write("    \033[41;1;37m|  ENGAGING COMBAT! Draw your steel!                     |\033[0m");
                     else
                         $write("    \033[44;1;37m|  Supplies stored in Pouch. Tile is now cleared!        |\033[0m");
                 end else if (lp == 7) begin
@@ -827,32 +909,33 @@ module terminal_ui;
                         $write("    \033[44;1;37m+--------------------------------------------------------+\033[0m");
                 end
 
-                $write("\n");
+                $write("\033[K\n");
             end
 
-            $display("\n\033[1;33m==================================================================================\033[0m\n");
+            $display("\033[1;33m+==================================================================================================+\033[0m\033[K");
+            $fflush();
         end
     endtask
 
     // ------------------------------------------------------------------------
     // 6. Boxed Notifications with High-Contrast Backgrounds
     // ------------------------------------------------------------------------
-    // A. Item Acquired Notification (Standardized 102-Column Box)
+    // A. Item Acquired Notification (Standardized 100-Column Box)
     // ------------------------------------------------------------------------
     task notify_receive_item;
-        input [255:0] source_str;
+        input [511:0] source_str;
         input [255:0] item_name;
         input [7:0]   amount;
         begin
-            $display("\033[1;36m+====================================================================================================+\033[0m");
-            $display("\033[1;36m| \033[44;1;37m [BOUNTY ACQUIRED] \033[0m \033[1;37mSOURCE: %-73s \033[1;36m|\033[0m", source_str);
-            $display("\033[1;36m| \033[1;33m>> You received: %0dx %-77s \033[1;36m|\033[0m", amount, item_name);
-            $display("\033[1;36m+====================================================================================================+\033[0m\n");
+            $display("\033[1;36m+==================================================================================================+\033[0m\033[K");
+            $display("\033[1;36m| \033[44;1;37m [BOUNTY ACQUIRED] \033[0m \033[1;37mSOURCE: %-68s \033[1;36m|\033[0m\033[K", source_str);
+            $display("\033[1;36m| \033[1;33m>> You received: %0dx %-76s \033[1;36m|\033[0m\033[K", amount, item_name);
+            $display("\033[1;36m+==================================================================================================+\033[0m\033[K");
         end
     endtask
 
     // ------------------------------------------------------------------------
-    // B. Item Consumed Notification (Standardized 102-Column Box)
+    // B. Item Consumed Notification (Standardized 100-Column Box)
     // ------------------------------------------------------------------------
     task notify_consume_item;
         input [255:0] item_name;
@@ -861,11 +944,11 @@ module terminal_ui;
         input [7:0]   curr_hp;
         input [7:0]   max_hp;
         begin
-            $display("\033[1;32m+====================================================================================================+\033[0m");
-            $display("\033[1;32m| \033[48;2;0;90;110;1;37m [SUPPLY ADMINISTERED] \033[0m \033[1;37mApplied %-14s to %-47s \033[1;32m|\033[0m", item_name, char_name);
-            $display("\033[1;32m| \033[1;33m>> %-14s recovers +%0d HP! (Current Vitality: %3d / %3d)                                   \033[1;32m|\033[0m",
+            $display("\033[1;32m+==================================================================================================+\033[0m");
+            $display("\033[1;32m| \033[48;2;0;90;110;1;37m [SUPPLY ADMINISTERED] \033[0m \033[1;37mApplied %-14s to %-45s \033[1;32m|\033[0m", item_name, char_name);
+            $display("\033[1;32m| \033[1;33m>> %-14s recovers +%3d HP! (Current Vitality: %3d / %3d)                               \033[1;32m|\033[0m",
                      char_name, heal_hp, curr_hp, max_hp);
-            $display("\033[1;32m+====================================================================================================+\033[0m\n");
+            $display("\033[1;32m+==================================================================================================+\033[0m\n");
         end
     endtask
 
@@ -900,17 +983,17 @@ module terminal_ui;
         input [7:0]   curr_mind;
         begin
             if (!is_success) begin
-                $display("\n\033[1;31m+====================================================================================================+\033[0m");
-                $display("\033[1;31m| \033[41;1;37m [!] COIN OF FATE FAILED - LETHAL BLOW STRUCK ! \033[0m\033[1;31m                                                   |\033[0m");
-                $display("\033[1;31m| \033[1;37m>> %-12s failed to deflect the cleave! Took \033[1;31m-%0d DMG\033[1;37m and lost \033[1;36m-20 Mind\033[1;37m to terror!          \033[1;31m|\033[0m", hero_name, dmg_val);
-                $display("\033[1;31m| \033[1;33m>> Vitality Status: %-12s has %3d / %3d HP | Mind: %3d/100                                        \033[1;31m|\033[0m", hero_name, curr_hp, max_hp, curr_mind);
-                $display("\033[1;31m+====================================================================================================+\033[0m\n");
+                $display("\033[1;31m+==================================================================================================+\033[0m\033[K");
+                $display("\033[1;31m| \033[41;1;37m [!] COIN OF FATE FAILED - LETHAL BLOW STRUCK ! \033[0m\033[1;31m                                                 |\033[0m\033[K");
+                $display("\033[1;31m| \033[1;37m>> %-12s failed to deflect cleave! Took \033[1;31m-%3d DMG\033[1;37m & lost \033[1;36m-20 Mind\033[1;37m to terror!               \033[1;31m|\033[0m\033[K", hero_name, dmg_val);
+                $display("\033[1;31m| \033[1;33m>> Vitality Status: %-12s has %3d / %3d HP | Mind: %3d/100                                \033[1;31m|\033[0m\033[K", hero_name, curr_hp, max_hp, curr_mind);
+                $display("\033[1;31m+==================================================================================================+\033[0m\033[K");
             end else begin
-                $display("\n\033[1;32m+====================================================================================================+\033[0m");
-                $display("\033[1;32m| \033[42;1;37m [*] COIN OF FATE SUCCESS - FLAWLESS COUNTER PARRY ! \033[0m\033[1;32m                                              |\033[0m");
-                $display("\033[1;32m| \033[1;37m>> %-12s perfectly parried the lethal execution and countered for \033[1;32m+%0d pure DMG\033[1;37m!          \033[1;32m|\033[0m", hero_name, dmg_val);
-                $display("\033[1;32m| \033[1;33m>> The adversary reels in shock and agonizing agony from your riposte!                             \033[1;32m|\033[0m");
-                $display("\033[1;32m+====================================================================================================+\033[0m\n");
+                $display("\033[1;32m+==================================================================================================+\033[0m\033[K");
+                $display("\033[1;32m| \033[42;1;37m [*] COIN OF FATE SUCCESS - FLAWLESS COUNTER PARRY ! \033[0m\033[1;32m                                            |\033[0m\033[K");
+                $display("\033[1;32m| \033[1;37m>> %-12s perfectly parried the lethal execution & countered for \033[1;32m+%3d DMG\033[1;37m!                 \033[1;32m|\033[0m\033[K", hero_name, dmg_val);
+                $display("\033[1;32m| \033[1;33m>> The adversary reels in shock and agony from your riposte!                                     \033[1;32m|\033[0m\033[K");
+                $display("\033[1;32m+==================================================================================================+\033[0m\033[K");
             end
         end
     endtask
@@ -919,11 +1002,11 @@ module terminal_ui;
         input [255:0] hero_name;
         input [255:0] next_name;
         begin
-            $display("\n\033[1;31m+====================================================================================================+\033[0m");
-            $display("\033[1;31m| \033[41;1;37m [!] CRITICAL CASUALTY: FRONTLINE EXPLORER COLLAPSED ! \033[0m\033[1;31m                                            |\033[0m");
-            $display("\033[1;31m| \033[1;37m>> %-12s has fallen unconscious to devastating wounds!                                     \033[1;31m|\033[0m", hero_name);
-            $display("\033[1;33m| >> Reserve companion %-12s steps forward to defend the party frontline!                 \033[1;31m|\033[0m", next_name);
-            $display("\033[1;31m+====================================================================================================+\033[0m\n");
+            $display("\n\033[1;31m+==================================================================================================+\033[0m");
+            $display("\033[1;31m| \033[41;1;37m [!] CRITICAL CASUALTY: FRONTLINE EXPLORER COLLAPSED ! \033[0m\033[1;31m                                          |\033[0m");
+            $display("\033[1;31m| \033[1;37m>> %-12s has fallen unconscious to devastating wounds!                                   \033[1;31m|\033[0m", hero_name);
+            $display("\033[1;33m| >> Reserve companion %-12s steps forward to defend the party frontline!               \033[1;31m|\033[0m", next_name);
+            $display("\033[1;31m+==================================================================================================+\033[0m\n");
         end
     endtask
 
@@ -1081,7 +1164,7 @@ module terminal_ui;
     // ------------------------------------------------------------------------
     task render_slash_fx;
         begin
-            $display("\033[1;31m   >>> ////// LETHAL EXECUTION: BRUTAL SLASH TEARS THROUGH FLESH ////// <<<\033[0m\a");
+            $display("\n\033[1;31m   >>> ////// LETHAL EXECUTION: BRUTAL SLASH TEARS THROUGH FLESH ////// <<<\033[0m\a");
         end
     endtask
 
@@ -1243,25 +1326,32 @@ module terminal_ui;
         end
     endtask
 
-    // Task to render Coin Flip of Fate prompt
+    // Task to render Coin Flip of Fate prompt (Clean Gothic Theme, <= 16 lines)
     task render_coin_flip_prompt;
         input         cursor_pos; // 0: Heads, 1: Tails
         input [255:0] enemy_name;
         input [255:0] attack_name;
         begin
-            $display("\n\033[41;1;37m+====================================================================================================+\033[0m");
-            $display("\033[41;1;37m|  !!! LETHAL THREAT DETECTED: %-18s PREPARES [%-20s] !!!     |\033[0m", enemy_name, attack_name);
-            $display("\033[41;1;37m|  COIN FLIP OF FATE: PARRY COMPLETELY OR SUFFER CATASTROPHIC MUTILATION !                           |\033[0m");
-            $display("\033[41;1;37m+====================================================================================================+\033[0m");
-            $display("\033[1;33m  BET YOUR LIFE UPON THE COIN: \033[0m");
+            $write("\033[H");
+            $display("\033[1;30m+==================================================================================================+\033[0m\033[K");
+            $display("\033[41;1;37m|  !!! LETHAL THREAT DETECTED: %-18s PREPARES [%-20s] !!!              |\033[0m\033[K", enemy_name, attack_name);
+            $display("\033[41;1;37m|  COIN FLIP OF FATE: CALL THE COIN TO PARRY COMPLETELY OR SUFFER CATASTROPHIC MUTILATION !        |\033[0m\033[K");
+            $display("\033[1;30m+==================================================================================================+\033[0m\033[K");
+            $display("\033[K");
+            $display("  \033[1;33mBET YOUR LIFE UPON THE COIN:\033[0m\033[K");
+            $display("\033[K");
             if (cursor_pos == 1'b0) begin
-                $display("  \033[1;30;43m > [1] HEADS (SYLVIAN'S GRACE) \033[0m : \033[1;32mBlessing of love and preservation\033[0m \033[1;33m< [SELECTED]\033[0m");
-                $display("    [2] TAILS (GRO-GOROTH'S WRATH): Might of ancient slaughter and destruction");
+                $display("  \033[1;32m\342\226\266 [1] HEADS (SYLVIAN'S GRACE)  : Blessing of love, restoration & preservation\033[0m\033[K");
+                $display("    \033[90m[2] TAILS (GRO-GOROTH'S WRATH): Might of ancient slaughter, carnage & destruction\033[0m\033[K");
             end else begin
-                $display("    [1] HEADS (SYLVIAN'S GRACE) : Blessing of love and preservation");
-                $display("  \033[1;30;43m > [2] TAILS (GRO-GOROTH'S WRATH): \033[1;31mMight of ancient slaughter and destruction\033[0m \033[1;33m< [SELECTED]\033[0m");
+                $display("    \033[90m[1] HEADS (SYLVIAN'S GRACE)  : Blessing of love, restoration & preservation\033[0m\033[K");
+                $display("  \033[1;31m\342\226\266 [2] TAILS (GRO-GOROTH'S WRATH): Might of ancient slaughter, carnage & destruction\033[0m\033[K");
             end
-            $display("\033[90m  Keys: [W/S] or [Up/Down]: Toggle Coin Face | [E/Space/Enter]: Flip Coin | [1/2]: Quick Select\033[0m\n");
+            $display("\033[K");
+            $display("\033[1;30m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S / Arrows]\033[0m Flip Coin  |  \033[1;32m[Enter/Space]\033[0m Confirm Bet  |  \033[1;37m[1/2]\033[0m Quick Bet\033[K");
+            $write("\033[1;30m+==================================================================================================+\033[0m\033[K\033[J");
+            $fflush();
         end
     endtask
 
@@ -1270,25 +1360,25 @@ module terminal_ui;
         input user_choice;
         input flip_result;
         begin
-            $display("\n  \033[1;33m>> THE COIN SPINS INTO THE DARK AIR... \033[0m");
-            $display("     [ (O) | ]");
-            $display("     [ (O) / ]");
-            $display("     [ (O) - ]");
-            $display("     [ (O) \\ ]\a");
+            $display("  \033[1;33m>> THE COIN SPINS INTO THE DARK AIR... \033[0m\033[K");
+            $display("     [ (O) | ]\033[K");
+            $display("     [ (O) / ]\033[K");
+            $display("     [ (O) - ]\033[K");
+            $display("     [ (O) \\ ]\033[K");
 
             if (flip_result == 1'b0)
-                $display("  \033[1;33m>> COIN LANDED ON: [ HEADS (SYLVIAN) ] !\033[0m");
+                $display("  \033[1;33m>> COIN LANDED ON: [ HEADS (SYLVIAN) ] !\033[0m\033[K");
             else
-                $display("  \033[1;33m>> COIN LANDED ON: [ TAILS (GRO-GOROTH) ] !\033[0m");
+                $display("  \033[1;33m>> COIN LANDED ON: [ TAILS (GRO-GOROTH) ] !\033[0m\033[K");
 
             if (user_choice == flip_result) begin
-                $display("\033[1;32m+====================================================================================================+\033[0m");
-                $display("\033[1;32m|  >>> [SUBLIME PARRY!]: YOU CALLED THE COIN! DEFLECTED LETHAL BLOW AND COUNTER-STRUCK! <<<          |\033[0m");
-                $display("\033[1;32m+====================================================================================================+\033[0m\a\n");
+                $display("\033[1;32m+==================================================================================================+\033[0m\033[K");
+                $display("\033[1;32m|  >>> [SUBLIME PARRY!]: YOU CALLED THE COIN! DEFLECTED LETHAL BLOW AND COUNTER-STRUCK! <<<        |\033[0m\033[K");
+                $display("\033[1;32m+==================================================================================================+\033[0m\033[K");
             end else begin
-                $display("\033[1;31m+====================================================================================================+\033[0m");
-                $display("\033[1;31m|  >>> [COIN FLIP FAILED!]: THE LETHAL BLOW SHATTERS FLESH AND BONE WITH CRITICAL CARNAGE! <<<       |\033[0m");
-                $display("\033[1;31m+====================================================================================================+\033[0m\a\n");
+                $display("\033[1;31m+==================================================================================================+\033[0m\033[K");
+                $display("\033[1;31m|  >>> [COIN FLIP FAILED!]: THE LETHAL BLOW SHATTERS FLESH AND BONE WITH CRITICAL CARNAGE! <<<     |\033[0m\033[K");
+                $display("\033[1;31m+==================================================================================================+\033[0m\033[K");
             end
         end
     endtask
@@ -1380,43 +1470,45 @@ module terminal_ui;
         input [7:0] bag_ale;
         input [7:0] bag_keys;
         begin
-            $display("\033[1;32m+====================================================================================================+\033[0m");
-            $display("\033[1;32m|                                  SURVIVAL POUCH & PROVISIONS                                       |\033[0m");
-            $display("\033[1;32m+====================================================================================================+\033[0m");
+            $write("\033[H");
+            $display("\033[1;32m+==================================================================================================+\033[0m");
+            $display("\033[1;32m|                                  SURVIVAL POUCH & PROVISIONS                                     |\033[0m");
+            $display("\033[1;32m+==================================================================================================+\033[0m");
             
             // Item 0: Poppy
             if (cursor_pos == 3'd0)
-                $display("  \033[1;30;43m > [1] POPPY FLOWER          \033[0m : Qty: %-2d | Restores +%0d HP             \033[1;33m< [SELECT]\033[0m", bag_poppy, is_hard_mode ? 30 : 50);
+                $display("  \033[1;30;43m > [1] POPPY FLOWER          \033[0m : Qty: %-2d | Restores +%0d HP             \033[1;33m< [SELECT]\033[0m\033[K", bag_poppy, is_hard_mode ? 30 : 50);
             else
-                $display("    [1] POPPY FLOWER          : Qty: %-2d | Restores +%0d HP", bag_poppy, is_hard_mode ? 30 : 50);
+                $display("    [1] POPPY FLOWER          : Qty: %-2d | Restores +%0d HP\033[K", bag_poppy, is_hard_mode ? 30 : 50);
 
-            // Item 1: Marijuana
+            // Item 1: Medicinal Herb
             if (cursor_pos == 3'd1)
-                $display("  \033[1;30;43m > [2] MARIJUANA HERB        \033[0m : Qty: %-2d | Restores +%0d HP, +20 Mind   \033[1;33m< [SELECT]\033[0m", bag_marijuana, is_hard_mode ? 70 : 120);
+                $display("  \033[1;30;43m > [2] MEDICINAL HERB        \033[0m : Qty: %-2d | Restores +%0d HP, +20 Mind   \033[1;33m< [SELECT]\033[0m\033[K", bag_marijuana, is_hard_mode ? 70 : 120);
             else
-                $display("    [2] MARIJUANA HERB        : Qty: %-2d | Restores +%0d HP, +20 Mind", bag_marijuana, is_hard_mode ? 70 : 120);
+                $display("    [2] MEDICINAL HERB        : Qty: %-2d | Restores +%0d HP, +20 Mind\033[K", bag_marijuana, is_hard_mode ? 70 : 120);
 
             // Item 2: Moldy Bread
             if (cursor_pos == 3'd2)
-                $display("  \033[1;30;43m > [3] MOLDY BREAD           \033[0m : Qty: %-2d | Relieves -40 Hunger          \033[1;33m< [SELECT]\033[0m", bag_bread);
+                $display("  \033[1;30;43m > [3] MOLDY BREAD           \033[0m : Qty: %-2d | Relieves -40 Hunger          \033[1;33m< [SELECT]\033[0m\033[K", bag_bread);
             else
-                $display("    [3] MOLDY BREAD           : Qty: %-2d | Relieves -40 Hunger", bag_bread);
+                $display("    [3] MOLDY BREAD           : Qty: %-2d | Relieves -40 Hunger\033[K", bag_bread);
 
             // Item 3: Dried Meat
             if (cursor_pos == 3'd3)
-                $display("  \033[1;30;43m > [4] DRIED MEAT            \033[0m : Qty: %-2d | Relieves -60 Hunger, +15 HP  \033[1;33m< [SELECT]\033[0m", bag_meat);
+                $display("  \033[1;30;43m > [4] DRIED MEAT            \033[0m : Qty: %-2d | Relieves -60 Hunger, +15 HP  \033[1;33m< [SELECT]\033[0m\033[K", bag_meat);
             else
-                $display("    [4] DRIED MEAT            : Qty: %-2d | Relieves -60 Hunger, +15 HP", bag_meat);
+                $display("    [4] DRIED MEAT            : Qty: %-2d | Relieves -60 Hunger, +15 HP\033[K", bag_meat);
 
             // Item 4: Ale Flask
             if (cursor_pos == 3'd4)
-                $display("  \033[1;30;43m > [5] ALE FLASK             \033[0m : Qty: %-2d | Cleanses Fear, +35 Mind      \033[1;33m< [SELECT]\033[0m", bag_ale);
+                $display("  \033[1;30;43m > [5] ALE FLASK             \033[0m : Qty: %-2d | Cleanses Fear, +35 Mind      \033[1;33m< [SELECT]\033[0m\033[K", bag_ale);
             else
-                $display("    [5] ALE FLASK             : Qty: %-2d | Cleanses Fear, +35 Mind", bag_ale);
+                $display("    [5] ALE FLASK             : Qty: %-2d | Cleanses Fear, +35 Mind\033[K", bag_ale);
 
-            $display("\033[1;32m+====================================================================================================+\033[0m");
-            $display("  \033[1;33mDUNGEON KEYS IN POSSESSION: %0d/3 KEYS\033[0m", bag_keys);
-            $display("\033[90m  Keys: [W/S] or [Up/Down]: Move Cursor | [E/Space/Enter]: Use Item | [1-5]: Quick Select | [C]: Close Bag\033[0m\n");
+            $display("\033[1;32m+==================================================================================================+\033[0m");
+            $display("  \033[1;33mDUNGEON KEYS IN POSSESSION: %0d/3 KEYS\033[0m\033[K", bag_keys);
+            $display("\033[90m  Keys: [W/S or Up/Down]: Move | [Enter/Space/E]: Use | [1-5]: Quick Select | [C/Esc]: Close\033[0m\033[K\n");
+            $write("\033[J");
         end
     endtask
 
@@ -1507,13 +1599,13 @@ module terminal_ui;
             $display("\033[1;36m+====================================================================================================+\033[0m");
             $display("\033[1;37m|  [1] ATTACK   : Strike foe with your active weapon to inflict physical damage (based on ATK vs DEF)|\033[0m");
             $display("\033[1;37m|  [2] DEFEND   : Raise guard to brace for enemy assault (Mitigates incoming damage by 70%%)           |\033[0m");
-            $display("\033[1;37m|  [3] MEDICINE : Administer supplies from Survival Pouch (Poppy: +%2d HP | Marijuana: +%3d HP)       |\033[0m",
+            $display("\033[1;37m|  [3] MEDICINE : Administer supplies from Survival Pouch (Poppy: +%2d HP | Medicinal: +%3d HP)       |\033[0m",
                      is_hard_mode ? 30 : 50, is_hard_mode ? 70 : 120);
             $display("\033[1;33m|                 >> NOTE: Using medicine consumes 1 Combat Turn! Enemy attacks in retaliation!      |\033[0m");
             $display("\033[1;37m|  [4] SWITCH   : Tag in another conscious squad member to lead combat (Consumes 1 Turn)              |\033[0m");
             $display("\033[1;37m|  [5] FLEE     : Attempt a desperate retreat back into corridors (50%% escape success probability)   |\033[0m");
             $display("\033[1;36m+====================================================================================================+\033[0m");
-            $display("\033[1;37m  SURVIVAL SUPPLIES IN POUCH: \033[38;2;242;34;84m[+] Poppy: %0d (+%0d HP)\033[0m | \033[38;2;105;225;101m[*] Marijuana: %0d (+%0d HP)\033[0m",
+            $display("\033[1;37m  SURVIVAL SUPPLIES IN POUCH: \033[38;2;242;34;84m[+] Poppy: %0d (+%0d HP)\033[0m | \033[38;2;105;225;101m[*] Medicinal: %0d (+%0d HP)\033[0m",
                      poppy_qty, is_hard_mode ? 30 : 50, marijuana_qty, is_hard_mode ? 70 : 120);
             $display("\033[1;36m======================================================================================================\033[0m\n");
         end
@@ -1560,20 +1652,19 @@ module terminal_ui;
             u_router.get_monster_dim(enemy_id, mw, mh);
 
             $write("\033[H");
-            $display("\033[1;31m====================================================================================================\033[0m");
-            $write("  \033[1;37mTACTICAL COMBAT [TURN %0d]\033[0m  |  \033[1;33mFEAR & HUNGER LABYRINTH\033[0m", turn_no);
+            $write("  \033[1;37mTACTICAL COMBAT [TURN %0d]\033[0m | \033[1;33mFEAR & HUNGER LABYRINTH\033[0m", turn_no);
             if (enemy_id == 6'd23)
-                $display("  |  \033[41;1;37m[!] MIMIC HORROR ENCOUNTER [!]\033[0m");
+                $display(" | \033[41;1;37m[!] MIMIC HORROR ENCOUNTER [!]\033[0m\033[K");
             else if (is_elite)
-                $display("  |  \033[45;1;37m[!] ELITE DUNGEON ADVERSARY (+20%% STATS) [!]\033[0m");
+                $display(" | \033[45;1;37m[!] ELITE ADVERSARY (+20%% STATS) [!]\033[0m\033[K");
             else
-                $display("  |  \033[1;31m[!] FOE ENGAGED [!]\033[0m");
-            $display("\033[1;31m====================================================================================================\033[0m");
+                $display(" | \033[1;31m[!] FOE ENGAGED [!]\033[0m\033[K");
+            $display("\033[1;31m====================================================================================================\033[0m\033[K");
 
             // ----------------------------------------------------------------
-            // TOP 50%: ENEMY ADVERSARY ZONE (Enemy Stats Left, Monster Right)
+            // TOP 50%: ENEMY ADVERSARY ZONE (9 rows, <= 100 cols)
             // ----------------------------------------------------------------
-            for (lp = 0; lp < 11; lp = lp + 1) begin
+            for (lp = 0; lp < 9; lp = lp + 1) begin
                 // Left Column: Enemy Information & Targetable Limbs
                 case (lp)
                     0: begin
@@ -1647,15 +1738,15 @@ module terminal_ui;
                         $write(" ");
                     end
                 end
-                $write("\n");
+                $write("\033[K\n");
             end
 
-            $display("\033[1;30m====================================================================================================\033[0m");
+            $display("\033[1;30m====================================================================================================\033[0m\033[K");
 
             // ----------------------------------------------------------------
-            // BOTTOM 50%: HERO SQUAD ZONE (Hero Sprite Left, Hero Stats Right)
+            // BOTTOM 50%: HERO SQUAD ZONE (9 rows holding all hero info)
             // ----------------------------------------------------------------
-            for (lp = 0; lp < 11; lp = lp + 1) begin
+            for (lp = 0; lp < 9; lp = lp + 1) begin
                 $write("  ");
                 // Left Column: Player Explorer Sprite Model
                 for (c = 0; c < 24; c = c + 1) begin
@@ -1691,8 +1782,8 @@ module terminal_ui;
                     end
                     3: $write("\033[1;30m------------------------------------------------------------------\033[0m");
                     4: begin
-                        $write("POUCH: \033[38;2;242;34;84m[P] Poppy: %-2d (+50HP)\033[0m   |  \033[38;2;105;225;101m[M] Weed: %-2d (+120HP)\033[0m",
-                               poppy_qty, marijuana_qty);
+                        $write("POUCH: \033[38;2;242;34;84m[P] Poppy: %-2d (+%0dHP)\033[0m  |  \033[38;2;105;225;101m[M] Herb: %-2d (+%0dHP)\033[0m",
+                               poppy_qty, is_hard_mode ? 30 : 50, marijuana_qty, is_hard_mode ? 70 : 120);
                     end
                     5: begin
                         $write("       \033[38;2;230;180;50m[B] Bread: %-2d (-40Hng)\033[0m  |  \033[38;2;180;100;255m[A] Ale:  %-2d (+35Mnd)\033[0m",
@@ -1713,24 +1804,23 @@ module terminal_ui;
                     8: $write("\033[90m[STATUS]: Ready for orders. Type hotkey below and press Enter.\033[0m");
                     default: $write("                                                                  ");
                 endcase
-                $write("\n");
+                $write("\033[K\n");
             end
 
             // ----------------------------------------------------------------
-            // LAST ACTION EVENT TICKER (HIGH-CONTRAST BOXED NOTIFICATION)
+            // LAST ACTION EVENT TICKER (COMPACT 2-LINE <= 100 COLS BOX)
             // ----------------------------------------------------------------
-            $display("\033[1;33m+====================================================================================================+\033[0m");
-            $display("\033[1;33m| \033[43;1;30m [EVENT & ACTION REPORT] \033[0m \033[1;37m%-72s\033[1;33m |\033[0m", last_action_msg);
-            $display("\033[1;33m+====================================================================================================+\033[0m");
+            $display("\033[1;33m+==================================================================================================+\033[0m\033[K");
+            $display("\033[1;33m| \033[43;1;30m [EVENT & ACTION REPORT] \033[0m \033[1;37m%-69s\033[1;33m |\033[0m\033[K", last_action_msg);
 
             // ----------------------------------------------------------------
-            // DIRECT ACTION DECK (INSTANT 1-KEY COMMANDS)
+            // DIRECT ACTION DECK (STRICT <= 100 COLS)
             // ----------------------------------------------------------------
-            $display("\033[1;37m  TARGET LIMB : \033[1;31m[H]\033[0m Head (Instakill)  \033[1;33m[T]\033[0m Torso  \033[1;36m[R]\033[0m R-Arm (Disarm)  \033[1;36m[L]\033[0m L-Arm  \033[1;32m[K]\033[0m Legs\033[0m");
-            $display("\033[1;37m  HEXEN SKILL : \033[1;35m[1]\033[0m %-16s  \033[1;35m[2]\033[0m %-16s\033[0m", sk1_name, sk2_name);
-            $display("\033[1;37m  USE POUCH   : \033[1;31m[P]\033[0m Poppy (+HP)  \033[1;32m[M]\033[0m Weed (+HP)  \033[1;33m[B]\033[0m Bread (-Hng)  \033[1;34m[A]\033[0m Ale (+Mnd)\033[0m");
-            $display("\033[1;37m  TACTICS     : \033[1;36m[G]\033[0m Guard (-70%%)  \033[1;33m[S]\033[0m Switch Hero  \033[1;31m[F]\033[0m Flee  \033[1;32m[Z]\033[0m Stance (Brsrk/Grd/Agl)\033[0m");
-            $display("\033[1;36m====================================================================================================\033[0m");
+            $display("\033[1;37m  TARGET LIMB : \033[1;31m[H]\033[0m Head (Instakill)  \033[1;33m[T]\033[0m Torso  \033[1;36m[R]\033[0m R-Arm (Disarm)  \033[1;36m[L]\033[0m L-Arm  \033[1;32m[K]\033[0m Legs\033[0m\033[K");
+            $display("\033[1;37m  HEXEN SKILL : \033[1;35m[1]\033[0m %-15s \033[1;35m[2]\033[0m %-15s \033[1;33m| [G]\033[0m Guard [S] Tag [Z] Stance [F] Flee\033[0m\033[K", sk1_name, sk2_name);
+            $display("\033[1;37m  USE POUCH   : \033[1;31m[P]\033[0m Poppy (+HP)  \033[1;32m[M]\033[0m Herb (+HP)  \033[1;33m[B]\033[0m Bread (-Hng)  \033[1;34m[A]\033[0m Ale (+Mnd)\033[0m\033[K");
+            $display("\033[1;36m====================================================================================================\033[0m\033[K");
+            $write("\033[J");
         end
     endtask
 
@@ -1749,9 +1839,10 @@ module terminal_ui;
             $display("\033[1;31m     \\ \\_______\\ \\__\\ \\__\\ \\__\\    \\ \\__\\ \\_______\\       \\ \\_______\\ \\__/ /     \\ \\_______\\ \\__\\\\ _\\ \033[0m");
             $display("\033[1;31m      \\|_______|\\|__|\\|__|\\|__|     \\|__|\\|_______|        \\|_______|\\|__|/       \\|_______|\\|__|\\|__|\033[0m");
             $display("\033[1;31m====================================================================================================\033[0m");
-            $display("\033[1;37m+====================================================================================================+\033[0m");
-            $display("\033[1;37m|  YOUR ENTIRE SQUAD HAS FALLEN TO THE LABYRINTH HORRORS... YOUR BONES ROT IN THE DARKNESS.         |\033[0m");
-            $display("\033[1;37m+====================================================================================================+\033[0m\n");
+            $display("\033[1;37m+==================================================================================================+\033[0m");
+            $display("\033[1;37m|  YOUR ENTIRE SQUAD HAS FALLEN TO THE LABYRINTH HORRORS... YOUR BONES ROT IN THE DARKNESS.       |\033[0m");
+            $display("\033[1;37m+==================================================================================================+\033[0m\n");
+            $write("\033[J");
         end
     endtask
 
@@ -1772,10 +1863,1023 @@ module terminal_ui;
             $display("\033[1;33m                                                                  \\|___|/     \033[0m");
             $display("\033[1;32m                      [ E S C A P E   A C H I E V E D   -   V I C T O R Y ]                       \033[0m");
             $display("\033[1;33m====================================================================================================\033[0m");
-            $display("\033[1;36m+====================================================================================================+\033[0m");
-            $display("\033[1;36m|  \033[1;33mALL 3 RUNIC KEYS INSERTED!\033[1;37m THE RUNIC GATES GRIND OPEN AS GOLDEN LIGHT FLOODS THE DARKNESS!        \033[1;36m|\033[0m");
-            $display("\033[1;36m|  \033[1;32mYou and your surviving companions have triumphed over the horrors and conquered the Labyrinth!   \033[1;36m|\033[0m");
-            $display("\033[1;36m+====================================================================================================+\033[0m\n");
+            $display("\033[1;36m+==================================================================================================+\033[0m");
+            $display("\033[1;36m| \033[1;33mALL 3 RUNIC KEYS INSERTED!\033[1;37m THE RUNIC GATES GRIND OPEN AS GOLDEN LIGHT FLOODS THE DARKNESS!     \033[1;36m|\033[0m");
+            $display("\033[1;36m| \033[1;32mYou and your surviving companions have triumphed over the horrors and conquered the Labyrinth! \033[1;36m|\033[0m");
+            $display("\033[1;36m+==================================================================================================+\033[0m\n");
+            $write("\033[J");
+        end
+    endtask
+
+    // ========================================================================
+    // 10. SOLO EXPLORER v2 HARDWARE-ACCURATE SCREENS (<= 29 ROWS x 100 COLS)
+    //     Replicates Python Solo Explorer UX with Zero Yellow Glare & Zero Scroll
+    // ========================================================================
+
+    // Solo Obstacle Coordinates Overlay (preserves map_rom.v & battle_top.v 525 tiles)
+    task solo_tile_obstacle;
+        input integer x;
+        input integer y;
+        output [2:0] obs_type;
+        begin
+            if ((x == 6 && y == 7) || (x == 20 && y == 11))
+                obs_type = `OBSTACLE_BARRICADE;
+            else if ((x == 16 && y == 3) || (x == 24 && y == 15))
+                obs_type = `OBSTACLE_SEAL;
+            else if ((x == 10 && y == 2) || (x == 28 && y == 16))
+                obs_type = `OBSTACLE_CRAWLSPACE;
+            else
+                obs_type = `OBSTACLE_NONE;
+        end
+    endtask
+
+    // Complete Solo Hero Dossier Profile (8 Heroes, Hardware Shift Scaling)
+    task get_solo_hero_dossier;
+        input  [3:0]   cid;
+        input          is_hard_mode;
+        output [7:0]   hp_v, atk_v, def_v, dodge_v, max_tox_v, bag_cap_v;
+        output [127:0] h_name;
+        output [191:0] h_role;
+        output [191:0] phys_s, mag_s;
+        output [255:0] trait_s, buff_s;
+        output [479:0] assess_1, assess_2;
+        reg [255:0]    rom_name, rom_class;
+        begin
+            u_char_db.get_character(cid, is_hard_mode, hp_v, atk_v, def_v, rom_name, rom_class);
+            case (cid)
+                4'd1: begin
+                    h_name    = "CAHARA";
+                    h_role    = "Mercenary Rogue";
+                    phys_s    = "Baseline (0%)";
+                    mag_s     = "Baseline (0%)";
+                    dodge_v   = 8'd25;
+                    max_tox_v = 8'd100;
+                    bag_cap_v = 8'd10;
+                    trait_s   = "Deep Pockets (2x Bag)";
+                    buff_s    = "Food & Herbs +25% Eff";
+                    assess_1  = "Versatile rogue. Carries 2x supplies, disarms chest traps";
+                    assess_2  = "100% safely, guaranteed retreat, and Poison Dart pierces.";
+                end
+                4'd2: begin
+                    h_name    = "D'ARCE";
+                    h_role    = "Holy Paladin";
+                    phys_s    = "+35% Plate Armor";
+                    mag_s     = "-20% Conductive";
+                    dodge_v   = 8'd5;
+                    max_tox_v = 8'd100;
+                    bag_cap_v = 8'd5;
+                    trait_s   = "Iron Armor (-35% Phys)";
+                    buff_s    = "Prayer 0% Tox, Break #";
+                    assess_1  = "Supreme tank. Heavy plate reduces physical wounds by 35%,";
+                    assess_2  = "Holy Smite shatters armor & smashes iron barricades.";
+                end
+                4'd3: begin
+                    h_name    = "ENKI";
+                    h_role    = "Dark Occultist";
+                    phys_s    = "-25% Frail Body";
+                    mag_s     = "+40% Occult Ward";
+                    dodge_v   = 8'd10;
+                    max_tox_v = 8'd100;
+                    bag_cap_v = 8'd5;
+                    trait_s   = "Eldritch (+5 Mind/turn)";
+                    buff_s    = "Dispel Hexen Seals";
+                    assess_1  = "Supreme arcane firepower. Black Orb pierces armor and";
+                    assess_2  = "ghosts effortlessly. Dispels seals but physically fragile.";
+                end
+                4'd4: begin
+                    h_name    = "RAGNVALDR";
+                    h_role    = "Outlander Berserker";
+                    phys_s    = "+15% Tough Muscle";
+                    mag_s     = "-10% Primal";
+                    dodge_v   = 8'd5;
+                    max_tox_v = 8'd150;
+                    bag_cap_v = 8'd5;
+                    trait_s   = "Beast Gut (150% MaxTox)";
+                    buff_s    = "Bloodlust <35%, Meat 2x";
+                    assess_1  = "Unstoppable juggernaut. Tolerates 150% herb toxicity, gets";
+                    assess_2  = "+50% ATK when low HP. Bread is half as filling as Meat.";
+                end
+                4'd5: begin
+                    h_name    = "LE'GARDE";
+                    h_role    = "Tactician Commander";
+                    phys_s    = "Baseline (0%)";
+                    mag_s     = "Baseline (0%)";
+                    dodge_v   = 8'd15;
+                    max_tox_v = 8'd100;
+                    bag_cap_v = 8'd5;
+                    trait_s   = "Precision (+35% Sever)";
+                    buff_s    = "Vial+50% ATK, Trap-Safe";
+                    assess_1  = "Disciplined tactician. Disarms chest traps like Cahara and";
+                    assess_2  = "turns Alchemical Vials into ferocious +50% ATK bursts.";
+                end
+                4'd6: begin
+                    h_name    = "MOONLESS";
+                    h_role    = "Ancient Direhound";
+                    phys_s    = "+10% Thick Hide";
+                    mag_s     = "Baseline (0%)";
+                    dodge_v   = 8'd30;
+                    max_tox_v = 8'd100;
+                    bag_cap_v = 8'd5;
+                    trait_s   = "Feral (0% Herb Tox)";
+                    buff_s    = "Meat +40 HP, Crawl =";
+                    assess_1  = "High-speed predator with 30% base evasion and 0% toxicity";
+                    assess_2  = "gain from Poppy/Herbs. Crawls narrow rock crevices easily.";
+                end
+                4'd7: begin
+                    h_name    = "THE GIRL";
+                    h_role    = "Innocent Ward";
+                    phys_s    = "Baseline (0%)";
+                    mag_s     = "+30% Holy Ward";
+                    dodge_v   = 8'd35;
+                    max_tox_v = 8'd100;
+                    bag_cap_v = 8'd5;
+                    trait_s   = "Serenity (Dread Immune)";
+                    buff_s    = "-10% Tox/turn, Crawl =";
+                    assess_1  = "Miraculous survivor. 35% evasion, immune to Dread Aura,";
+                    assess_2  = "auto-detoxes every turn & slips through tiny crevices.";
+                end
+                4'd8: begin
+                    h_name    = "NAS'HRAH";
+                    h_role    = "Doom Wizard Head";
+                    phys_s    = "-20% Fragile Skull";
+                    mag_s     = "+35% Arch-Mage";
+                    dodge_v   = 8'd15;
+                    max_tox_v = 8'd100;
+                    bag_cap_v = 8'd5;
+                    trait_s   = "Undead (0 Hng, 0% Tox)";
+                    buff_s    = "No Guard/Herb; Vial +HP";
+                    assess_1  = "Floating head of destruction. Never hungers or overdoses";
+                    assess_2  = "and dispels seals, yet refuses to Guard or use herbs.";
+                end
+                default: begin
+                    h_name    = "EXPLORER";
+                    h_role    = "Novice Wanderer";
+                    phys_s    = "Baseline (0%)";
+                    mag_s     = "Baseline (0%)";
+                    dodge_v   = 8'd10;
+                    max_tox_v = 8'd100;
+                    bag_cap_v = 8'd5;
+                    trait_s   = "Wanderer Grit";
+                    buff_s    = "Standard Rations";
+                    assess_1  = "Balanced dungeon wanderer.";
+                    assess_2  = "Rely on limb severing and survival herbs.";
+                end
+            endcase
+        end
+    endtask
+
+    // 4-Skill Deck Lookup for Solo Heroes
+    task get_solo_skill_info;
+        input  [3:0]   cid;
+        input  [1:0]   sk_idx;
+        output [143:0] sk_label;
+        output [479:0] sk_desc;
+        begin
+            case (cid)
+                4'd1: case (sk_idx) // Cahara
+                    2'd0: begin sk_label = "TWIN DAGGERS";   sk_desc = "-> 12 Mind | Dual steel slice: 38 Phys DMG"; end
+                    2'd1: begin sk_label = "POISON DART";    sk_desc = "-> 15 Mind | Alchemy dart: 28 Chem DMG (-ATK)"; end
+                    2'd2: begin sk_label = "STEAL ITEM";     sk_desc = "-> 15 Mind | Pickpocket +1 Poppy or Bread + 14 DMG"; end
+                    2'd3: begin sk_label = "SMOKE BOMB";     sk_desc = "-> 20 Mind | Flash screen: 100% immediate Escape"; end
+                endcase
+                4'd2: case (sk_idx) // D'arce
+                    2'd0: begin sk_label = "DEFENSE STANCE"; sk_desc = "-> 10 Mind | Iron Vow: -75% incoming DMG & +15 HP"; end
+                    2'd1: begin sk_label = "HEALING PRAYER"; sk_desc = "-> 20 Mind | Sacred prayer: +45 HP (0% Toxicity)"; end
+                    2'd2: begin sk_label = "HOLY SMITE";     sk_desc = "-> 22 Mind | Sanctified cleave: 44-56 Holy/Armor DMG"; end
+                    2'd3: begin sk_label = "KNIGHT CHARGE";  sk_desc = "-> 12 Mind, -8 HP | Tower shield bash: 38 Phys DMG"; end
+                endcase
+                4'd3: case (sk_idx) // Enki
+                    2'd0: begin sk_label = "BLACK ORB";      sk_desc = "-> 25 Mind | 52-78 True Magic (Pierces DEF/Ghost)"; end
+                    2'd1: begin sk_label = "RITUAL DAGGER";  sk_desc = "->  0 Mind | Sacrificial slash: 20 DMG, +15 Mind"; end
+                    2'd2: begin sk_label = "BLOOD SACRIFICE";sk_desc = "-> -20 HP  | Trade blood for +40 dark Mind energy"; end
+                    2'd3: begin sk_label = "HEXEN BIND";     sk_desc = "-> 15 Mind | Shadow chains root legs (100% Head hit)"; end
+                endcase
+                4'd4: case (sk_idx) // Ragnvaldr
+                    2'd0: begin sk_label = "WAR AXE";        sk_desc = "-> 14 Mind (or 15 HP) | 48 DMG (+50% Bloodlust)"; end
+                    2'd1: begin sk_label = "SPIRIT TOTEM";   sk_desc = "-> 16 Mind | Ancestral Spirit Magic: 32 True DMG"; end
+                    2'd2: begin sk_label = "FERAL ROAR";     sk_desc = "-> 14 Mind | Savage roar cuts enemy ATK by 35%"; end
+                    2'd3: begin sk_label = "DEVOUR FLESH";   sk_desc = "-> +15% Tox| Feast mid-clash: +35 HP, -25 Hunger"; end
+                endcase
+                4'd5: case (sk_idx) // Le'garde
+                    2'd0: begin sk_label = "FENCING THRUST"; sk_desc = "-> 12 Mind | Rapier lunge: 38 Phys (+50% Focus)"; end
+                    2'd1: begin sk_label = "LEGION LIGHT";   sk_desc = "-> 20 Mind | Solar flare: 35 Magic DMG (anti-Ghost)"; end
+                    2'd2: begin sk_label = "TACTICAL FOCUS"; sk_desc = "-> 15 Mind | Aim vital joints (+50% next attack)"; end
+                    2'd3: begin sk_label = "WAR CRY";        sk_desc = "-> 14 Mind | Shatter foe DEF (-35%) & +10 Mind"; end
+                endcase
+                4'd6: case (sk_idx) // Moonless
+                    2'd0: begin sk_label = "FERAL BITE";     sk_desc = "-> +15 Hng | Rip flesh for 40 Phys DMG (+Bleed)"; end
+                    2'd1: begin sk_label = "MOON HOWL";      sk_desc = "-> 15 Mind | Lunar howl: 30 Magic DMG (Stuns legs)"; end
+                    2'd2: begin sk_label = "SHADOW POUNCE";  sk_desc = "-> 12 Mind | Leap: 35 DMG (55 DMG if foe crouched)"; end
+                    2'd3: begin sk_label = "SCENT DANGER";   sk_desc = "-> 10 Mind | Sharp instinct (+35% Evasion buff)"; end
+                endcase
+                4'd7: case (sk_idx) // The Girl
+                    2'd0: begin sk_label = "NIMBLE DODGE";   sk_desc = "-> 12 Mind | Duck into shadows: 100% evade next hit"; end
+                    2'd1: begin sk_label = "LOVING EMBRACE"; sk_desc = "-> 15 Mind | Serenity heals +35 HP & calms fear"; end
+                    2'd2: begin sk_label = "PURE LIGHT";     sk_desc = "-> 20 Mind | Sacred glow: 32-51 Magic vs dark/ghost"; end
+                    2'd3: begin sk_label = "DISTRACT FOE";   sk_desc = "-> 10 Mind | Lantern wave halves enemy ATK 50%"; end
+                endcase
+                default: case (sk_idx) // Nas'hrah (8)
+                    2'd0: begin sk_label = "COMBUSTION";     sk_desc = "-> 25 Mind | Gro-goroth fire: 62 unstoppable Magic"; end
+                    2'd1: begin sk_label = "CURSE OF DECAY"; sk_desc = "-> 20 Mind | Dark hex inflicts 32 True Magic DMG"; end
+                    2'd2: begin sk_label = "HEAD GNAW";      sk_desc = "->  0 Mind | Bite: 24 Phys DMG, steals +15 HP/+10 Mnd"; end
+                    2'd3: begin sk_label = "MOCK FOE";       sk_desc = "-> 15 Mind | Arrogant mockery halves enemy DEF 50%"; end
+                endcase
+            endcase
+        end
+    endtask
+
+    // Monster Concise Name (exact <= 18 chars) & Archetype helpers for Combat Card
+    task get_mon_card_meta;
+        input  [5:0]   mid;
+        input  [1:0]   arch;
+        output [143:0] m_name;
+        output [63:0]  arch_s;
+        output [343:0] trait_line;
+        begin
+            case (arch)
+                `ARCHETYPE_SPECTRAL: begin arch_s = "SPECTRAL"; trait_line = "SPECTRAL (Blades resisted, Magic weak)"; end
+                `ARCHETYPE_ARMORED:  begin arch_s = "ARMORED "; trait_line = "ARMORED (Deflects steel, Magic weak)"; end
+                `ARCHETYPE_TERROR:   begin arch_s = "TERROR  "; trait_line = "DREAD AURA (-25 Mind/turn, Ward repels)"; end
+                default:             begin arch_s = "NORMAL  "; trait_line = "STANDARD COMBATANT (Target limbs freely)"; end
+            endcase
+            case (mid)
+                6'd1:  m_name = "MAGE GHOST";
+                6'd2:  m_name = "CLASSIC GHOST";
+                6'd3:  m_name = "MAW SLIME";
+                6'd4:  m_name = "BRACHIO TITAN";
+                6'd5:  m_name = "ANTLER TOTEM";
+                6'd6:  m_name = "KRAKEN OCTOPUS";
+                6'd7:  m_name = "BEHOLDER EYE";
+                6'd8:  m_name = "SHADOW SWORDSMAN";
+                6'd9:  m_name = "GIANT SNAIL";
+                6'd10: m_name = "GRAVE SPIDER";
+                6'd11: m_name = "DUNGEON ANT";
+                6'd12: m_name = "BATTLE LLAMA";
+                6'd13: m_name = "SHADOW HOUND";
+                6'd14: m_name = "FOREST STAG";
+                6'd15: m_name = "CAVE GNOME";
+                6'd16: m_name = "MINI KNIGHT";
+                6'd17: m_name = "LITTLE DRAKE";
+                6'd18: m_name = "SHADOW SLUG";
+                6'd19: m_name = "DARK CONSTRUCT";
+                6'd20: m_name = "ABYSSAL OVERLORD";
+                6'd21: m_name = "WYVERN";
+                6'd22: m_name = "GARGOYLE";
+                6'd23: m_name = "CHEST MIMIC";
+                6'd24: m_name = "HYDRA";
+                6'd25: m_name = "IMP DEMON";
+                6'd26: m_name = "SPECTRAL BEAST";
+                6'd27: m_name = "TREANT";
+                6'd28: m_name = "ELDRITCH BEHOLDER";
+                6'd29: m_name = "STONE GOLEM";
+                6'd30: m_name = "SUN CHIMERA";
+                6'd31: m_name = "SIREN NAGA";
+                6'd32: m_name = "UNICORN";
+                6'd33: m_name = "OUROBOROS";
+                6'd34: m_name = "ANUBIS WARRIOR";
+                6'd35: m_name = "PHOENIX";
+                6'd36: m_name = "CTHULHU TITAN";
+                default: m_name = "LABYRINTH BEAST";
+            endcase
+        end
+    endtask
+
+    // Print exact 24-char Hero Menu Line inside Solo Select Left Box
+    task write_hero_selector_row;
+        input [3:0] id_num;
+        input       is_cur;
+        begin
+            if (is_cur) $write("\033[1;32m\342\226\266 ");
+            else        $write("\033[90m  ");
+            case (id_num)
+                4'd1: $write("[1] CAHARA    (Mercenary)   ");
+                4'd2: $write("[2] D'ARCE    (Paladin)     ");
+                4'd3: $write("[3] ENKI      (Occultist)   ");
+                4'd4: $write("[4] RAGNVALDR (Berserker)   ");
+                4'd5: $write("[5] LE'GARDE  (Commander)   ");
+                4'd6: $write("[6] MOONLESS  (Direhound)   ");
+                4'd7: $write("[7] THE GIRL  (Ward)        ");
+                4'd8: $write("[8] NAS'HRAH  (Doom Mage)   ");
+                default: $write("[?] UNKNOWN   (Explorer)    ");
+            endcase
+            $write("\033[0m");
+        end
+    endtask
+
+    // ------------------------------------------------------------------------
+    // S1. Solo Explorer Selector (Dual Split-Box 100 Cols x 24 Rows, Live Model)
+    // ------------------------------------------------------------------------
+    task render_solo_select_screen;
+        input [3:0] sel_id;
+        input       is_hard_mode;
+        integer lp, c;
+        reg [5:0]   pw, ph;
+        reg [7:0]   hp_v, atk_v, def_v, dodge_v, max_tox_v, bag_cap_v;
+        reg [127:0] h_name;
+        reg [191:0] h_role, phys_s, mag_s;
+        reg [255:0] trait_s, buff_s;
+        reg [479:0] assess_1, assess_2;
+        reg [143:0] sk1, sk2, sk3, sk4;
+        reg [479:0] dummy_d;
+        reg         pt_t, pt_b;
+        reg [23:0]  rgb_t, rgb_b;
+        begin
+            get_solo_hero_dossier(sel_id, is_hard_mode, hp_v, atk_v, def_v, dodge_v, max_tox_v, bag_cap_v,
+                                  h_name, h_role, phys_s, mag_s, trait_s, buff_s, assess_1, assess_2);
+            get_solo_skill_info(sel_id, 2'd0, sk1, dummy_d);
+            get_solo_skill_info(sel_id, 2'd1, sk2, dummy_d);
+            get_solo_skill_info(sel_id, 2'd2, sk3, dummy_d);
+            get_solo_skill_info(sel_id, 2'd3, sk4, dummy_d);
+            u_router.get_funger_dim(sel_id, pw, ph);
+
+            $write("\033[H");
+            $display("\033[1;30m+==================================================================================================+\033[0m\033[K");
+            if (is_hard_mode)
+                $display("\033[1;30m| \033[1;37mFEAR & HUNGER: SOLO SURVIVOR EXPEDITION - SELECT YOUR EXPLORER\033[0m       \033[1;31m[TERROR & STARVATION]\033[1;30m       |\033[0m\033[K");
+            else
+                $display("\033[1;30m| \033[1;37mFEAR & HUNGER: SOLO SURVIVOR EXPEDITION - SELECT YOUR EXPLORER\033[0m           \033[1;32m[FEAR & HUNGER]\033[1;30m         |\033[0m\033[K");
+            $display("\033[1;30m+==================================================================================================+\033[0m\033[K");
+            $display("\033[1;30m+--------------------------------+  +--------------------------------------------------------------+\033[0m\033[K");
+
+            for (lp = 0; lp < 18; lp = lp + 1) begin
+                // Left Box (34 cols: "| " + 30 + " |")
+                $write("\033[1;30m| \033[0m");
+                if (lp == 0)       $write("\033[1;33mSELECT EXPLORER (W/S):        \033[0m");
+                else if (lp >= 2 && lp <= 9) write_hero_selector_row(lp[3:0] - 4'd1, (lp - 1) == sel_id);
+                else if (lp == 11) $write("\033[1;33m[CONTROLS]:                   \033[0m");
+                else if (lp == 12) $write("\033[1;37m[W/S]   \033[90m: Move Selection      \033[0m");
+                else if (lp == 13) $write("\033[1;37m[1..8]  \033[90m: Quick Jump Explorer \033[0m");
+                else if (lp == 14) $write("\033[1;32m[Enter] \033[90m: Embark Solo         \033[0m");
+                else if (lp == 15) $write("\033[1;31m[Q]     \033[90m: Exit Game           \033[0m");
+                else               $write("                              ");
+                $write("\033[1;30m |  | \033[0m");
+
+                // Right Box (64 cols: 26 sprite + 2 sp + 32 stats = 60, or 60 full line)
+                if (lp < 14) begin
+                    for (c = 0; c < 26; c = c + 1) begin
+                        if (c < pw && (lp * 2) < ph) begin
+                            u_router.sample_funger_pixel(sel_id, lp * 2, lp * 2 + 1, c, 1'b0, pt_t, rgb_t, pt_b, rgb_b);
+                            print_hb_pixel(pt_t, rgb_t[23:16], rgb_t[15:8], rgb_t[7:0],
+                                           (lp * 2 + 1 >= ph) ? 1'b1 : pt_b, rgb_b[23:16], rgb_b[15:8], rgb_b[7:0]);
+                        end else begin
+                            $write(" ");
+                        end
+                    end
+                    $write("  ");
+                    case (lp)
+                        0:  $write("\033[1;33mNAME   : \033[1;37m%-23s\033[0m", h_name);
+                        1:  $write("\033[1;33mROLE   : \033[1;37m%-23s\033[0m", h_role);
+                        2:  $write("\033[1;32mHP     : %3d / %-3d              \033[0m", hp_v, hp_v);
+                        3:  $write("\033[1;31mATK    : %2d   \033[1;36mDEF: %2d           \033[0m", atk_v, def_v);
+                        4:  $write("\033[1;37mPHYS-R : %-23s\033[0m", phys_s);
+                        5:  $write("\033[1;37mMAG-R  : %-23s\033[0m", mag_s);
+                        6:  $write("\033[1;35mDODGE  : %2d%% Evasion            \033[0m", dodge_v);
+                        7:  $write("\033[1;36mBAG CAP: %2d Slots (MaxTox %3d%%) \033[0m", bag_cap_v, max_tox_v);
+                        8:  $write("\033[1;33mTRAIT  : %-23s\033[0m", trait_s);
+                        9:  $write("\033[1;32mBUFF   : %-23s\033[0m", buff_s);
+                        10: $write("\033[1;36mSKILL 1: %-23s\033[0m", sk1);
+                        11: $write("\033[1;36mSKILL 2: %-23s\033[0m", sk2);
+                        12: $write("\033[1;36mSKILL 3: %-23s\033[0m", sk3);
+                        13: $write("\033[1;36mSKILL 4: %-23s\033[0m", sk4);
+                        default: $write("                                ");
+                    endcase
+                end else if (lp == 14) begin
+                    $write("\033[1;30m------------------------------------------------------------\033[0m");
+                end else if (lp == 15) begin
+                    $write("\033[1;33m[SOLO SURVIVAL ASSESSMENT]:                                 \033[0m");
+                end else if (lp == 16) begin
+                    $write("\033[1;37m%-60s\033[0m", assess_1);
+                end else begin
+                    $write("\033[1;37m%-60s\033[0m", assess_2);
+                end
+                $display("\033[1;30m |\033[0m\033[K");
+            end
+
+            $display("\033[1;30m+--------------------------------+  +--------------------------------------------------------------+\033[0m\033[K");
+            $write("\033[1;30m+==================================================================================================+\033[0m\033[K\033[J");
+            $fflush();
+        end
+    endtask
+
+    // ------------------------------------------------------------------------
+    // S2. Solo Labyrinth Map Screen (29 Rows x 100 Cols, 2-Tier Torchlight)
+    // ------------------------------------------------------------------------
+    task render_solo_map_screen;
+        input               is_hard_mode;
+        input signed [31:0] px, py;
+        input [31:0]        step_count;
+        input [31:0]        slain_count;
+        input [3:0]         hero_id;
+        input [7:0]         hero_hp, hero_max, hero_mind, hero_hunger;
+        input [7:0]         key_qty;
+        input [719:0]       cleared_mask;
+        input [767:0]       log_msg;
+        integer x, y, cell_idx, dist_sq;
+        integer ex_dx, ex_dy, ex_tx, ex_ty;
+        reg [2:0] raw_t, obs_t;
+        reg [7:0]   d_hp, d_atk, d_def, d_dg, d_tox, d_cap;
+        reg [127:0] h_name;
+        reg [191:0] h_role, d_pr, d_mr;
+        reg [255:0] trait_s, d_bf;
+        reg [479:0] d_a1, d_a2;
+        begin
+            get_solo_hero_dossier(hero_id, is_hard_mode, d_hp, d_atk, d_def, d_dg, d_tox, d_cap,
+                                  h_name, h_role, d_pr, d_mr, trait_s, d_bf, d_a1, d_a2);
+
+            for (ex_dy = -4; ex_dy <= 4; ex_dy = ex_dy + 1) begin
+                for (ex_dx = -4; ex_dx <= 4; ex_dx = ex_dx + 1) begin
+                    if ((ex_dx * ex_dx + ex_dy * ex_dy) <= 16) begin
+                        ex_tx = px + ex_dx;
+                        ex_ty = py + ex_dy;
+                        if (ex_tx >= 0 && ex_tx < `MAP_WIDTH && ex_ty >= 0 && ex_ty < `MAP_HEIGHT) begin
+                            explored_mask[ex_ty * `MAP_WIDTH + ex_tx] = 1'b1;
+                        end
+                    end
+                end
+            end
+
+            $write("\033[H");
+            $display("\033[1;30m+==================================================================================================+\033[0m\033[K");
+            if (is_hard_mode)
+                $display("\033[1;30m|     \033[1;37mFEAR & HUNGER: TERMINAL LABYRINTH - SOLO EXPLORER\033[0m                 \033[1;31m[TERROR & STARVATION]\033[1;30m      |\033[0m\033[K");
+            else
+                $display("\033[1;30m|     \033[1;37mFEAR & HUNGER: TERMINAL LABYRINTH - SOLO EXPLORER\033[0m                     \033[1;32m[FEAR & HUNGER]\033[1;30m        |\033[0m\033[K");
+            $display("\033[1;30m| \033[1;32m[EXPLORER]  :\033[0m \033[1;37m%-10s  [%-19s]\033[0m | \033[1;32mHP  : %3d/%-3d\033[0m | \033[1;36mMIND: %3d/100\033[0m | \033[1;33mHNG: %3d/100\033[1;30m   |\033[0m\033[K",
+                     h_name, h_role, hero_hp, hero_max, hero_mind, hero_hunger);
+            $display("\033[1;30m| \033[1;33m[EXPEDITION]:\033[0m \033[1;37mPOS:(%2d,%2d)\033[0m | \033[1;36mKEYS:%0d/3\033[0m | \033[1;31mSLAIN:%2d\033[0m | \033[1;37mSTEPS: %-4d\033[0m   | \033[1;35mTRAIT: %-23s\033[1;30m |\033[0m\033[K",
+                     px, py, key_qty, slain_count, step_count, trait_s);
+            $display("\033[1;30m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[K");
+
+            for (y = 0; y < `MAP_HEIGHT; y = y + 1) begin
+                $write("              ");
+                for (x = 0; x < `MAP_WIDTH; x = x + 1) begin
+                    cell_idx = y * `MAP_WIDTH + x;
+                    dist_sq  = (x - px) * (x - px) + (y - py) * (y - py);
+                    if (x == px && y == py) begin
+                        $write("\033[1;33;40m O\033[0m");
+                    end else if (!explored_mask[cell_idx]) begin
+                        $write("  ");
+                    end else begin
+                        raw_t = u_map.get_tile(x, y);
+                        solo_tile_obstacle(x, y, obs_t);
+                        if (cleared_mask[cell_idx] && (raw_t == `TILE_MONSTER || raw_t == `TILE_CHEST || obs_t == `OBSTACLE_BARRICADE || obs_t == `OBSTACLE_SEAL)) begin
+                            raw_t = `TILE_PATH;
+                            obs_t = `OBSTACLE_NONE;
+                        end
+                        if (dist_sq <= 16) begin
+                            if (obs_t == `OBSTACLE_BARRICADE)       $write("\033[41;1;37m #\033[0m");
+                            else if (obs_t == `OBSTACLE_SEAL)       $write("\033[45;1;37m \302\247\033[0m");
+                            else if (obs_t == `OBSTACLE_CRAWLSPACE) $write("\033[43;1;30m =\033[0m");
+                            else case (raw_t)
+                                `TILE_WALL:    $write("\033[42m  \033[0m");
+                                `TILE_PATH:    $write("\033[90m .\033[0m");
+                                `TILE_MONSTER: $write("\033[45;1;37m M\033[0m");
+                                `TILE_CHEST:   $write("\033[48;2;139;69;19;1;37m C\033[0m");
+                                `TILE_GATE:    $write("\033[46;1;30m G\033[0m");
+                                default:       $write("\033[90m .\033[0m");
+                            endcase
+                        end else begin
+                            if (obs_t == `OBSTACLE_BARRICADE)       $write("\033[48;2;100;20;20;1;37m #\033[0m");
+                            else if (obs_t == `OBSTACLE_SEAL)       $write("\033[48;2;70;20;70;1;37m \302\247\033[0m");
+                            else if (obs_t == `OBSTACLE_CRAWLSPACE) $write("\033[48;2;90;70;10;1;30m =\033[0m");
+                            else case (raw_t)
+                                `TILE_WALL:    $write("\033[48;2;20;75;30m  \033[0m");
+                                `TILE_PATH:    $write("\033[38;2;70;70;70m .\033[0m");
+                                `TILE_MONSTER: $write("\033[48;2;80;25;80;1;37m M\033[0m");
+                                `TILE_CHEST:   $write("\033[48;2;90;45;15;1;37m C\033[0m");
+                                `TILE_GATE:    $write("\033[48;2;20;85;85;1;30m G\033[0m");
+                                default:       $write("\033[38;2;70;70;70m .\033[0m");
+                            endcase
+                        end
+                    end
+                end
+                $display("              \033[K");
+            end
+
+            $display("\033[K");
+            $display("\033[1;30m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[1;30m|  \033[1;33m[LOG]     :\033[0m \033[1;37m%-82s\033[1;30m  |\033[0m\033[K", log_msg);
+            $display("\033[1;30m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[1;30m|  \033[1;37m[CONTROLS]: [W/A/S/D] Move   |   [I] Pouch   |   \033[1;33m* [G] SURVIVAL GUIDE\033[1;37m   |   [Q] Quit           \033[1;30m |\033[0m\033[K");
+            $write("\033[1;30m+==================================================================================================+\033[0m\033[K\033[J");
+            $fflush();
+        end
+    endtask
+
+    // ------------------------------------------------------------------------
+    // S3. On-Demand Expedition Survivor Guide Book [G] (26 Rows x 100 Cols)
+    // ------------------------------------------------------------------------
+    task render_guide_modal_screen;
+        begin
+            $write("\033[H");
+            $display("\033[1;36m+==================================================================================================+\033[0m\033[K");
+            $display("\033[1;36m|                         \033[1;37mFEAR & HUNGER: EXPEDITION SURVIVOR GUIDE BOOK\033[1;36m                            |\033[0m\033[K");
+            $display("\033[1;36m+==================================================================================================+\033[0m\033[K");
+            $display("\033[K");
+            $display("\033[1;33m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[1;33m| \033[1;33m[LABYRINTH TILES & HAZARDS]\033[0m\033[1;33m                                                                      |\033[0m\033[K");
+            $display("\033[1;33m|   \033[1;33m O\033[0m \033[1;37mExplorer   : Your current position inside the pitch-black catacombs.\033[1;33m                        |\033[0m\033[K");
+            $display("\033[1;33m|   \033[90m .\033[0m \033[1;37mPathway    : Stone corridor illuminated by torchlight (dim outside radius 4).\033[1;33m               |\033[0m\033[K");
+            $display("\033[1;33m|   \033[42m  \033[0m \033[1;37mWall       : Solid subterranean bedrock. Impassable barrier.\033[1;33m                                |\033[0m\033[K");
+            $display("\033[1;33m|   \033[45;1;37m M\033[0m \033[1;37mMonster    : Roaming beast (Bosses at (34,6)/(34,14)). Initiates Solo Combat Arena.\033[1;33m         |\033[0m\033[K");
+            $display("\033[1;33m|   \033[48;2;139;69;19;1;37m C\033[0m \033[1;37mChest      : Vault supplies, spring-needle Runic Keys, or 25%% Mimic ambushes.\033[1;33m               |\033[0m\033[K");
+            $display("\033[1;33m|   \033[41;1;37m #\033[0m \033[1;37mBarricade  : Iron debris. Smashed open upon forceful contact.\033[1;33m                               |\033[0m\033[K");
+            $display("\033[1;33m|   \033[45;1;37m \302\247\033[0m \033[1;37mHexen Seal : Arcane ward. Occultists dispel safely; mortals take -10 HP burns.\033[1;33m              |\033[0m\033[K");
+            $display("\033[1;33m|   \033[43;1;30m =\033[0m \033[1;37mCrevice    : Narrow crawlspace. Small frames slip effortlessly through.\033[1;33m                     |\033[0m\033[K");
+            $display("\033[1;33m|   \033[46;1;30m G\033[0m \033[1;37mExit Gate  : Eastern escape portal. REQUIRES 3 RUNIC KEYS TO UNLOCK!\033[1;33m                        |\033[0m\033[K");
+            $display("\033[1;33m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[K");
+            $display("\033[1;32m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[1;32m| \033[1;32m[SURVIVAL SUPPLIES & RELICS (OPEN WITH 'I')]\033[0m\033[1;32m                                                     |\033[0m\033[K");
+            $display("\033[1;32m|   \033[1;33mTotem of Undying\033[0m : \033[1;37mUnique relic! Auto-revives on death, heals full HP & restores limbs.        \033[1;32m|\033[0m\033[K");
+            $display("\033[1;32m|   \033[1;31mPoppy / Med Herb\033[0m : \033[1;37mRestores +50/+120 HP (+30/+75 Hard). Beware 100%% Herbal Toxicity Overdose!  \033[1;32m|\033[0m\033[K");
+            $display("\033[1;32m|   \033[1;33mBread / Meat    \033[0m : \033[1;37m-40 / -60 Hunger (+20 HP from Meat). Staves off starvation HP drain.        \033[1;32m|\033[0m\033[K");
+            $display("\033[1;32m|   \033[1;36mAlchemical Vial \033[0m : \033[1;37m+35 Mind, cleanses -25%% Toxicity, purges bleeding & necrotic poison.        \033[1;32m|\033[0m\033[K");
+            $display("\033[1;32m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[K");
+            $display("\033[1;30m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[1;30m| \033[1;37m[CONTROLS]: [W/A/S/D / Arrows] Move  |  [I] Open Survival Pouch  |  [Q] Abandon Expedition     \033[1;30m  |\033[0m\033[K");
+            $display("\033[1;30m| \033[1;33m>> Press [G], [Enter], [Space], or [Esc] to close Guide and return to Labyrinth Map\033[1;30m              |\033[0m\033[K");
+            $write("\033[1;30m+==================================================================================================+\033[0m\033[K\033[J");
+            $fflush();
+        end
+    endtask
+
+    // ------------------------------------------------------------------------
+    // S4. Solo Survival Pouch Dual Split-Box (28 Rows x 100 Cols, 8 Items)
+    // ------------------------------------------------------------------------
+    task write_pouch_row;
+        input [2:0] item_idx;
+        input [2:0] sel_idx;
+        input [7:0] qty;
+        input       is_hard_mode;
+        begin
+            if (item_idx == sel_idx) $write("\033[1;30m| \033[1;33m\342\226\266 ");
+            else if (qty > 0 || item_idx == 3'd7) $write("\033[1;30m| \033[1;37m  ");
+            else $write("\033[1;30m| \033[90m  ");
+
+            case (item_idx)
+                3'd0: $write("[1] TOTEM OF UNDYING   [x%2d]  [RELIC]    Auto-revive on death, full HP & restore limbs       ", qty);
+                3'd1: $write("[2] POPPY FLOWER       [x%2d]  [HERB]     Restores %s HP & stops arterial bleeding           ", qty, is_hard_mode ? "+30" : "+50");
+                3'd2: $write("[3] MEDICINAL HERB     [x%2d]  [HERB]     Restores %s medicine, soothes agony            ", qty, is_hard_mode ? "+75 HP " : "+120 HP");
+                3'd3: $write("[4] MOLDY BREAD        [x%2d]  [RATION]   Relieves -40 Hunger (staves off starvation)         ", qty);
+                3'd4: $write("[5] DRIED MEAT         [x%2d]  [RATION]   Relieves -60 Hunger & restores +20 HP jerky         ", qty);
+                3'd5: $write("[6] ALCHEMICAL VIAL    [x%2d]  [TINCTURE] Restores +35 Mind, -25%% Tox, purges bleeding        ", qty);
+                3'd6: $write("[7] RUNIC KEY          [x%2d]  [KEY]      Eastern Gate Key (collect 3 keys to escape)         ", qty);
+                3'd7: $write("[8] [ CLOSE POUCH ]          [RETURN]   Return to dungeon without closing active menu        ");
+            endcase
+            $display("\033[1;30m  |\033[0m\033[K");
+        end
+    endtask
+
+    task render_solo_pouch_screen;
+        input [2:0]   sel_idx;
+        input         is_hard_mode;
+        input [3:0]   hero_id;
+        input [7:0]   hero_hp, hero_max, hero_mind, hero_max_mind, hero_hunger, hero_tox, hero_max_tox;
+        input [7:0]   hero_atk, hero_def;
+        input         has_bleed, has_poison, limb_head, limb_torso, limb_arm_r, limb_arm_l, limb_legs;
+        input [7:0]   bag_totem, bag_poppy, bag_herb, bag_bread, bag_meat, bag_vial, bag_keys;
+        input [767:0] status_msg;
+        integer lp, c;
+        reg [5:0]   pw, ph;
+        reg [7:0]   d_hp, d_atk, d_def, dodge_v, d_tox, bag_cap_v;
+        reg [127:0] h_name;
+        reg [191:0] h_role, d_pr, d_mr;
+        reg [255:0] trait_s, d_bf;
+        reg [479:0] d_a1, d_a2;
+        reg [7:0]   q_arr;
+        reg         pt_t, pt_b;
+        reg [23:0]  rgb_t, rgb_b;
+        begin
+            get_solo_hero_dossier(hero_id, is_hard_mode, d_hp, d_atk, d_def, dodge_v, d_tox, bag_cap_v,
+                                  h_name, h_role, d_pr, d_mr, trait_s, d_bf, d_a1, d_a2);
+            u_router.get_funger_dim(hero_id, pw, ph);
+
+            $write("\033[H");
+            $display("\033[1;30m+=[ \033[1;33mSURVIVAL POUCH & EXPEDITION DOSSIER - %-10s [%-19s]\033[1;30m ]=======================+\033[0m\033[K", h_name, h_role);
+            $display("\033[1;30m+----------------------------------+  +------------------------------------------------------------+\033[0m\033[K");
+
+            for (lp = 0; lp < 12; lp = lp + 1) begin
+                // Left Model Box (36 cols = "|    " + 26 sprite + "    |")
+                $write("\033[1;30m|    \033[0m");
+                for (c = 0; c < 26; c = c + 1) begin
+                    if (c < pw && (lp * 2) < ph) begin
+                        u_router.sample_funger_pixel(hero_id, lp * 2, lp * 2 + 1, c, 1'b0, pt_t, rgb_t, pt_b, rgb_b);
+                        print_hb_pixel(pt_t, rgb_t[23:16], rgb_t[15:8], rgb_t[7:0],
+                                       (lp * 2 + 1 >= ph) ? 1'b1 : pt_b, rgb_b[23:16], rgb_b[15:8], rgb_b[7:0]);
+                    end else begin
+                        $write(" ");
+                    end
+                end
+                $write("\033[1;30m    |  | \033[0m");
+
+                // Right Vitals Box (62 cols = "| " + 58 + " |")
+                case (lp)
+                    0:  $write("\033[1;32mHERO  : \033[1;37m%-10s \033[90m[%-19s]\033[0m                  ", h_name, h_role);
+                    1:  begin
+                        $write("HP    : ");
+                        print_mini_bar(hero_hp, hero_max, 14, 8'd60, 8'd220, 8'd100);
+                        $write(" \033[1;32m%3d/%-3d\033[0m %-10s               ", hero_hp, hero_max,
+                               ({1'b0, hero_hp} * 9'd2 > {1'b0, hero_max}) ? "[Healthy]" : "[Wounded]");
+                    end
+                    2:  begin
+                        $write("MIND  : ");
+                        print_mini_bar(hero_mind, hero_max_mind, 14, 8'd80, 8'd180, 8'd255);
+                        $write(" \033[1;36m%3d/%-3d\033[0m %-10s               ", hero_mind, hero_max_mind,
+                               (hero_mind > 8'd50) ? "[Lucid]" : ((hero_mind > 8'd20) ? "[Uneasy]" : "[Panicked]"));
+                    end
+                    3:  begin
+                        $write("HUNGER: ");
+                        print_mini_bar(hero_hunger, 8'd100, 14, 8'd255, 8'd160, 8'd40);
+                        $write(" \033[1;33m%3d/100\033[0m %-10s               ", hero_hunger,
+                               (hero_hunger >= 8'd80) ? "[Starving]" : ((hero_hunger >= 8'd50) ? "[Hungry]" : "[Satiated]"));
+                    end
+                    4:  begin
+                        $write("TOXIC : ");
+                        print_mini_bar(hero_tox, hero_max_tox, 14, 8'd190, 8'd80, 8'd240);
+                        $write(" \033[1;35m%3d/%-3d%%\033[0m %-10s              ", hero_tox, hero_max_tox,
+                               (hero_tox >= hero_max_tox) ? "[Overdose]" : ((hero_tox >= 8'd50) ? "[High]" : "[Clean]"));
+                    end
+                    5:  $write("\033[1;37mSTATS : \033[1;31mATK:%2d\033[0m | \033[1;34mDEF:%2d\033[0m | \033[1;32mEVADE:%2d%%\033[0m | \033[1;35mBAG:%2d SLOTS\033[0m        ",
+                               hero_atk, hero_def, dodge_v, bag_cap_v);
+                    6:  $write("\033[1;36mKEYS  : EAST GATE [ %0d/3 Runic Keys Found ]                \033[0m", bag_keys);
+                    7:  $write("\033[1;36mLIMBS : \033[0m[H:%s T:%s RA:%s LA:%s LG:%s]                     ",
+                               limb_head ? "OK" : "XX", limb_torso ? "OK" : "XX", limb_arm_r ? "OK" : "XX", limb_arm_l ? "OK" : "XX", limb_legs ? "OK" : "XX");
+                    8:  $write("\033[1;33mTRAIT : \033[0m%-50s", trait_s);
+                    9:  begin
+                        if (has_bleed)                     $write("\033[1;31mSTATUS: Bleeding (-4 HP/turn) [Use Poppy / Vial!]         \033[0m");
+                        else if (has_poison)               $write("\033[1;35mSTATUS: Necrotic Poison (-5 HP/turn) [Use Vial!]          \033[0m");
+                        else if (hero_hunger >= 8'd80)     $write("\033[1;31mSTATUS: Starvation Crisis! [Consume Bread / Meat!]        \033[0m");
+                        else if (hero_tox >= hero_max_tox) $write("\033[1;31mSTATUS: Overdose Toxicity! Herbs ineffective [Use Vial]   \033[0m");
+                        else                               $write("\033[1;32mSTATUS: Healthy & Combat Ready                            \033[0m");
+                    end
+                    10: $write("\033[90mPASSIV: %-50s\033[0m", d_bf);
+                    11: $write("\033[90mEQUIP : Melee Arsenal & Solo Survival Satchel             \033[0m");
+                endcase
+                $display("\033[1;30m |\033[0m\033[K");
+            end
+
+            $display("\033[1;30m+----------------------------------+  +------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[K");
+            $display("\033[1;30m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            for (lp = 0; lp < 8; lp = lp + 1) begin
+                case (lp)
+                    0: q_arr = bag_totem;
+                    1: q_arr = bag_poppy;
+                    2: q_arr = bag_herb;
+                    3: q_arr = bag_bread;
+                    4: q_arr = bag_meat;
+                    5: q_arr = bag_vial;
+                    6: q_arr = bag_keys;
+                    default: q_arr = 8'd0;
+                endcase
+                write_pouch_row(lp[2:0], sel_idx, q_arr, is_hard_mode);
+            end
+
+            $display("\033[1;30m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[K");
+            $display("\033[1;30m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[1;30m|  \033[1;37m%-94s\033[1;30m  |\033[0m\033[K",
+                     (status_msg == 0) ? "Select an item [W/S or 1-8] and press [Enter] to use, or [I/Esc/Q] to close." : status_msg);
+            $display("\033[1;30m+==================================================================================================+\033[0m\033[K");
+            $write("\033[1;30m| \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S / Arrows]\033[0m Navigate | \033[1;37m[1..8]\033[0m Jump | \033[1;32m[Enter]\033[0m Use | \033[1;31m[I/Esc/Q]\033[0m Close Pouch          \033[1;30m|\033[0m\033[K\033[J");
+            $fflush();
+        end
+    endtask
+
+    // ------------------------------------------------------------------------
+    // S5. Pokémon-Style Solo Combat Arena (29 Rows x 100 Cols, Hierarchical Menu)
+    //     cmenu_mode: 0 = MAIN (5 options), 1 = TARGET_LIMB (6 options), 2 = SKILL (5 options)
+    // ------------------------------------------------------------------------
+    task write_combat_opt_row;
+        input         is_sel;
+        input [2:0]   opt_num;
+        input [127:0] label_s;
+        input [511:0] desc_s;
+        begin
+            if (is_sel) begin
+                $display("    \033[1;32m\342\226\266 [%0d] \033[1;37m%-15s \033[1;33m%-72s\033[0m\033[K", opt_num, label_s, desc_s);
+            end else begin
+                $display("      \033[90m[%0d] %-15s %-72s\033[0m\033[K", opt_num, label_s, desc_s);
+            end
+        end
+    endtask
+
+    task render_solo_combat_screen;
+        input         is_hard_mode;
+        input [3:0]   turn_no;
+        input [1:0]   cmenu_mode;
+        input [2:0]   menu_cursor;
+        // Solo Hero data
+        input [3:0]   hero_id;
+        input [7:0]   hero_hp, hero_max, hero_mind, hero_max_mind, hero_hunger, hero_tox, hero_max_tox;
+        input [7:0]   hero_atk, hero_def;
+        input [1:0]   hero_stance;
+        input         is_guarding, has_bleed, has_poison;
+        // Enemy data
+        input [5:0]   enemy_id;
+        input [1:0]   enemy_arch;
+        input         is_elite;
+        input [7:0]   enemy_hp, enemy_max, enemy_atk, enemy_def;
+        input [7:0]   head_hp, torso_hp, arm_r_hp, arm_l_hp, leg_r_hp;
+        input         is_crawling, is_disarmed;
+        input [767:0] log_msg;
+        integer lp, c, m_voff;
+        reg [5:0]   pw, ph, mw, mh;
+        reg [1:0]   mon_state;
+        reg [7:0]   d_hp, d_atk, d_def, dodge_v, d_tox, bag_cap_v;
+        reg [127:0] h_name;
+        reg [191:0] h_role, phys_s, mag_s;
+        reg [255:0] trait_s, buff_s;
+        reg [479:0] d_a1, d_a2;
+        reg [143:0] m_name;
+        reg [63:0]  arch_s;
+        reg [343:0] m_trait;
+        reg [143:0] sk_lbl;
+        reg [479:0] sk_dsc;
+        reg [111:0] stance_s;
+        reg [23:0]  rgb_t, rgb_b;
+        reg         t_t, t_b;
+        begin
+            get_solo_hero_dossier(hero_id, is_hard_mode, d_hp, d_atk, d_def, dodge_v, d_tox, bag_cap_v,
+                                  h_name, h_role, phys_s, mag_s, trait_s, buff_s, d_a1, d_a2);
+            get_mon_card_meta(enemy_id, enemy_arch, m_name, arch_s, m_trait);
+            u_router.get_funger_dim(hero_id, pw, ph);
+            u_router.get_monster_dim(enemy_id, mw, mh);
+
+            if (enemy_hp == 0 || head_hp == 0) mon_state = 2'd2;
+            else if (is_crawling || is_disarmed || arm_l_hp == 0 || ({1'b0, enemy_hp} * 9'd2 <= {1'b0, enemy_max})) mon_state = 2'd1;
+            else mon_state = 2'd0;
+
+            m_voff = (mon_state == 2'd1 && mh <= 6'd16) ? 2 : 0;
+
+            case (hero_stance)
+                `STANCE_BERSERK:    stance_s = "BERSERK(+ATK)";
+                `STANCE_IRON_GUARD: stance_s = "IRON GUARD   ";
+                `STANCE_AGILE:      stance_s = "AGILE(+EVADE)";
+                default:            stance_s = "BALANCED     ";
+            endcase
+
+            $write("\033[H");
+            // 1. Header (1 row, 100 cols)
+            $display("\033[1;30m+=[ \033[1;37mSOLO COMBAT ARENA - %-10s vs #%02d %-18s [%8s] | TURN %2d\033[1;30m ]================+\033[0m\033[K",
+                     h_name, enemy_id, m_name, arch_s, turn_no);
+            $display("\033[K");
+
+            // 2. Zone 1: Opponent Card (54 cols Left, sub-grid matching Hero Card) + 4 sp + Monster Sprite (42 cols Right) (10 rows)
+            for (lp = 0; lp < 10; lp = lp + 1) begin
+                case (lp)
+                    0: $write("\033[1;30m+----------------------------------------------------+    \033[0m");
+                    1: $write("\033[1;30m| \033[1;31mFOE     :\033[0m #%02d \033[1;35m%-18s\033[0m \033[1;33m[%-8s]\033[0m \033[1;37m%-7s\033[1;30m|\033[0m    ",
+                              enemy_id, m_name, arch_s,
+                              (enemy_id == 6'd23) ? "[MIMIC]" : (is_elite ? "[ELITE]" : "[BEAST]"));
+                    2: $write("\033[1;30m+----------------------------------+-----------------+    \033[0m");
+                    3: begin
+                        $write("\033[1;30m| \033[0mHP      : ");
+                        print_mini_bar(enemy_hp, enemy_max, 12, 8'd230, 8'd55, 8'd70);
+                        $write(" \033[1;31m%3d/%-3d\033[0m \033[1;30m|\033[0m \033[1;31mATK  : %2d\033[0m       \033[1;30m|\033[0m    ",
+                               enemy_hp, enemy_max, enemy_atk);
+                    end
+                    4: $write("\033[1;30m| \033[0mPOSTURE : %-23s\033[1;30m|\033[0m \033[1;36mDEF  : %2d\033[0m       \033[1;30m|\033[0m    ",
+                              (mon_state == 2'd2) ? "[DEAD]" : (is_crawling ? "[CRAWLING - 100% HEAD]" : (is_disarmed ? "[DISARMED - LOW ATK]" : ((arm_l_hp == 0) ? "[GUARD BROKEN - -DEF]" : "[INTACT]"))),
+                              enemy_def);
+                    5: $write("\033[1;30m+----------------------------------+-----------------+    \033[0m");
+                    6: $write("\033[1;30m| \033[1;36mTRAIT   : %-41s\033[1;30m|\033[0m    ", m_trait);
+                    7: begin
+                        if (head_hp == 0 || enemy_hp == 0 || torso_hp == 0)
+                            $write("\033[1;30m| \033[90mLIMBS   : [DECAPITATED / NEUTRALIZED]               \033[1;30m|\033[0m    ");
+                        else if (is_crawling || is_disarmed || arm_l_hp == 0)
+                            $write("\033[1;30m| \033[1;33mLIMBS   : R-Arm:%s L-Arm:%s Legs:%s %-11s \033[1;30m|\033[0m    ",
+                                   (arm_r_hp == 0) ? "CUT" : "OK ", (arm_l_hp == 0) ? "CUT" : "OK ",
+                                   is_crawling ? "CUT" : "OK ", is_crawling ? "[CRAWLING!]" : "[CRIPPLED] ");
+                        else
+                            $write("\033[1;30m| \033[90mLIMBS   : All Limbs Functional & Intact            \033[1;30m|\033[0m    ");
+                    end
+                    8: begin
+                        if (is_crawling)
+                            $write("\033[1;30m| \033[1;32mTIP     : Crawling! 100%% HEAD HIT & 100%% FLEE!     \033[1;30m|\033[0m    ");
+                        else
+                            $write("\033[1;30m| \033[90mTIP     : Cut R-Arm=Disarm | Cut Legs=100%% Head    \033[1;30m|\033[0m    ");
+                    end
+                    9: $write("\033[1;30m+----------------------------------------------------+    \033[0m");
+                endcase
+
+                for (c = 0; c < 24; c = c + 1) begin
+                    if (c < mw && (lp * 2 + m_voff) < (mh + m_voff + 2)) begin
+                        sample_monster_tristate_pixel(enemy_id, mon_state, lp * 2 + m_voff, lp * 2 + m_voff + 1, c[5:0], t_t, rgb_t, t_b, rgb_b);
+                        print_hb_pixel(t_t, rgb_t[23:16], rgb_t[15:8], rgb_t[7:0],
+                                       t_b, rgb_b[23:16], rgb_b[15:8], rgb_b[7:0]);
+                    end else begin
+                        $write(" ");
+                    end
+                end
+                if (lp == 0) begin
+                    if (mon_state == 2'd2)      $display("  \033[90m[FOE: DEAD]     \033[0m\033[K");
+                    else if (mon_state == 2'd1) $display("  \033[1;33m[FOE: INJURED]  \033[0m\033[K");
+                    else                        $display("  \033[1;31m[ENEMY]         \033[0m\033[K");
+                end else begin
+                    $display("                  \033[K");
+                end
+            end
+
+            // 2-row breathing gap between Opponent Zone and Hero Zone
+            $display("\033[K");
+            $display("\033[K");
+
+            // 3. Zone 2: Full-Height Solo Hero Sprite (36 cols Left, 28px = 14 rows) + Spaced Hero Card (64 cols Right)
+            for (lp = 0; lp < 14; lp = lp + 1) begin
+                $write("    ");
+                for (c = 0; c < 26; c = c + 1) begin
+                    if (c < pw && (lp * 2) < ph) begin
+                        u_router.sample_funger_pixel(hero_id, lp * 2, lp * 2 + 1, c, 1'b0, t_t, rgb_t, t_b, rgb_b);
+                        print_hb_pixel(t_t, rgb_t[23:16], rgb_t[15:8], rgb_t[7:0],
+                                       (lp * 2 + 1 >= ph) ? 1'b1 : t_b, rgb_b[23:16], rgb_b[15:8], rgb_b[7:0]);
+                    end else begin
+                        $write(" ");
+                    end
+                end
+                $write("      ");
+
+                case (lp)
+                    0:  $display("\033[1;30m+--------------------------------------------------------------+\033[0m\033[K");
+                    1:  $display("\033[1;30m|  \033[1;32mHERO   :\033[0m \033[1;37m%-10s  [%-19s]\033[0m                  \033[1;30m|\033[0m\033[K", h_name, h_role);
+                    2:  $display("\033[1;30m+-------------------------------------+------------------------+\033[0m\033[K");
+                    3: begin
+                        $write("\033[1;30m|  \033[0mHP     : ");
+                        print_mini_bar(hero_hp, hero_max, 14, 8'd60, 8'd220, 8'd100);
+                        $display(" \033[1;32m%3d/%-3d\033[0m  \033[1;30m|\033[0m  \033[1;31mATK    : %2d\033[0m           \033[1;30m|\033[0m\033[K",
+                                 hero_hp, hero_max, hero_atk);
+                    end
+                    4: begin
+                        $write("\033[1;30m|  \033[0mMIND   : ");
+                        print_mini_bar(hero_mind, hero_max_mind, 14, 8'd80, 8'd180, 8'd255);
+                        $display(" \033[1;36m%3d/%-3d\033[0m  \033[1;30m|\033[0m  \033[1;36mDEF    : %2d\033[0m           \033[1;30m|\033[0m\033[K",
+                                 hero_mind, hero_max_mind, hero_def);
+                    end
+                    5: begin
+                        $write("\033[1;30m|  \033[0mHUNGER : ");
+                        print_mini_bar(hero_hunger, 8'd100, 14, 8'd255, 8'd160, 8'd40);
+                        $display(" \033[1;33m%3d/100\033[0m  \033[1;30m|\033[0m  \033[1;35mEVADE  : %2d%%\033[0m          \033[1;30m|\033[0m\033[K",
+                                 hero_hunger, dodge_v);
+                    end
+                    6: begin
+                        $write("\033[1;30m|  \033[0mTOXIC  : ");
+                        print_mini_bar(hero_tox, hero_max_tox, 14, 8'd190, 8'd80, 8'd240);
+                        $display(" \033[1;35m%3d/%-3d%%\033[0m \033[1;30m|\033[0m  \033[1;33mSTANCE : %-13s\033[1;30m|\033[0m\033[K",
+                                 hero_tox, hero_max_tox, stance_s);
+                    end
+                    7:  $display("\033[1;30m+-------------------------------------+------------------------+\033[0m\033[K");
+                    8:  $display("\033[1;30m|  \033[1;33mTRAIT  : %-50s\033[1;30m |\033[0m\033[K", trait_s);
+                    9:  $display("\033[1;30m|  \033[90mBUFF   : %-50s\033[1;30m |\033[0m\033[K", buff_s);
+                    10: begin
+                        if (is_guarding)
+                            $display("\033[1;30m|  \033[1;32mSTATE  : IRON GUARD ACTIVE (-70%% Incoming Damage!)          \033[1;30m |\033[0m\033[K");
+                        else if (has_bleed)
+                            $display("\033[1;30m|  \033[1;31mSTATE  : BLEEDING (-4 HP/turn) [Use Poppy / Vial in ITEM!] \033[1;30m |\033[0m\033[K");
+                        else if (has_poison)
+                            $display("\033[1;30m|  \033[1;35mSTATE  : NECROTIC POISON (-5 HP/turn) [Use Vial in ITEM!]  \033[1;30m |\033[0m\033[K");
+                        else if (hero_id == 4'd4 && ({1'b0, hero_hp} * 9'd3 <= {1'b0, hero_max}))
+                            $display("\033[1;30m|  \033[1;31mSTATE  : BLOODLUST ACTIVE (+50%% ATK Rage below 35%% HP!)    \033[1;30m |\033[0m\033[K");
+                        else
+                            $display("\033[1;30m|  \033[90mSTATE  : Standard Readiness - Choose command below         \033[1;30m |\033[0m\033[K");
+                    end
+                    11: $display("\033[1;30m+--------------------------------------------------------------+\033[0m\033[K");
+                    default: $display("                                                                \033[K");
+                endcase
+            end
+
+            $display("\033[K");
+            // 4. Zone 3: Combat Log Box (3 rows)
+            $display("\033[1;30m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[1;30m| \033[1;33m[LOG]\033[0m \033[1;37m%-90s\033[1;30m |\033[0m\033[K", log_msg);
+            $display("\033[1;30m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[K");
+
+            // 5. Zone 4: Fixed 7-Row Hierarchical Menu (1 Title + 6 Options)
+            if (cmenu_mode == 2'd0) begin
+                $display("  \033[1;37mCOMBAT COMMANDS (%-10s - Choose action with [W/S] + [Enter]):\033[0m\033[K", h_name);
+                write_combat_opt_row(menu_cursor == 3'd0, 3'd1, "ATTACK        ", "-> Target specific limbs (Head / Torso / R-Arm / L-Arm / Legs)");
+                write_combat_opt_row(menu_cursor == 3'd1, 3'd2, "GUARD         ", "-> Brace for impact (-70% incoming DMG; [Z] cycles Stance)");
+                write_combat_opt_row(menu_cursor == 3'd2, 3'd3, "SKILL         ", "-> Unleash unique Hero Hexen spells & combat abilities");
+                write_combat_opt_row(menu_cursor == 3'd3, 3'd4, "ITEM          ", "-> Open Survival Pouch (Herbs, Rations, Vials & Totem)");
+                if (is_crawling || hero_id == 4'd1)
+                    write_combat_opt_row(menu_cursor == 3'd4, 3'd5, "FLEE          ", "-> Disengage to corridor (100% Escape Chance!)");
+                else
+                    write_combat_opt_row(menu_cursor == 3'd4, 3'd5, "FLEE          ", "-> Disengage and retreat to corridor (50% / Agile Chance)");
+                $display("\033[K");
+            end else if (cmenu_mode == 2'd1) begin
+                $display("  \033[1;33mACTION > ATTACK > SELECT TARGET LIMB ([B/Esc] Back):\033[0m\033[K");
+                if (is_crawling)
+                    write_combat_opt_row(menu_cursor == 3'd0, 3'd1, "HEAD          ", "-> 100% CRITICAL FINISH! Foe crippled -> Instant Decapitate!");
+                else
+                    write_combat_opt_row(menu_cursor == 3'd0, 3'd1, "HEAD          ", "-> 30% Hit | Risky lethal strike -> Instant Decapitation Kill!");
+                write_combat_opt_row(menu_cursor == 3'd1, 3'd2, "TORSO         ", "-> 95% Hit | Reliable core damage strike");
+                write_combat_opt_row(menu_cursor == 3'd2, 3'd3, "RIGHT ARM     ", "-> 80% Hit | Sever weapon arm -> Disarms enemy attacks");
+                write_combat_opt_row(menu_cursor == 3'd3, 3'd4, "LEFT ARM      ", "-> 80% Hit | Crush offhand arm -> Shatters enemy defense");
+                write_combat_opt_row(menu_cursor == 3'd4, 3'd5, "LEGS          ", "-> 85% Hit | Break legs -> Forces Crawl (100% Head & Flee!)");
+                write_combat_opt_row(menu_cursor == 3'd5, 3'd6, "BACK          ", "-> Return to main combat command menu");
+            end else begin
+                $display("  \033[1;35mACTION > SKILLS & ABILITIES (%-10s - [B/Esc] Back):\033[0m\033[K", h_name);
+                for (lp = 0; lp < 4; lp = lp + 1) begin
+                    get_solo_skill_info(hero_id, lp[1:0], sk_lbl, sk_dsc);
+                    write_combat_opt_row(menu_cursor == lp[2:0], lp[2:0] + 3'd1, sk_lbl, sk_dsc);
+                end
+                write_combat_opt_row(menu_cursor == 3'd4, 3'd5, "BACK          ", "-> Return to main combat command menu");
+                $display("\033[K");
+            end
+
+            // 6. Zone 5: Footer (1 spacer + 2 rows)
+            $display("\033[K");
+            $display("\033[1;30m====================================================================================================\033[0m\033[K");
+            $write("  \033[90m[CONTROLS]:\033[0m \033[1;37m[W/S / 1-6]\033[0m Navigate | \033[1;32m[Enter]\033[0m Confirm | \033[1;33m[B/Esc]\033[0m Back | \033[1;36m[Z]\033[0m Stance | \033[1;31m[Q]\033[0m Quit\033[0m\033[K\033[J");
+            $fflush();
+        end
+    endtask
+
+    // ------------------------------------------------------------------------
+    // S6. Solo Victory Screen (24 Rows x 100 Cols, Performance Log)
+    // ------------------------------------------------------------------------
+    task render_solo_victory_screen;
+        input         is_hard_mode;
+        input [3:0]   hero_id;
+        input [7:0]   hero_hp, hero_max, hero_mind;
+        input [31:0]  steps, slain, chests;
+        reg [7:0]   d_hp, d_atk, d_def, d_dg, d_tox, d_cap;
+        reg [127:0] h_name;
+        reg [191:0] h_role, d_pr, d_mr;
+        reg [255:0] d_tr, d_bf;
+        reg [479:0] d_a1, d_a2;
+        begin
+            get_solo_hero_dossier(hero_id, is_hard_mode, d_hp, d_atk, d_def, d_dg, d_tox, d_cap,
+                                  h_name, h_role, d_pr, d_mr, d_tr, d_bf, d_a1, d_a2);
+            $write("\033[H");
+            $display("\033[1;33m+==================================================================================================+\033[0m\033[K");
+            $display("\033[1;33m|            ___      ___ ___  ________  _________  ________  ________      ___    ___             |\033[0m\033[K");
+            $display("\033[1;33m|           |\\  \\    /  /|\\  \\|\\   ____\\|\\___   ___\\\\   __  \\|\\   __  \\    |\\  \\  /  /|            |\033[0m\033[K");
+            $display("\033[1;33m|           \\ \\  \\  /  / | \\  \\ \\  \\___|\\|___ \\  \\_\\ \\  \\|\\  \\ \\  \\|\\  \\   \\ \\  \\/  / /            |\033[0m\033[K");
+            $display("\033[1;33m|            \\ \\  \\/  / / \\ \\  \\ \\  \\        \\ \\  \\ \\ \\  \\\\\\  \\ \\   _  _\\   \\ \\    / /             |\033[0m\033[K");
+            $display("\033[1;33m|             \\ \\    / /   \\ \\  \\ \\  \\____    \\ \\  \\ \\ \\  \\\\\\  \\ \\  \\\\  \\|   \\/  /  /              |\033[0m\033[K");
+            $display("\033[1;33m|              \\ \\__/ /     \\ \\__\\ \\_______\\   \\ \\__\\ \\ \\_______\\ \\__\\\\ _\\   __/  / /              |\033[0m\033[K");
+            $display("\033[1;33m|               \\|__|/       \\|__|\\|_______|    \\|__|  \\|_______|\\|__|\\|__| |\\___/ /               |\033[0m\033[K");
+            $display("\033[1;33m|                                                                           \\|___|/                |\033[0m\033[K");
+            $display("\033[1;33m|                     \033[1;32m[ E S C A P E   A C H I E V E D   -   V I C T O R Y ]\033[1;33m                        |\033[0m\033[K");
+            $display("\033[1;33m+==================================================================================================+\033[0m\033[K");
+            $display("\033[1;32m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[1;32m|    ALL 3 RUNIC KEYS INSERTED! THE RUNIC GATES GRIND OPEN AS SUNLIGHT FLOODS THE LABYRINTH!       |\033[0m\033[K");
+            $display("\033[1;32m|    \033[1;37m%-10s [%-19s] has conquered subterranean dread and escaped alive!\033[1;32m          |\033[0m\033[K", h_name, h_role);
+            $display("\033[1;32m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[1;36m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[1;36m| \033[1;36m[EXPEDITION PERFORMANCE LOG]:\033[0m\033[1;36m                                                                    |\033[0m\033[K");
+            $display("\033[1;36m|   - Difficulty Conquered : \033[1;32m%-42s\033[1;36m                            |\033[0m\033[K",
+                     is_hard_mode ? "TERROR & STARVATION (Hardcore Mode)" : "FEAR & HUNGER (Normal Mode)");
+            $display("\033[1;36m|   - Explorer Standing    : \033[1;37m%-10s (%3d/%-3d HP, Mind: %3d/100)\033[1;36m                                |\033[0m\033[K",
+                     h_name, hero_hp, hero_max, hero_mind);
+            $display("\033[1;36m|   - Total Steps Taken    : \033[1;33m%-5d steps\033[1;36m  |  Foes Slain: \033[1;31m%-2d\033[1;36m  |  Vaults Looted: \033[1;33m%-2d\033[1;36m                  |\033[0m\033[K",
+                     steps, slain, chests);
+            $display("\033[1;36m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[1;30m====================================================================================================\033[0m\033[K");
+            $display("  \033[1;37m[CONTROLS]: Press [Enter] or [Q] to return to surface\033[0m\033[K");
+            $write("\033[1;30m====================================================================================================\033[0m\033[K\033[J");
+            $fflush();
+        end
+    endtask
+
+    // ------------------------------------------------------------------------
+    // S7. Solo Game Over Screen (17 Rows x 100 Cols)
+    // ------------------------------------------------------------------------
+    task render_solo_game_over_screen;
+        input [3:0]   hero_id;
+        input         is_hard_mode;
+        input [255:0] killer_name;
+        reg [7:0]   d_hp, d_atk, d_def, d_dg, d_tox, d_cap;
+        reg [127:0] h_name;
+        reg [191:0] h_role, d_pr, d_mr;
+        reg [255:0] d_tr, d_bf;
+        reg [479:0] d_a1, d_a2;
+        begin
+            get_solo_hero_dossier(hero_id, is_hard_mode, d_hp, d_atk, d_def, d_dg, d_tox, d_cap,
+                                  h_name, h_role, d_pr, d_mr, d_tr, d_bf, d_a1, d_a2);
+            $write("\033[H");
+            $display("\033[1;31m+==================================================================================================+\033[0m\033[K");
+            $display("\033[1;31m|  ________  ________  _____ ______   _______           ________  ___      ___ _______   ________  |\033[0m\033[K");
+            $display("\033[1;31m| |\\   ____\\|\\   __  \\|\\   _ \\  _   \\|\\  ___ \\         |\\   __  \\|\\  \\    /  /|\\  ___ \\ |\\   __  \\ |\033[0m\033[K");
+            $display("\033[1;31m| \\ \\  \\___|\\ \\  \\|\\  \\ \\  \\\\\\__\\ \\  \\ \\   __/|        \\ \\  \\|\\  \\ \\  \\  /  / | \\   __/|\\ \\  \\|\\  \\|\033[0m\033[K");
+            $display("\033[1;31m|  \\ \\  \\  __\\ \\   __  \\ \\  \\\\|__| \\  \\ \\  \\_|/__      \\ \\  \\\\\\  \\ \\  \\/  / / \\ \\  \\_|/_\\ \\   _  _\\|\033[0m\033[K");
+            $display("\033[1;31m|   \\ \\  \\|\\  \\ \\  \\ \\  \\ \\  \\    \\ \\  \\ \\  \\_|\\ \\      \\ \\  \\\\\\  \\ \\    / /   \\ \\  \\_|\\ \\ \\  \\\\ \\||\033[0m\033[K");
+            $display("\033[1;31m|    \\ \\_______\\ \\__\\ \\__\\ \\__\\    \\ \\__\\ \\_______\\      \\ \\_______\\ \\__/ /     \\ \\_______\\ \\__\\\\_\\|\033[0m\033[K");
+            $display("\033[1;31m|     \\|_______|\\|__|\\|__|\\|__|     \\|__|\\|_______|        \\|_______|\\|__|/       \\|_______|\\|__|\\||\033[0m\033[K");
+            $display("\033[1;31m|                        \033[1;37m[ S U R V I V O R   D E M I S E   -   Y O U   D I E D ]\033[1;31m                   |\033[0m\033[K");
+            $display("\033[1;31m+==================================================================================================+\033[0m\033[K");
+            $display("\033[1;37m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[1;37m|  \033[1;31m%-10s\033[1;37m HAS FALLEN TO \033[1;33m%-22s\033[1;37m IN THE DARK LABYRINTH PERIMETER.                |\033[0m\033[K", h_name, killer_name);
+            $display("\033[1;37m|  \033[90mYour flesh decays into subterranean ash... The forgotten gods claim another wandering soul.\033[1;37m     |\033[0m\033[K");
+            $display("\033[1;37m+--------------------------------------------------------------------------------------------------+\033[0m\033[K");
+            $display("\033[1;30m====================================================================================================\033[0m\033[K");
+            $display("  \033[1;37m[CONTROLS]: Press [Enter] or [Q] to exit\033[0m\033[K");
+            $write("\033[1;30m====================================================================================================\033[0m\033[K\033[J");
+            $fflush();
         end
     endtask
 

@@ -591,6 +591,7 @@ combat_log = "Battle initiated. Shadow Swordsman unsheathes dark blade."
 current_menu = "MAIN"
 cursor_idx = 0
 combat_outcome = None
+is_hardcore_mode = False
 
 # =============================================================================
 # FLICKER-FREE ATOMIC TERMINAL BLITTING ENGINE (EXACT 100 COLUMNS & TAIL ERASE)
@@ -1659,6 +1660,7 @@ def handle_selection():
             if inventory.get("totem", 0) > 0:
                 inventory["totem"] -= 1
                 hero["hp"] = hero["max_hp"]
+                hero["toxicity"] = 0
                 if "debuffs" in hero:
                     hero["debuffs"].clear()
                 if "severed_limbs" in hero:
@@ -1679,7 +1681,7 @@ def handle_selection():
                     hero["hp"] = max(1, hero["hp"] - 5)
                     combat_log = f"OVERDOSE! {hero['name']}'s stomach convulsing (0 HP, -5 HP toxin)!"
                 else:
-                    heal_amt = 65 if hero["name"] == "CAHARA" else 50
+                    heal_amt = 65 if hero["name"] == "CAHARA" else (30 if is_hardcore_mode else 50)
                     hero["hp"] = min(hero["max_hp"], hero["hp"] + heal_amt)
                     added_tox = 0 if hero["name"] == "MOONLESS" else (15 if hero["name"] == "RAGNVALDR" else 35)
                     hero["toxicity"] = min(max_t, hero.get("toxicity", 0) + added_tox)
@@ -1703,7 +1705,7 @@ def handle_selection():
                     hero["hp"] = max(1, hero["hp"] - 5)
                     combat_log = f"OVERDOSE! {hero['name']} overdoses on medicinal herbs (0 HP, -5 HP toxin)!"
                 else:
-                    heal_amt = 150 if hero["name"] == "CAHARA" else 120
+                    heal_amt = 150 if hero["name"] == "CAHARA" else (75 if is_hardcore_mode else 120)
                     hero["hp"] = min(hero["max_hp"], hero["hp"] + heal_amt)
                     added_tox = 0 if hero["name"] == "MOONLESS" else (25 if hero["name"] == "RAGNVALDR" else 50)
                     hero["toxicity"] = min(max_t, hero.get("toxicity", 0) + added_tox)
@@ -2003,13 +2005,13 @@ def enemy_turn():
     if hero["hp"] == 0:
         if inventory.get("totem", 0) > 0:
             inventory["totem"] -= 1
-            revive_hp = max(1, hero["max_hp"] // 2)
-            hero["hp"] = revive_hp
+            hero["hp"] = hero["max_hp"]
+            hero["toxicity"] = 0
             if "debuffs" in hero:
                 hero["debuffs"].clear()
             if "severed_limbs" in hero:
                 hero["severed_limbs"] = {"head": 100, "torso": 100, "arm_r": 100, "arm_l": 100, "leg_r": 100, "leg_l": 100}
-            combat_log += f" | \033[1;33m★ [TOTEM OF UNDYING DETONATES]! Golden amber aura defies death! Severed limbs restored & {hero['name']} revived to {hero['hp']} HP!\033[0m"
+            combat_log += f" | \033[1;33m★ [TOTEM OF UNDYING]: Full HP ({hero['hp']}) & limbs restored!\033[0m"
         else:
             combat_log += f" | {hero['name']} has fallen in the dark catacombs! DEFEAT!"
             combat_outcome = "DEFEAT"
@@ -2086,8 +2088,9 @@ def run_interactive_loop():
     clear_screen()
     return combat_outcome or "QUIT", active_hero, inventory
 
-def run_solo_combat(hero_obj, monster_id=8, monster_name="SHADOW SWORDSMAN", monster_archetype="ARMORED", monster_hp=95, monster_atk=24, monster_def=99, inv=None):
-    global active_hero, monster, inventory, combat_log, current_menu, cursor_idx, combat_outcome
+def run_solo_combat(hero_obj, monster_id=8, monster_name="SHADOW SWORDSMAN", monster_archetype="ARMORED", monster_hp=95, monster_atk=24, monster_def=99, inv=None, is_hardcore=False):
+    global active_hero, monster, inventory, combat_log, current_menu, cursor_idx, combat_outcome, is_hardcore_mode
+    is_hardcore_mode = is_hardcore
     active_hero = copy.deepcopy(hero_obj)
     active_hero["is_guarding"] = False
     active_hero["buff"] = active_hero.get("buff", "")

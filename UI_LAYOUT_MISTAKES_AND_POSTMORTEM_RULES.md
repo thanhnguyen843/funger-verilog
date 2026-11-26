@@ -268,7 +268,18 @@ Khi mất tứ chi hoặc gãy xương mà chưa dùng Totem, nhân vật sẽ p
 #### Đồng nhất Điểm Khởi Chạy Duy nhất (`PLAY_GAME.bat`)
 - Toàn bộ các file `.bat` tạm thời và thử nghiệm riêng lẻ (`SHOW_HERO_MODELS.bat`, `SHOW_MONSTER_MODELS.bat`, `TEST_GRID_HERO_SELECT.bat`, `TEST_GRID_INVENTORY.bat`) đã được loại bỏ hoàn toàn khỏi kho mã nguồn.
 - Giữ lại duy nhất **1 file khởi chạy chuẩn:** `PLAY_GAME.bat` tại thư mục gốc của dự án.
-- Tự động cấu hình chuẩn `cols=100 lines=36`, kích hoạt VirtualTerminalLevel cho Windows Terminal, tự biên dịch và kiểm tra Verilog RTL nếu có `iverilog`, và khởi động mượt mà bằng Python runtime hoặc VVP hardware simulator.
+- Tự động cấu hình chuẩn `cols=102 lines=38`, kích hoạt VirtualTerminalLevel cho Windows Terminal, biên dịch `iverilog -Wall -g2012` (0 errors, 0 warnings) và **chạy trực tiếp mô phỏng thuần Verilog `vvp sim/funger_play.out`** kết hợp cầu nối nhận phím tức thì `[Console]::ReadKey($true)` bằng Windows PowerShell tích hợp (0% Python runtime, không echo xuống dòng).
+
+---
+
+### 7. KIẾN TRÚC THUẦN VERILOG (PURE VERILOG UNIFICATION) & TÁCH BIỆT PYTHON RUNTIME
+
+1. **Chuyển `PLAY_GAME.bat` về 100% Thuần Verilog (`iverilog` + `vvp` + Windows PowerShell Raw-Key Bridge):**
+   - Để đáp ứng đúng bản chất đồ án Verilog / Kiến trúc Máy tính (chạy thuần Verilog, không lệ thuộc Python runtime mà vẫn giữ trải nghiệm điều khiển 1 phím mượt mà, không cần bấm Enter thủ công sau từng bước và không làm trôi khung terminal), `PLAY_GAME.bat` biên dịch và chạy trực tiếp `vvp sim/funger_play.out` kèm vòng lặp PowerShell `[Console]::ReadKey($true)` nội tuyến (tự nhường về `vvp` thuần khi stdin là pipe CI/automated test).
+   - Các file Python trước đây (`master_game.py`, `demo_*.py`, `launch_game.py`) và bộ `audit_*.py` / `local_test_matrix.py` được định vị rõ là **công cụ kiểm thử tự động & nguyên mẫu tham chiếu ngoại tuyến**, hoàn toàn tách rời khỏi quá trình biên dịch/vận hành của hệ thống Verilog.
+2. **Nâng cấp điều khiển con trỏ `W/S + Enter` & chống tràn chiều cao ngay trong Verilog (`terminal_ui.v`, `tb_play.v`):**
+   - Bật lại vòng lặp con trỏ `W/S` (`↑/↓`) + `Enter` (`title_cursor`, `diff_cursor`, `squad_cursor`) có tô sáng vệt chọn trên Title, Difficulty và Squad Select trong `tb_play.v` và `terminal_ui.v` (vẫn giữ tương thích 100% phím tắt số `0..4`).
+   - Thu gọn `render_battle_screen_diagonal` còn 32 dòng + nhắc lệnh gọn 1 dòng trong khung `lines=38`, chống trôi/cuộn độ cao tuyệt đối; đồng bộ `Weed` -> `Herb` theo độ khó (`+30/+70` vs `+50/+120`), thêm `\033[J` xoá tàn dư dưới khung và đồng bộ `hw_sync_hp`, `hw_sync_restore_mind`, `hw_sync_restore_hunger` trong `tb_play.v`.
 
 ---
 *Tài liệu được biên soạn và chuẩn hóa bởi Antigravity Engine - Retro Game Verilog Lab.*
