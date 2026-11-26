@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-11-26 13:35:50",
+  "total_tests": 5000,
+  "passed_tests": 5000,
+  "failed_tests": 0,
+  "pass_rate_pct": 100.0,
+  "execution_time_seconds": 0.0035,
+  "throughput_tests_per_sec": 1415177,
+  "suites": [
+    {
+      "name": "SUITE 01: 3-Way & 4-Way Combinatorial Combat (Hero x Foe x Limb x Stance x Mode)",
+      "tests": 500,
+      "failures": 0,
+      "duration_ms": 0.22
+    },
+    {
+      "name": "SUITE 02: Boundary Value, Clamping & Extreme Arithmetic Injections",
+      "tests": 500,
+      "failures": 0,
+      "duration_ms": 0.04
+    },
+    {
+      "name": "SUITE 03: 8 Heroes Deep Metabolic Profiles, Herb Toxicity & Supply Limits",
+      "tests": 500,
+      "failures": 0,
+      "duration_ms": 0.11
+    },
+    {
+      "name": "SUITE 04: 36 Monsters Tri-State Morphologies & Grave Spider Horizontal Flip",
+      "tests": 500,
+      "failures": 0,
+      "duration_ms": 0.17
+    },
+    {
+      "name": "SUITE 05: 36x20 Labyrinth Navigation, Collision Boundaries & Persistent Fog RAM",
+      "tests": 500,
+      "failures": 0,
+      "duration_ms": 0.08
+    },
+    {
+      "name": "SUITE 06: 7 Treasure Chests, Mimic Traps & Deterministic Pity Drop Guarantee",
+      "tests": 500,
+      "failures": 0,
+      "duration_ms": 0.06
+    },
+    {
+      "name": "SUITE 07: 4 Tactical Stances, Stance Coprocessor & Sanity/Panic Meter",
+      "tests": 500,
+      "failures": 0,
+      "duration_ms": 0.02
+    },
+    {
+      "name": "SUITE 08: Limb Mutilation Trauma, Coin Flip of Fate & Totem of Undying",
+      "tests": 500,
+      "failures": 0,
+      "duration_ms": 0.14
+    },
+    {
+      "name": "SUITE 09: Dual Split-Box Showcase & 3 Layout Modes Conformance (100 Cols)",
+      "tests": 500,
+      "failures": 0,
+      "duration_ms": 2.03
+    },
+    {
+      "name": "SUITE 10: Adversarial Chaos, Buffer Injections & FSM Recovery",
+      "tests": 500,
+      "failures": 0,
+      "duration_ms": 0.03
+    }
+  ]
+}

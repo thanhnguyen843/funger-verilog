@@ -44,6 +44,7 @@ module tb_adversarial_chaos;
         .limb_target    (alu_limb),
         .is_lethal_mode (alu_lethal),
         .enemy_disarmed (alu_disarmed),
+        .enemy_archetype(2'd0),
         .p1_damage      (alu_dmg_p1),
         .p2_damage      (alu_dmg_p2),
         .p1_flee_penalty(alu_flee_pen)

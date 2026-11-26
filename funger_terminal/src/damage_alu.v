@@ -24,6 +24,7 @@ module damage_alu (
     input  wire [2:0] limb_target,     // 0: Torso, 1: Head, 2: Arm R, 3: Arm L, 4: Legs
     input  wire       is_lethal_mode,  // 1: Lethal coin-flip execution attack
     input  wire       enemy_disarmed,  // 1: Enemy arm severed, damage reduced
+    input  wire [1:0] enemy_archetype, // 0: Normal, 1: Spectral, 2: Armored, 3: Terror
     output reg  [7:0] p1_damage,
     output reg  [7:0] p2_damage,
     output reg  [7:0] p1_flee_penalty
@@ -74,6 +75,13 @@ module damage_alu (
                 raw_dmg_1to2 = 8'd255;
             else
                 raw_dmg_1to2 = raw_dmg_1to2 + (raw_dmg_1to2 >> 1);
+        end
+
+        // Archetype Immunities: Spectral immune to physical; Armored deflects standard blades
+        if (enemy_archetype === `ARCHETYPE_SPECTRAL) begin
+            raw_dmg_1to2 = 8'd0;
+        end else if (enemy_archetype === `ARCHETYPE_ARMORED) begin
+            raw_dmg_1to2 = 8'd2;
         end
 
         // Enemy base damage calculation:

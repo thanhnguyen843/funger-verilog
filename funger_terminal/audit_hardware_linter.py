@@ -127,7 +127,7 @@ def main():
             print(f"         {w}")
         total_errors += 1
     elif compiler_warns:
-        serious = [w for w in compiler_warns if "warning:" in w and ("Padding" in w or "expects" in w or "undefined" in w)]
+        serious = [w for w in compiler_warns if "warning:" in w and ("Padding" in w or "expects" in w or "undefined" in w or "floating" in w or "port" in w.lower())]
         if serious:
             print(f"  [FAIL] Compiler reported {len(serious)} serious port/width warnings!")
             for w in serious:
