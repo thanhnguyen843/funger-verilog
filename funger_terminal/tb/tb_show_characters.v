@@ -11,7 +11,7 @@
 module tb_show_characters;
 
     // Submodules
-    character_rom u_char_rom();
+    character_rom u_char_rom(.char_id(4'd1), .is_hard_mode(1'b0), .char_hp(), .char_atk(), .char_def(), .char_name(), .char_class());
     sprite_router u_router();
 
     // ------------------------------------------------------------------------

@@ -362,6 +362,7 @@ module battle_top (
         .limb_target    (alu_limb_sel),
         .is_lethal_mode (1'b0),
         .enemy_disarmed (1'b0),
+        .enemy_archetype(`ARCHETYPE_NORMAL),
         .p1_damage      (alu_dmg_to_p1),
         .p2_damage      (alu_dmg_to_p2),
         .p1_flee_penalty(alu_flee_pen)
@@ -376,14 +377,14 @@ module battle_top (
                                  ((heal_target_idx == 2'd1) ? inv_p1_max :
                                   ((heal_target_idx == 2'd2) ? inv_p2_max : inv_p3_max));
 
-    // Poppy Flower (+50 HP Normal, +30 HP Hardcore), Marijuana Herb (+120 HP Normal, +70 HP Hardcore)
+    // Poppy Flower (+50 HP Normal, +30 HP Hardcore), Medicinal Herb (+120 HP Normal, +70 HP Hardcore)
     wire [7:0] poppy_heal_val = is_hard_mode_reg ? 8'd30 : 8'd50;
     wire [7:0] weed_heal_val  = is_hard_mode_reg ? 8'd70 : 8'd120;
 
     // Normal Herb: Poppy Flower (nếu ngất thì hồi sinh lên giá trị hồi phục)
     wire [7:0] heal_calc_normal = (heal_target_hp + poppy_heal_val > heal_target_max) ?
                                   heal_target_max : (heal_target_hp + poppy_heal_val);
-    // Strong Crystal: Marijuana Herb (nếu ngất thì hồi sinh lên giá trị hồi phục)
+    // Strong Crystal: Medicinal Herb (nếu ngất thì hồi sinh lên giá trị hồi phục)
     wire [7:0] heal_calc_strong = (heal_target_hp + weed_heal_val > heal_target_max) ?
                                   heal_target_max : (heal_target_hp + weed_heal_val);
 
@@ -416,7 +417,7 @@ module battle_top (
             player_y          <= 32'd2;
             step_count        <= 32'd0;
 
-            enemy_id_reg      <= 5'd1;
+            enemy_id_reg      <= 6'd1;
             enemy_hp_reg      <= 8'd100;
             enemy_max_hp_reg  <= 8'd100;
             enemy_atk_reg     <= 8'd20;

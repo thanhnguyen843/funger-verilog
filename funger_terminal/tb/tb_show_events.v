@@ -151,7 +151,7 @@ module tb_show_events;
             $display("  | \033[1;32m0 to 7 (80%%)\033[0m| \033[1;32mSAFE CHEST \033[0m| \033[1;37mSub-roll item reward from ancient cache:\033[0m                              |");
             $display("  |            |            |  - \033[1;33mDungeon Key (Ancient Runic Key)\033[0m [20%%] : Unlocks Cyan Gate 'G'  |");
             $display("  |            |            |  - \033[1;31mWhite Poppy Flower\033[0m              [25%%] : Potent +30 HP healing  |");
-            $display("  |            |            |  - \033[1;32mMarijuana Herb & Ale Flask\033[0m      [25%%] : +15 HP, +20 Mind       |");
+            $display("  |            |            |  - \033[1;32mMedicinal Herb & Ale Flask\033[0m      [25%%] : +15 HP, +20 Mind       |");
             $display("  |            |            |  - \033[1;33mSalted Meat & Moldy Bread\033[0m       [30%%] : -40 Hunger reduction   |");
             $display("  | \033[1;31m8 to 9 (20%%)\033[0m| \033[1;31mMIMIC TRAP \033[0m| \033[1;31mCHEST AMBUSH: Chest sprouts razor fangs and initiates battle!         \033[0m|");
             $display("  |            |            |  - Spawns Monster #23 (Mimic: 95 HP, 22 ATK, 12 DEF).                |");

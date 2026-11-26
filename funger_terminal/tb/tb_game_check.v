@@ -32,7 +32,7 @@ module tb_game_check;
 
     // Module instances
     terminal_ui   ui();
-    character_rom char_db();
+    character_rom char_db(.char_id(4'd1), .is_hard_mode(1'b0), .char_hp(), .char_atk(), .char_def(), .char_name(), .char_class());
     monster_rom   mon_db(.monster_id(6'd1), .is_elite(1'b0), .base_hp(), .base_atk(), .base_def(), .spawn_weight(), .is_default_elite());
     map_rom       map_db(.in_x(32'sd0), .in_y(32'sd0), .out_tile());
 
@@ -171,7 +171,7 @@ module tb_game_check;
             team_hp[0], team_max[0], team_hp[1], team_max[1],
             team_hp[2], team_max[2], team_hp[3], team_max[3]
         );
-        $display("\033[1;32m>>> [CHECK 3 VERIFIED]: Pouch displays compact key model, mini item icons, 10 Poppy, 3 Marijuana.\033[0m\n");
+        $display("\033[1;32m>>> [CHECK 3 VERIFIED]: Pouch displays compact key model, mini item icons, 10 Poppy, 3 Medicinal.\033[0m\n");
 
         #20;
         // ====================================================================
@@ -189,9 +189,9 @@ module tb_game_check;
         bag_marijuana = bag_marijuana - 1;
         team_hp[3] = team_hp[3] + 8'd120;
         if (team_hp[3] > team_max[3]) team_hp[3] = team_max[3];
-        ui.notify_consume_item("Marijuana Herb", team_name[3], 8'd120, team_hp[3], team_max[3]);
+        ui.notify_consume_item("Medicinal Herb", team_name[3], 8'd120, team_hp[3], team_max[3]);
 
-        $display("   >> Updated Pouch Quantities: Poppy x%0d, Marijuana x%0d\n", bag_poppy, bag_marijuana);
+        $display("   >> Updated Pouch Quantities: Poppy x%0d, Medicinal x%0d\n", bag_poppy, bag_marijuana);
 
         #20;
         // ====================================================================

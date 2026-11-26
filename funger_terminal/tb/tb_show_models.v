@@ -10,7 +10,7 @@
 module tb_show_models;
 
     // Databases & Submodules
-    character_rom u_char_rom();
+    character_rom u_char_rom(.char_id(4'd1), .is_hard_mode(1'b0), .char_hp(), .char_atk(), .char_def(), .char_name(), .char_class());
     monster_rom   u_mon_rom(.monster_id(6'd1), .is_elite(1'b0), .base_hp(), .base_atk(), .base_def(), .spawn_weight(), .is_default_elite());
     sprite_router u_router();
 
@@ -28,18 +28,16 @@ module tb_show_models;
     key_sprite_rom u_key_t (.row(k_r_t), .col(k_c_t), .color_rgb(k_rgb_t), .is_transparent(k_trans_t));
     key_sprite_rom u_key_b (.row(k_r_b), .col(k_c_b), .color_rgb(k_rgb_b), .is_transparent(k_trans_b));
 
-    // Healing Items ROM instances
+    // Healing Items ROM instances (mapped to 20x20 hardware sprite_rom)
     reg  [5:0]  hb_r_t, hb_c_t, hb_r_b, hb_c_b;
-    wire [23:0] hb_rgb_t, hb_rgb_b;
-    wire        hb_trans_t, hb_trans_b;
-    healing_herb_rom u_herb_t (.row(hb_r_t), .col(hb_c_t), .flip_h(1'b0), .color_rgb(hb_rgb_t), .is_transparent(hb_trans_t));
-    healing_herb_rom u_herb_b (.row(hb_r_b), .col(hb_c_b), .flip_h(1'b0), .color_rgb(hb_rgb_b), .is_transparent(hb_trans_b));
+    wire        hb_pix_t, hb_pix_b;
+    sprite_rom u_herb_t   (.sprite_id(3'd5), .x(hb_c_t[4:0]), .y(hb_r_t[4:0]), .pixel_out(hb_pix_t));
+    sprite_rom u_herb_b   (.sprite_id(3'd5), .x(hb_c_b[4:0]), .y(hb_r_b[4:0]), .pixel_out(hb_pix_b));
 
     reg  [5:0]  fl_r_t, fl_c_t, fl_r_b, fl_c_b;
-    wire [23:0] fl_rgb_t, fl_rgb_b;
-    wire        fl_trans_t, fl_trans_b;
-    healing_flower_rom u_flower_t (.row(fl_r_t), .col(fl_c_t), .flip_h(1'b0), .color_rgb(fl_rgb_t), .is_transparent(fl_trans_t));
-    healing_flower_rom u_flower_b (.row(fl_r_b), .col(fl_c_b), .flip_h(1'b0), .color_rgb(fl_rgb_b), .is_transparent(fl_trans_b));
+    wire        fl_pix_t, fl_pix_b;
+    sprite_rom u_flower_t (.sprite_id(3'd3), .x(fl_c_t[4:0]), .y(fl_r_t[4:0]), .pixel_out(fl_pix_t));
+    sprite_rom u_flower_b (.sprite_id(3'd3), .x(fl_c_b[4:0]), .y(fl_r_b[4:0]), .pixel_out(fl_pix_b));
 
     // ------------------------------------------------------------------------
     // Half-block ANSI pixel printer
@@ -315,7 +313,7 @@ module tb_show_models;
                         end
                     6:  begin
                             if (mid == 6'd23)
-                                $write("| \033[1;33mLoot Drops    : 20%% Key Drop  |  Poppy / Marijuana Chest Bounty        \033[0m|");
+                                $write("| \033[1;33mLoot Drops    : 20%% Key Drop  |  Poppy / Medicinal Chest Bounty        \033[0m|");
                             else if (def_elite)
                                 $write("| \033[1;33mLoot Drops    : 50%% Dungeon Key Drop  |  20%% Healing Poppy Flower      \033[0m|");
                             else
@@ -375,7 +373,7 @@ module tb_show_models;
                     2: $write("\033[1;33m| Map Tile      : Brown Block with 'C' [\\033[48;2;139;69;19m C \\033[0m]              |\033[0m");
                     3: $write("\033[1;33m+------------------------------------------------------------------------+\033[0m");
                     4: $write("\033[1;37m| Interaction   : Full-Screen Chest Inspection upon entry                |\033[0m");
-                    5: $write("\033[1;37m| 80%% Loot      : Uncovers Poppy (+50 HP), Marijuana (+120 HP), or Key   |\033[0m");
+                    5: $write("\033[1;37m| 80%% Loot      : Uncovers Poppy (+50 HP), Medicinal (+120 HP), or Key   |\033[0m");
                     6: $write("\033[1;31m| 20%% Ambush    : Triggers instant combat with the vicious Mimic horror  |\033[0m");
                     7: $write("\033[1;33m+========================================================================+\033[0m");
                     default: $write("                                                                          ");
@@ -414,16 +412,16 @@ module tb_show_models;
             end
             $display("\033[1;30m--------------------------------------------------------------------------------------------------------\033[0m\n");
 
-            // --- 3. Poppy Flower (14x14 Pixels) ---
-            $display("\033[38;2;242;34;84m>>> [SUPPLY 1] CRIMSON POPPY FLOWER (14x14 Pixels, TrueColor 24-bit)\033[0m");
-            for (lp = 0; lp < 8; lp = lp + 1) begin
+            // --- 3. Poppy Flower (20x20 Pixels) ---
+            $display("\033[38;2;242;34;84m>>> [SUPPLY 1] CRIMSON POPPY FLOWER (20x20 Pixels, TrueColor 24-bit)\033[0m");
+            for (lp = 0; lp < 10; lp = lp + 1) begin
                 fl_r_t = lp * 2;
                 fl_r_b = lp * 2 + 1;
                 for (c = 0; c < 28; c = c + 1) begin
-                    if (c < 14 && lp * 2 < 14) begin
+                    if (c < 20 && lp * 2 < 20) begin
                         fl_c_t = c; fl_c_b = c; #1;
-                        print_hb_pixel(fl_trans_t, fl_rgb_t[23:16], fl_rgb_t[15:8], fl_rgb_t[7:0],
-                                       fl_trans_b, fl_rgb_b[23:16], fl_rgb_b[15:8], fl_rgb_b[7:0]);
+                        print_hb_pixel(!fl_pix_t, 8'd242, 8'd34, 8'd84,
+                                       !fl_pix_b, 8'd242, 8'd34, 8'd84);
                     end else begin
                         $write(" ");
                     end
@@ -442,16 +440,16 @@ module tb_show_models;
             end
             $display("\033[1;30m--------------------------------------------------------------------------------------------------------\033[0m\n");
 
-            // --- 4. Marijuana Herb (20x20 Pixels) ---
-            $display("\033[38;2;105;225;101m>>> [SUPPLY 2] RESTORATIVE MARIJUANA HERB (20x20 Pixels, TrueColor 24-bit)\033[0m");
-            for (lp = 0; lp < 11; lp = lp + 1) begin
+            // --- 4. Medicinal Herb (20x20 Pixels) ---
+            $display("\033[38;2;105;225;101m>>> [SUPPLY 2] RESTORATIVE MEDICINAL HERB (20x20 Pixels, TrueColor 24-bit)\033[0m");
+            for (lp = 0; lp < 10; lp = lp + 1) begin
                 hb_r_t = lp * 2;
                 hb_r_b = lp * 2 + 1;
                 for (c = 0; c < 28; c = c + 1) begin
                     if (c < 20 && lp * 2 < 20) begin
                         hb_c_t = c; hb_c_b = c; #1;
-                        print_hb_pixel(hb_trans_t, hb_rgb_t[23:16], hb_rgb_t[15:8], hb_rgb_t[7:0],
-                                       hb_trans_b, hb_rgb_b[23:16], hb_rgb_b[15:8], hb_rgb_b[7:0]);
+                        print_hb_pixel(!hb_pix_t, 8'd105, 8'd225, 8'd101,
+                                       !hb_pix_b, 8'd105, 8'd225, 8'd101);
                     end else begin
                         $write(" ");
                     end
@@ -459,8 +457,8 @@ module tb_show_models;
                 $write(" \033[1;30m|\033[0m ");
                 case (lp)
                     0: $write("\033[38;2;105;225;101m+========================================================================+\033[0m");
-                    1: $write("\033[38;2;105;225;101m| ITEM: Restorative Marijuana (High-Grade Tonic Herb)     |\033[0m");
-                    2: $write("\033[1;37m| Starting Stock: 3x Marijuana in Survival Pouch                         |\033[0m");
+                    1: $write("\033[38;2;105;225;101m| ITEM: Restorative Medicinal (High-Grade Tonic Herb)     |\033[0m");
+                    2: $write("\033[1;37m| Starting Stock: 3x Medicinal in Survival Pouch                         |\033[0m");
                     3: $write("\033[1;32m| Healing Effect: Restores +120 HP to any chosen party member            |\033[0m");
                     4: $write("\033[1;33m| Tactical Note : Powerful medicine for reviving critically injured allies|\033[0m");
                     5: $write("\033[38;2;105;225;101m+========================================================================+\033[0m");
