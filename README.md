@@ -94,8 +94,7 @@ retro_game_verilog/
     │   ├── monster_state_model.v                # Tri-state posture & Amber/Ash morphology transform
     │   ├── sprite_rom.v, chest_sprite_rom.v, key_sprite_rom.v, sprite_router.v
     │   ├── funger_*_rom.v, monster.v, fantasy_creatures.v
-    │   ├── terminal_ui.v                        # ANSI 24-bit TrueColor Solo & hardware renderer
-    │   └── gen_chest_key_roms.py                # Offline pixel-art ROM codegen utility
+    │   └── terminal_ui.v                        # ANSI 24-bit TrueColor Solo & hardware renderer
     ├── tb/                                      # 19 Pure Verilog testbenches (0 -Wall warnings)
     │   ├── tb_play.v                            # Main playable Pure Verilog Solo Explorer simulator
     │   ├── tb_full_map_victory.v                # battle_top.v full-map 3-key victory campaign
@@ -143,7 +142,6 @@ python local_test_matrix.py                                  # 26 Solo Explorer 
 python test_matrix.py                                        # 7 fast Solo & RTL CI integration suites
 python audit_visual_screen_inspector.py                      # 108/108 visual render checks (36 monsters x 3 states)
 python audit_5000_deep_adversarial_matrix.py                 # 5,000/5,000 combinatorial & adversarial verification matrix
-python benchmark_hw_vs_sw.py                                 # Hardware RTL vs. RISC-V software latency/energy report
 ```
 
 ---

@@ -80,8 +80,7 @@ funger_terminal/
 │   ├── funger_cahara_rom.v / funger_darce_rom.v / funger_enki_rom.v / funger_ragnvaldr_rom.v
 │   ├── funger_legarde_rom.v / funger_moonless_rom.v / funger_thegirl_rom.v / funger_nashrah_rom.v
 │   ├── monster.v / fantasy_creatures.v
-│   ├── terminal_ui.v                       # 24-bit TrueColor ANSI renderer (simulation display)
-│   └── gen_chest_key_roms.py               # Offline pixel-art ROM codegen utility
+│   └── terminal_ui.v                       # 24-bit TrueColor ANSI renderer (simulation display)
 ├── tb/                                     # 19 Pure Verilog Verification & Gallery Testbenches
 │   ├── tb_play.v                           # Main interactive Solo Explorer simulation
 │   ├── tb_full_map_victory.v               # battle_top.v full-map 3-key campaign TB
@@ -92,7 +91,7 @@ funger_terminal/
 └── *.py                                    # Strictly offline verification, audit & benchmark scripts
 ```
 
-*(Note: All `.py` files inside `funger_terminal/` — including `run_comprehensive_verification.py`, `local_test_matrix.py`, `test_matrix.py`, `audit_*.py`, `benchmark_hw_vs_sw.py`, and legacy/reference TUI scripts such as `master_game.py` and `demo_*.py` — are strictly offline tools and are never invoked by [`PLAY_GAME.bat`](../PLAY_GAME.bat).)*
+*(Note: All remaining `.py` files inside `funger_terminal/` — `run_comprehensive_verification.py`, `local_test_matrix.py`, `test_matrix.py`, `audit_*.py`, and CI audit helper catalogs — are strictly offline verification tools and are never invoked by [`PLAY_GAME.bat`](../PLAY_GAME.bat).)*
 
 ---
 
@@ -138,5 +137,4 @@ python local_test_matrix.py                                # 26 Solo Explorer & 
 python test_matrix.py                                      # 7 fast Solo & RTL CI integration suites
 python audit_visual_screen_inspector.py                    # 108/108 visual checks (36 monsters x 3 states)
 python audit_5000_deep_adversarial_matrix.py               # 5,000/5,000 combinatorial & adversarial matrix
-python benchmark_hw_vs_sw.py                               # Hardware RTL vs. RISC-V software benchmark
 ```
